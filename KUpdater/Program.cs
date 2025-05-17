@@ -1,3 +1,6 @@
+using System;
+using System.Windows.Forms;
+
 namespace KUpdater
 {
     internal static class Program

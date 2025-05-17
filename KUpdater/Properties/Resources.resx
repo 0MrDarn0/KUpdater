@@ -118,9 +118,6 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="border_bottom_center" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\border_bottom_center.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="border_bottom_left" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\border_bottom_left.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -139,19 +136,34 @@
   <data name="border_top_left" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\border_top_left.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="border_top_left_1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\border_top_left_1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="border_top_left_2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\border_top_left_2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="border_top_left_moon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\border_top_left_moon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="border_top_right" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\border_top_right.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="btn-default" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\btn-default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="btn_default_click" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\btn_default_click.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="btn_close" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\btn_close.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="btn_default_hover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\btn_default_hover.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="btn_on" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\btn_on.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="btn_default_normal" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\btn_default_normal.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="btn_over" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\btn_over.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="btn_exit_click" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\btn_exit_click.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="btn_exit_hover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\btn_exit_hover.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="btn_exit_normal" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\btn_exit_normal.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

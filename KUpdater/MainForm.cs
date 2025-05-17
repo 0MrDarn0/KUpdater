@@ -1,7 +1,8 @@
+using KUpdater.UI;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace KUpdater
@@ -14,7 +15,10 @@ namespace KUpdater
         private bool resizing = false;
         private Point resizeStartCursor;
         private Size resizeStartSize;
-        private const int resizeHitSize = 30; // z. B. 20x20 Pixel in der unteren rechten Ecke
+        private const int resizeHitSize = 20;
+
+        private readonly Font buttonFont = new Font("Segoe UI", 10, FontStyle.Bold);
+        private readonly List<ButtonRegion> buttons;
 
 
         public MainForm()
@@ -22,8 +26,13 @@ namespace KUpdater
             InitializeComponent();
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.CenterScreen;
-        }
 
+
+
+            buttons = new List<ButtonRegion>();
+            buttons.Add(new ButtonRegion(() => new Rectangle(this.Width - 60, 10, 25, 15),"Exit", "btn_exit", () => this.Close()));
+
+        }
         protected override CreateParams CreateParams
         {
             get
@@ -37,54 +46,112 @@ namespace KUpdater
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
-            ApplyLayeredBackground();
+            SafeRedraw();
         }
 
-        private void ApplyLayeredBackground()
-        {
-            int width = this.Width;
-            int height = this.Height;
 
-            Bitmap bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (resizing)
+            {
+                Point delta = new Point(Cursor.Position.X - resizeStartCursor.X, Cursor.Position.Y - resizeStartCursor.Y);
+                int newWidth = Math.Max(300, resizeStartSize.Width + delta.X);
+                int newHeight = Math.Max(200, resizeStartSize.Height + delta.Y);
+                this.Size = new Size(newWidth, newHeight);
+                SafeRedraw();
+                return;
+            }
+
+            if (dragging)
+            {
+                Point newLocation = new Point(this.Left + e.X - dragStart.X, this.Top + e.Y - dragStart.Y);
+                this.Location = newLocation;
+                return;
+            }
+
+            this.Cursor = new Rectangle(this.Width - resizeHitSize, this.Height - resizeHitSize, resizeHitSize, resizeHitSize)
+                .Contains(e.Location) ? Cursors.SizeNWSE : Cursors.Default;
+
+            bool needsRedraw = false;
+            foreach (var btn in buttons)
+            {
+                bool prev = btn.IsHovered;
+                btn.IsHovered = btn.Bounds.Contains(e.Location);
+                if (prev != btn.IsHovered) needsRedraw = true;
+            }
+
+            if (needsRedraw)
+                SafeRedraw();
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                foreach (var btn in buttons)
+                {
+                    if (btn.Bounds.Contains(e.Location))
+                    {
+                        btn.IsPressed = true;
+                        SafeRedraw();
+                        return;
+                    }
+                }
+
+                var resizeRect = new Rectangle(this.Width - resizeHitSize, this.Height - resizeHitSize, resizeHitSize, resizeHitSize);
+                if (resizeRect.Contains(e.Location))
+                {
+                    resizing = true;
+                    resizeStartCursor = Cursor.Position;
+                    resizeStartSize = this.Size;
+                }
+                else
+                {
+                    dragging = true;
+                    dragStart = e.Location;
+                }
+            }
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            dragging = false;
+            resizing = false;
+
+            foreach (var btn in buttons)
+            {
+                if (btn.IsPressed && btn.Bounds.Contains(e.Location))
+                {
+                    btn.IsPressed = false;
+                    btn.OnClick?.Invoke();
+                    return;
+                }
+                btn.IsPressed = false;
+            }
+
+            SafeRedraw();
+        }
+
+
+
+        private void SafeRedraw()
+        {
+            if (this.IsDisposed || !this.IsHandleCreated)
+                return;
+
+            Bitmap bmp = new Bitmap(this.Width, this.Height, PixelFormat.Format32bppArgb);
             using (Graphics g = Graphics.FromImage(bmp))
             {
                 g.Clear(Color.Transparent);
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                UI.Renderer.DrawBackground(g, this.Size);
 
-                // Rahmen-Grafiken laden (ersetze Pfade ggf.)
-                var topLeft = Image.FromFile("Resources/border_top_left.png");
-                var topCenter = Image.FromFile("Resources/border_top_center.png");
-                var topRight = Image.FromFile("Resources/border_top_right.png");
-                var rightCenter = Image.FromFile("Resources/border_right_center.png");
-                var bottomRight = Image.FromFile("Resources/border_bottom_right.png");
-                var bottomCenter = Image.FromFile("Resources/border_bottom_center.png");
-                var bottomLeft = Image.FromFile("Resources/border_bottom_left.png");
-                var leftCenter = Image.FromFile("Resources/border_left_center.png");
-
-                int topHeight = topCenter.Height;
-                int bottomHeight = bottomCenter.Height;
-                int sideWidth = leftCenter.Width;
-
-                
-                // Ecken zeichnen
-                g.DrawImage(topLeft, 0, 0, topLeft.Width, topLeft.Height);
-                g.DrawImage(topRight, width - topRight.Width, 0, topRight.Width, topRight.Height);
-                g.DrawImage(bottomLeft, 0, height - bottomLeft.Height, bottomLeft.Width, bottomLeft.Height);
-                g.DrawImage(bottomRight, width - bottomRight.Width +1, height - bottomRight.Height, bottomRight.Width, bottomRight.Height);
-
-                // Kanten strecken/zeichnen
-                g.DrawImage(topCenter, new Rectangle(topLeft.Width, 0, width - topLeft.Width - topRight.Width + 10, topCenter.Height));
-                g.DrawImage(bottomCenter, new Rectangle(bottomLeft.Width, height - bottomCenter.Height, width - bottomLeft.Width - bottomRight.Width + 21, bottomCenter.Height));
-                g.DrawImage(leftCenter, new Rectangle(0, topLeft.Height, leftCenter.Width, height - topLeft.Height - bottomLeft.Height + 5));
-                g.DrawImage(rightCenter, new Rectangle(width - rightCenter.Width, topRight.Height, rightCenter.Width, height - topRight.Height - bottomRight.Height + 5));
-
-                // Optional: Innenfläche ausfüllen
-                g.FillRectangle(Brushes.Black, new Rectangle(leftCenter.Width - 5, topCenter.Height - 5, width - leftCenter.Width * 2 + 12, height - topCenter.Height - bottomCenter.Height + 9));
+                foreach (ButtonRegion btn in buttons)
+                    btn.Draw(g, buttonFont);
             }
 
             SetBitmap(bmp, 255);
         }
-
 
         private void SetBitmap(Bitmap bitmap, byte opacity)
         {
@@ -93,11 +160,11 @@ namespace KUpdater
             IntPtr hBitmap = bitmap.GetHbitmap(Color.FromArgb(0));
             IntPtr oldBitmap = NativeMethods.SelectObject(memDc, hBitmap);
 
-            var size = new Size(bitmap.Width, bitmap.Height);
-            var pointSource = new Point(0, 0);
-            var topPos = new Point(this.Left, this.Top);
+            Size size = new Size(bitmap.Width, bitmap.Height);
+            Point source = new Point(0, 0);
+            Point topPos = new Point(this.Left, this.Top);
 
-            NativeMethods.BLENDFUNCTION blend = new NativeMethods.BLENDFUNCTION
+            var blend = new NativeMethods.BLENDFUNCTION
             {
                 BlendOp = NativeMethods.AC_SRC_OVER,
                 BlendFlags = 0,
@@ -106,13 +173,14 @@ namespace KUpdater
             };
 
             NativeMethods.UpdateLayeredWindow(this.Handle, screenDc, ref topPos, ref size, memDc,
-                ref pointSource, 0, ref blend, NativeMethods.ULW_ALPHA);
+                ref source, 0, ref blend, NativeMethods.ULW_ALPHA);
 
             NativeMethods.SelectObject(memDc, oldBitmap);
             NativeMethods.DeleteObject(hBitmap);
             NativeMethods.DeleteDC(memDc);
             NativeMethods.ReleaseDC(IntPtr.Zero, screenDc);
         }
+
 
         protected override void OnMouseClick(MouseEventArgs e)
         {
@@ -122,60 +190,5 @@ namespace KUpdater
                 this.Close();
             }
         }
-
-        protected override void OnMouseDown(MouseEventArgs e)
-        {
-            // Checke ob der Klick in der Resize-Ecke war
-            Rectangle resizeRect = new Rectangle(this.Width - resizeHitSize, this.Height - resizeHitSize, resizeHitSize, resizeHitSize);
-            if (e.Button == MouseButtons.Left && resizeRect.Contains(e.Location))
-            {
-                resizing = true;
-                resizeStartCursor = Cursor.Position;
-                resizeStartSize = this.Size;
-            }
-            else if (e.Button == MouseButtons.Left && e.Y < 50)
-            {
-                dragging = true;
-                dragStart = new Point(e.X, e.Y);
-            }
-        }
-
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-
-            Rectangle resizeRect = new Rectangle(this.Width - resizeHitSize, this.Height - resizeHitSize, resizeHitSize, resizeHitSize);
-            if (resizeRect.Contains(e.Location))
-            {
-                this.Cursor = Cursors.SizeNWSE;
-            }
-            else if (!dragging && !resizing)
-            {
-                this.Cursor = Cursors.Default;
-            }
-
-            if (resizing)
-            {
-                Point delta = new Point(Cursor.Position.X - resizeStartCursor.X, Cursor.Position.Y - resizeStartCursor.Y);
-                int newWidth = Math.Max(300, resizeStartSize.Width + delta.X);  // Mindestgröße
-                int newHeight = Math.Max(200, resizeStartSize.Height + delta.Y);
-                this.Size = new Size(newWidth, newHeight);
-                ApplyLayeredBackground(); // neu zeichnen nach Resize
-            }
-            else if (dragging)
-            {
-                Point newLocation = new Point(this.Left + e.X - dragStart.X, this.Top + e.Y - dragStart.Y);
-                this.Location = newLocation;
-            }
-        }
-
-        protected override void OnMouseUp(MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left)
-            {
-                dragging = false;
-                resizing = false;
-            }
-        }
-
     }
 }

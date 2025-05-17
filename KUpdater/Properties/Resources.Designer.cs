@@ -63,16 +63,6 @@ namespace KUpdater.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap border_bottom_center {
-            get {
-                object obj = ResourceManager.GetObject("border_bottom_center", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
         internal static System.Drawing.Bitmap border_bottom_left {
             get {
                 object obj = ResourceManager.GetObject("border_bottom_left", resourceCulture);
@@ -133,6 +123,36 @@ namespace KUpdater.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap border_top_left_1 {
+            get {
+                object obj = ResourceManager.GetObject("border_top_left_1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap border_top_left_2 {
+            get {
+                object obj = ResourceManager.GetObject("border_top_left_2", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap border_top_left_moon {
+            get {
+                object obj = ResourceManager.GetObject("border_top_left_moon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap border_top_right {
             get {
                 object obj = ResourceManager.GetObject("border_top_right", resourceCulture);
@@ -143,9 +163,9 @@ namespace KUpdater.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap btn_close {
+        internal static System.Drawing.Bitmap btn_default_click {
             get {
-                object obj = ResourceManager.GetObject("btn_close", resourceCulture);
+                object obj = ResourceManager.GetObject("btn_default_click", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -153,9 +173,9 @@ namespace KUpdater.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap btn_default {
+        internal static System.Drawing.Bitmap btn_default_hover {
             get {
-                object obj = ResourceManager.GetObject("btn-default", resourceCulture);
+                object obj = ResourceManager.GetObject("btn_default_hover", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -163,9 +183,9 @@ namespace KUpdater.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap btn_on {
+        internal static System.Drawing.Bitmap btn_default_normal {
             get {
-                object obj = ResourceManager.GetObject("btn_on", resourceCulture);
+                object obj = ResourceManager.GetObject("btn_default_normal", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -173,9 +193,29 @@ namespace KUpdater.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap btn_over {
+        internal static System.Drawing.Bitmap btn_exit_click {
             get {
-                object obj = ResourceManager.GetObject("btn_over", resourceCulture);
+                object obj = ResourceManager.GetObject("btn_exit_click", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap btn_exit_hover {
+            get {
+                object obj = ResourceManager.GetObject("btn_exit_hover", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap btn_exit_normal {
+            get {
+                object obj = ResourceManager.GetObject("btn_exit_normal", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
