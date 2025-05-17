@@ -10,6 +10,13 @@ namespace KUpdater
     {
         private bool dragging = false;
         private Point dragStart;
+
+        private bool resizing = false;
+        private Point resizeStartCursor;
+        private Size resizeStartSize;
+        private const int resizeHitSize = 30; // z. B. 20x20 Pixel in der unteren rechten Ecke
+
+
         public MainForm()
         {
             InitializeComponent();
@@ -118,7 +125,15 @@ namespace KUpdater
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left && e.Y < 50)
+            // Checke ob der Klick in der Resize-Ecke war
+            Rectangle resizeRect = new Rectangle(this.Width - resizeHitSize, this.Height - resizeHitSize, resizeHitSize, resizeHitSize);
+            if (e.Button == MouseButtons.Left && resizeRect.Contains(e.Location))
+            {
+                resizing = true;
+                resizeStartCursor = Cursor.Position;
+                resizeStartSize = this.Size;
+            }
+            else if (e.Button == MouseButtons.Left && e.Y < 50)
             {
                 dragging = true;
                 dragStart = new Point(e.X, e.Y);
@@ -127,7 +142,26 @@ namespace KUpdater
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            if (dragging)
+
+            Rectangle resizeRect = new Rectangle(this.Width - resizeHitSize, this.Height - resizeHitSize, resizeHitSize, resizeHitSize);
+            if (resizeRect.Contains(e.Location))
+            {
+                this.Cursor = Cursors.SizeNWSE;
+            }
+            else if (!dragging && !resizing)
+            {
+                this.Cursor = Cursors.Default;
+            }
+
+            if (resizing)
+            {
+                Point delta = new Point(Cursor.Position.X - resizeStartCursor.X, Cursor.Position.Y - resizeStartCursor.Y);
+                int newWidth = Math.Max(300, resizeStartSize.Width + delta.X);  // Mindestgröße
+                int newHeight = Math.Max(200, resizeStartSize.Height + delta.Y);
+                this.Size = new Size(newWidth, newHeight);
+                ApplyLayeredBackground(); // neu zeichnen nach Resize
+            }
+            else if (dragging)
             {
                 Point newLocation = new Point(this.Left + e.X - dragStart.X, this.Top + e.Y - dragStart.Y);
                 this.Location = newLocation;
@@ -139,6 +173,7 @@ namespace KUpdater
             if (e.Button == MouseButtons.Left)
             {
                 dragging = false;
+                resizing = false;
             }
         }
 
