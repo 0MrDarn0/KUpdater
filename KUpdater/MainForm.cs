@@ -167,7 +167,6 @@ namespace KUpdater
             UI.Renderer.DrawBackground(g, this.Size);
             UI.Renderer.DrawTitle(g, this.Size);
 
-
             foreach (ButtonRegion button in _buttons)
                button.Draw(g, _buttonFont);
          }

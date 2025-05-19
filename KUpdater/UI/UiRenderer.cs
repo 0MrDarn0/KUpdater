@@ -17,14 +17,14 @@ namespace KUpdater.UI
       private static readonly Point _windowTitlePosition;
 
       // Border Images
-      private static readonly Image _topLeftBorder = Image.FromFile(Resource("border_top_left.png"));
-      private static readonly Image _topCenterBorder = Image.FromFile(Resource("border_top_center.png"));
-      private static readonly Image _topRightBorder = Image.FromFile(Resource("border_top_right.png"));
-      private static readonly Image _rightCenterBorder = Image.FromFile(Resource("border_right_center.png"));
-      private static readonly Image _bottomRightBorder = Image.FromFile(Resource("border_bottom_right.png"));
-      private static readonly Image _bottomCenterBorder = Image.FromFile(Resource("border_bottom_center.png"));
-      private static readonly Image _bottomLeftBorder = Image.FromFile(Resource("border_bottom_left.png"));
-      private static readonly Image _leftCenterBorder = Image.FromFile(Resource("border_left_center.png"));
+      private static readonly Image _topLeftBorder = AssetLoader.RequireImage("border_top_left.png");
+      private static readonly Image _topCenterBorder = AssetLoader.RequireImage("border_top_center.png");
+      private static readonly Image _topRightBorder = AssetLoader.RequireImage("border_top_right.png");
+      private static readonly Image _rightCenterBorder = AssetLoader.RequireImage("border_right_center.png");
+      private static readonly Image _bottomRightBorder = AssetLoader.RequireImage("border_bottom_right.png");
+      private static readonly Image _bottomCenterBorder = AssetLoader.RequireImage("border_bottom_center.png");
+      private static readonly Image _bottomLeftBorder = AssetLoader.RequireImage("border_bottom_left.png");
+      private static readonly Image _leftCenterBorder = AssetLoader.RequireImage("border_left_center.png");
 
       static Renderer()
       {
