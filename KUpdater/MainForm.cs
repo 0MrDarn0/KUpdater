@@ -20,7 +20,7 @@ namespace KUpdater
       private bool _resizing = false;
       private Point _resizeStartCursor;
       private Size _resizeStartSize;
-      private const int _resizeHitSize = 20;
+      private const int _resizeHitSize = 40;
       private readonly Font _buttonFont = new("Segoe UI", 10, FontStyle.Bold);
       private readonly List<ButtonRegion> _buttons;
 
