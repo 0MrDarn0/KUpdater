@@ -6,8 +6,17 @@ namespace KUpdater.Settings
    public class KUpdaterSettings
    {
       public string Title { get; set; } = "kUpdater";
+      public string FontFamily { get; set; } = "Chiller";
+      public float FontSize { get; set; } = 40f;
+      public string FontStyle { get; set; } = "Italic";
+      public string TitleColor { get; set; } = "#FFA500"; // Default: Orange
+      public TitlePositionConfig TitlePosition { get; set; } = new TitlePositionConfig { X = 40, Y = -10 };
    }
-
+   public class TitlePositionConfig
+   {
+      public int X { get; set; }
+      public int Y { get; set; }
+   }
 
    public static class SettingsManager
    {

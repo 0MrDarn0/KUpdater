@@ -10,6 +10,7 @@ namespace KUpdater
    {
       public static MainForm? Instance { get; private set; }
       public string WindowTitle => _title;
+      public KUpdaterSettings Settings => _settings;
 
       private readonly string _title = "kUpdater";
       private readonly KUpdaterSettings _settings;

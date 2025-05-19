@@ -12,7 +12,10 @@ namespace KUpdater.UI
        */
       private static string Resource(string fileName) => Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", fileName);
 
-      private static readonly Font _windowTitleFont = new("Chiller", 40, FontStyle.Italic);
+      private static readonly Font _windowTitleFont;
+      private static readonly Color _windowTitleColor;
+      private static readonly Point _windowTitlePosition;
+
       // Border Images
       private static readonly Image _topLeftBorder = Image.FromFile(Resource("border_top_left.png"));
       private static readonly Image _topCenterBorder = Image.FromFile(Resource("border_top_center.png"));
@@ -23,6 +26,36 @@ namespace KUpdater.UI
       private static readonly Image _bottomLeftBorder = Image.FromFile(Resource("border_bottom_left.png"));
       private static readonly Image _leftCenterBorder = Image.FromFile(Resource("border_left_center.png"));
 
+      static Renderer()
+      {
+         var settings = KUpdater.Settings.SettingsManager.Load();
+
+         // FontStyle
+         if (!Enum.TryParse(settings.FontStyle, true, out FontStyle style))
+            style = FontStyle.Regular;
+         try
+         {
+            _windowTitleFont = new Font(settings.FontFamily, settings.FontSize, style);
+         }
+         catch
+         {
+            _windowTitleFont = new Font("Segoe UI", 40f, FontStyle.Regular); // Fallback
+         }
+
+
+         // Color
+         try
+         {
+            _windowTitleColor = ColorTranslator.FromHtml(settings.TitleColor);
+         }
+         catch
+         {
+            _windowTitleColor = Color.DarkOrange;
+         }
+
+         // Position
+         _windowTitlePosition = new Point(settings.TitlePosition.X, settings.TitlePosition.Y);
+      }
       private static void DebugDraw(Graphics g, Rectangle rect)
       {
          g.DrawRectangle(new(color: Color.Magenta, 1), rect);
@@ -31,7 +64,7 @@ namespace KUpdater.UI
       public static void DrawTitle(Graphics g, Size size)
       {
          string title = MainForm.Instance?.WindowTitle ?? "kUpdater";
-         TextRenderer.DrawText(g, title, _windowTitleFont, new Point(40, -10), Color.DarkOrange);
+         TextRenderer.DrawText(g, title, _windowTitleFont, _windowTitlePosition, _windowTitleColor);
          /*
           * Rectangle titleArea = new(0, -20, size.Width, 55);
           * DebugDraw(g, titleArea);
