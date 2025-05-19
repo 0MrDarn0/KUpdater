@@ -21,7 +21,7 @@ namespace KUpdater.Settings
 
       public static KUpdaterSettings Load()
       {
-         string configFilePath = Path.Combine(AppContext.BaseDirectory, _configFileName);
+         string configFilePath = Path.Combine(MainForm.Paths.ResourceDir, _configFileName);
          if (!File.Exists(configFilePath))
          {
             KUpdaterSettings? defaultSettings = new();

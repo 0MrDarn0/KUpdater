@@ -24,84 +24,65 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Resources\border_bottom_center.png">
+	
+	<ItemGroup>
+		<Content Include="kUpdater\**\*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+	
+	<ItemGroup>
+    <None Update="kUpdater\Resources\border_bottom_center.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_bottom_center1.png">
+    <None Update="kUpdater\Resources\border_bottom_left.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_bottom_left.png">
+    <None Update="kUpdater\Resources\border_bottom_right.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_bottom_right.png">
+    <None Update="kUpdater\Resources\border_left_center.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_left_center.png">
+    <None Update="kUpdater\Resources\border_right_center.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_right_center.png">
+    <None Update="kUpdater\Resources\border_top_center.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_top_center.png">
+    <None Update="kUpdater\Resources\border_top_left.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_top_left.png">
+    <None Update="kUpdater\Resources\border_top_left_1.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_top_left_1.png">
+    <None Update="kUpdater\Resources\border_top_left_2.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_top_left_2.png">
+    <None Update="kUpdater\Resources\border_top_left_moon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_top_left_3.png">
+    <None Update="kUpdater\Resources\border_top_right.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_top_left_moon.png">
+    <None Update="kUpdater\Resources\btn_default_click.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\border_top_right.png">
+    <None Update="kUpdater\Resources\btn_default_hover.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\btn_close.png">
+    <None Update="kUpdater\Resources\btn_default_normal.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\btn_default_click.png">
+    <None Update="kUpdater\Resources\btn_exit_click.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\btn_default_hover.png">
+    <None Update="kUpdater\Resources\btn_exit_hover.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\btn_default_normal.png">
+    <None Update="kUpdater\Resources\btn_exit_normal.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\btn_exit_click.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\btn_exit_hover.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\btn_exit_normal.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\button_click.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\button_exit_normal.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\button_hover.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\button_normal.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="kUpdater\" />
   </ItemGroup>
 
 </Project>

@@ -10,16 +10,18 @@ namespace KUpdater.UI
       웃
       유
        */
+      private static string Resource(string fileName) => Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", fileName);
+
       private static readonly Font _windowTitleFont = new("Chiller", 40, FontStyle.Italic);
       // Border Images
-      private static readonly Image _topLeftBorder = Image.FromFile("Resources/border_top_left.png");
-      private static readonly Image _topCenterBorder = Image.FromFile("Resources/border_top_center.png");
-      private static readonly Image _topRightBorder = Image.FromFile("Resources/border_top_right.png");
-      private static readonly Image _rightCenterBorder = Image.FromFile("Resources/border_right_center.png");
-      private static readonly Image _bottomRightBorder = Image.FromFile("Resources/border_bottom_right.png");
-      private static readonly Image _bottomCenterBorder = Image.FromFile("Resources/border_bottom_center.png");
-      private static readonly Image _bottomLeftBorder = Image.FromFile("Resources/border_bottom_left.png");
-      private static readonly Image _leftCenterBorder = Image.FromFile("Resources/border_left_center.png");
+      private static readonly Image _topLeftBorder = Image.FromFile(Resource("border_top_left.png"));
+      private static readonly Image _topCenterBorder = Image.FromFile(Resource("border_top_center.png"));
+      private static readonly Image _topRightBorder = Image.FromFile(Resource("border_top_right.png"));
+      private static readonly Image _rightCenterBorder = Image.FromFile(Resource("border_right_center.png"));
+      private static readonly Image _bottomRightBorder = Image.FromFile(Resource("border_bottom_right.png"));
+      private static readonly Image _bottomCenterBorder = Image.FromFile(Resource("border_bottom_center.png"));
+      private static readonly Image _bottomLeftBorder = Image.FromFile(Resource("border_bottom_left.png"));
+      private static readonly Image _leftCenterBorder = Image.FromFile(Resource("border_left_center.png"));
 
       private static void DebugDraw(Graphics g, Rectangle rect)
       {
@@ -83,7 +85,7 @@ namespace KUpdater.UI
       public static void DrawButtonWithImage(Graphics g, Rectangle rect, string baseName, string text, Font font, bool isHover, bool isPressed)
       {
          string state = isPressed ? "click" : isHover ? "hover" : "normal";
-         using var img = Image.FromFile($"Resources/{baseName}_{state}.png");
+         using var img = Image.FromFile(Resource($"{baseName}_{state}.png"));
 
          //draw the button
          g.DrawImage(img, rect);

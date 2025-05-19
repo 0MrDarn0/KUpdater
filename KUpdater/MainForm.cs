@@ -23,6 +23,11 @@ namespace KUpdater
       private readonly Font _buttonFont = new("Segoe UI", 10, FontStyle.Bold);
       private readonly List<ButtonRegion> _buttons;
 
+      public static class Paths
+      {
+         public static readonly string ResourceDir = Path.Combine(AppContext.BaseDirectory, "kUpdater");
+      }
+
       public MainForm()
       {
          Instance = this;
