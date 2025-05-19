@@ -100,4 +100,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="kUpdater\" />
+  </ItemGroup>
+
 </Project>

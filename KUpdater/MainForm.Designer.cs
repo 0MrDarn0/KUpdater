@@ -21,28 +21,29 @@ namespace KUpdater
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
+      #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
-        private void InitializeComponent()
-        {
-            SuspendLayout();
-            // 
-            // MainForm
-            // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
-            BackColor = Color.Black;
-            ClientSize = new Size(938, 565);
-            DoubleBuffered = true;
-            FormBorderStyle = FormBorderStyle.None;
-            Name = "MainForm";
-            ResumeLayout(false);
-        }
+      /// <summary>
+      ///  Required method for Designer support - do not modify
+      ///  the contents of this method with the code editor.
+      /// </summary>
+      private void InitializeComponent()
+      {
+         SuspendLayout();
+         // 
+         // MainForm
+         // 
+         AutoScaleDimensions = new SizeF(7F, 15F);
+         AutoScaleMode = AutoScaleMode.Font;
+         BackColor = Color.Black;
+         ClientSize = new Size(938, 565);
+         DoubleBuffered = true;
+         FormBorderStyle = FormBorderStyle.None;
+         Name = "MainForm";
+         StartPosition = FormStartPosition.CenterScreen;
+         ResumeLayout(false);
+      }
 
-        #endregion
-    }
+      #endregion
+   }
 }
