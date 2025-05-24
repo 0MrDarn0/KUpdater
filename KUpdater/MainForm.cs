@@ -33,11 +33,14 @@ namespace KUpdater
       {
          Instance = this;
          InitializeComponent();
+         LuaManager.Init("theme_loader.lua");
+         LuaManager.LoadTheme("kalonline");
          _settings = SettingsManager.Load();
          _title = _settings.Title;
 
          this.FormBorderStyle = FormBorderStyle.None;
          this.StartPosition = FormStartPosition.CenterScreen;
+
          _buttons =
          [
              new ButtonRegion(() =>

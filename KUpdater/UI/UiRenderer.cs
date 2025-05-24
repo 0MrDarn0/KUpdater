@@ -63,8 +63,11 @@ namespace KUpdater.UI
 
       public static void DrawTitle(Graphics g, Size size)
       {
-         string title = MainForm.Instance?.WindowTitle ?? "kUpdater";
-         TextRenderer.DrawText(g, title, _windowTitleFont, _windowTitlePosition, _windowTitleColor);
+         Theme theme = LuaManager.GetParsedTheme();
+         TextRenderer.DrawText(g, theme.Title, theme.TitleFont, theme.TitlePosition, theme.FontColor);
+
+         //string title = MainForm.Instance?.WindowTitle ?? "kUpdater";
+         //TextRenderer.DrawText(g, title, _windowTitleFont, _windowTitlePosition, _windowTitleColor);
          /*
           * Rectangle titleArea = new(0, -20, size.Width, 55);
           * DebugDraw(g, titleArea);
