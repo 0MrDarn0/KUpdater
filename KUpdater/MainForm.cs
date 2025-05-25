@@ -1,4 +1,3 @@
-using KUpdater.Settings;
 using KUpdater.UI;
 using System.Diagnostics;
 using System.Drawing.Imaging;
@@ -10,10 +9,7 @@ namespace KUpdater
    {
       public static MainForm? Instance { get; private set; }
       public string WindowTitle => _title;
-      public KUpdaterSettings Settings => _settings;
-
       private readonly string _title = "kUpdater";
-      private readonly KUpdaterSettings _settings;
 
       private bool _dragging = false;
       private Point _dragStart;
@@ -28,15 +24,23 @@ namespace KUpdater
       {
          public static readonly string ResourceDir = Path.Combine(AppContext.BaseDirectory, "kUpdater");
       }
-
+      /*
+       FileSystemWatcher watcher = new(@"kUpdater\Lua\themes");
+watcher.Filter = "kalonline.lua";
+watcher.NotifyFilter = NotifyFilters.LastWrite;
+watcher.Changed += (s, e) =>
+{
+    LuaManager.LoadTheme("kalonline");
+    form.Invalidate();
+};
+watcher.EnableRaisingEvents = true;
+       */
       public MainForm()
       {
          Instance = this;
          InitializeComponent();
          LuaManager.Init("theme_loader.lua");
          LuaManager.LoadTheme("kalonline");
-         _settings = SettingsManager.Load();
-         _title = _settings.Title;
 
          this.FormBorderStyle = FormBorderStyle.None;
          this.StartPosition = FormStartPosition.CenterScreen;
@@ -71,17 +75,17 @@ namespace KUpdater
       {
          if (_resizing)
          {
-            Point delta = new Point(Cursor.Position.X - _resizeStartCursor.X, Cursor.Position.Y - _resizeStartCursor.Y);
+            Point delta = new(Cursor.Position.X - _resizeStartCursor.X, Cursor.Position.Y - _resizeStartCursor.Y);
             int newWidth = Math.Max(300, _resizeStartSize.Width + delta.X);
             int newHeight = Math.Max(200, _resizeStartSize.Height + delta.Y);
-            this.Size = new Size(newWidth, newHeight);
+            this.Size = new(newWidth, newHeight);
             SafeRedraw();
             return;
          }
 
          if (_dragging)
          {
-            Point newLocation = new Point(this.Left + e.X - _dragStart.X, this.Top + e.Y - _dragStart.Y);
+            Point newLocation = new(this.Left + e.X - _dragStart.X, this.Top + e.Y - _dragStart.Y);
             this.Location = newLocation;
             return;
          }
@@ -114,7 +118,7 @@ namespace KUpdater
                }
             }
 
-            var resizeRect = new Rectangle(this.Width - _resizeHitSize, this.Height - _resizeHitSize, _resizeHitSize, _resizeHitSize);
+            Rectangle resizeRect = new(this.Width - _resizeHitSize, this.Height - _resizeHitSize, _resizeHitSize, _resizeHitSize);
             if (resizeRect.Contains(e.Location))
             {
                _resizing = true;
@@ -148,7 +152,7 @@ namespace KUpdater
       }
       protected override void OnMouseClick(MouseEventArgs e)
       {
-         var closeRect = new Rectangle(this.Width - 35, 15, 20, 20); // Position des Close-Buttons
+         Rectangle closeRect = new(this.Width - 35, 15, 20, 20); // Position des Close-Buttons
          if (closeRect.Contains(e.Location))
          {
             this.Close();

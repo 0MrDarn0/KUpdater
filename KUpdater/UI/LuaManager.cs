@@ -18,6 +18,12 @@ public class Theme
       public Font Font { get; set; } = new("Segoe UI", 14f, FontStyle.Regular);
    }
 }
+public class ThemeBackground
+{
+   public Image TopLeft, TopCenter, TopRight;
+   public Image RightCenter, BottomRight, BottomCenter, BottomLeft, LeftCenter;
+   public Color FillColor = Color.Black;
+}
 
 public static class LuaManager
 {
@@ -161,6 +167,41 @@ public static class LuaManager
       catch { style = fallback.Style; }
 
       return new Font(name, size, style);
+   }
+
+   public static ThemeBackground GetBackground()
+   {
+      var theme = GetTheme();
+      var bg = theme.Get("background").Table;
+
+      ThemeBackground result = new()
+      {
+         TopLeft = LoadImage(bg, "top_left"),
+         TopCenter = LoadImage(bg, "top_center"),
+         TopRight = LoadImage(bg, "top_right"),
+         RightCenter = LoadImage(bg, "right_center"),
+         BottomRight = LoadImage(bg, "bottom_right"),
+         BottomCenter = LoadImage(bg, "bottom_center"),
+         BottomLeft = LoadImage(bg, "bottom_left"),
+         LeftCenter = LoadImage(bg, "left_center"),
+         FillColor = ToColor(bg.Get("fill_color"), Color.Black)
+      };
+
+      return result;
+   }
+
+   private static Image LoadImage(Table table, string key)
+   {
+      string file = table.Get(key).CastToString();
+      if (string.IsNullOrWhiteSpace(file))
+         throw new Exception($"Missing background image key: {key}");
+
+      string path = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", file);
+
+      if (!File.Exists(path))
+         throw new FileNotFoundException($"Background image not found: {path}");
+
+      return Image.FromFile(path);
    }
 
 }
