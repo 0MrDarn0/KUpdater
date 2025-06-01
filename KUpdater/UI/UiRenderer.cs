@@ -1,9 +1,7 @@
 using System.Drawing.Drawing2D;
 
-namespace KUpdater.UI
-{
-   public static class Renderer
-   {
+namespace KUpdater.UI {
+   public static class Renderer {
       /*
        ҳ̸Ҳ̸ҳ
       kalonline:
@@ -14,18 +12,15 @@ namespace KUpdater.UI
        */
       private static string Resource(string fileName) => Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", fileName);
 
-      static Renderer()
-      {
+      static Renderer() {
 
       }
 
-      private static void DebugDraw(Graphics g, Rectangle rect)
-      {
+      private static void DebugDraw(Graphics g, Rectangle rect) {
          g.DrawRectangle(new(color: Color.Magenta, 1), rect);
       }
 
-      public static void DrawTitle(Graphics g, Size size)
-      {
+      public static void DrawTitle(Graphics g, Size size) {
          Theme theme = LuaManager.GetParsedTheme();
          TextRenderer.DrawText(g, theme.Title, theme.TitleFont, theme.TitlePosition, theme.FontColor);
 
@@ -38,8 +33,7 @@ namespace KUpdater.UI
           */
       }
 
-      public static void DrawBackground(Graphics g, Size size)
-      {
+      public static void DrawBackground(Graphics g, Size size) {
          var bg = LuaManager.GetBackground();
 
          int width = size.Width;
@@ -103,8 +97,7 @@ namespace KUpdater.UI
       //   g.FillRectangle(Brushes.Black, new Rectangle(_leftCenterBorder.Width - fill_pos_off, _topCenterBorder.Height - fill_pos_off, width - _leftCenterBorder.Width * 2 + fill_width_off, height - _topCenterBorder.Height - _bottomCenterBorder.Height + fill_height_off));
       //}
 
-      public static void DrawButton(Graphics g, Rectangle rect, string text, Font font, bool isHover, bool isPressed)
-      {
+      public static void DrawButton(Graphics g, Rectangle rect, string text, Font font, bool isHover, bool isPressed) {
          Color baseColor = isPressed ? Color.DarkRed : isHover ? Color.OrangeRed : Color.Red;
          using Brush brush = new SolidBrush(baseColor);
          g.FillRoundedRectangle(brush, rect, 6);
@@ -118,8 +111,7 @@ namespace KUpdater.UI
              TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
       }
 
-      public static void DrawButtonWithImage(Graphics g, Rectangle rect, string baseName, string text, Font font, bool isHover, bool isPressed)
-      {
+      public static void DrawButtonWithImage(Graphics g, Rectangle rect, string baseName, string text, Font font, bool isHover, bool isPressed) {
          string state = isPressed ? "click" : isHover ? "hover" : "normal";
          using var img = Image.FromFile(Resource($"{baseName}_{state}.png"));
 
@@ -135,8 +127,8 @@ namespace KUpdater.UI
              Color.Gold,
              TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
       }
-      public static void DrawButtonWithLua(Graphics g, Rectangle rect, string text, bool isHover, bool isPressed)
-      {
+
+      public static void DrawButtonWithLua(Graphics g, Rectangle rect, string text, bool isHover, bool isPressed) {
          Theme theme = LuaManager.GetParsedTheme();
 
          Color color = isPressed ? theme.Button.Pressed :
@@ -153,8 +145,8 @@ namespace KUpdater.UI
              theme.Button.FontColor,
              TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
       }
-      private static void FillRoundedRectangle(this Graphics g, Brush brush, Rectangle bounds, int radius)
-      {
+
+      private static void FillRoundedRectangle(this Graphics g, Brush brush, Rectangle bounds, int radius) {
          using var path = new System.Drawing.Drawing2D.GraphicsPath();
          path.AddArc(bounds.X, bounds.Y, radius, radius, 180, 90);
          path.AddArc(bounds.Right - radius, bounds.Y, radius, radius, 270, 90);

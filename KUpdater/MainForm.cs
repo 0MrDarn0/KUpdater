@@ -3,14 +3,9 @@ using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
-namespace KUpdater
-{
-   public partial class MainForm : Form
-   {
+namespace KUpdater {
+   public partial class MainForm : Form {
       public static MainForm? Instance { get; private set; }
-      public string WindowTitle => _title;
-      private readonly string _title = "kUpdater";
-
       private bool _dragging = false;
       private Point _dragStart;
       private bool _resizing = false;
@@ -20,23 +15,10 @@ namespace KUpdater
       private readonly Font _buttonFont = new("Segoe UI", 10, FontStyle.Bold);
       private readonly List<ButtonRegion> _buttons;
 
-      public static class Paths
-      {
+      public static class Paths {
          public static readonly string ResourceDir = Path.Combine(AppContext.BaseDirectory, "kUpdater");
       }
-      /*
-       FileSystemWatcher watcher = new(@"kUpdater\Lua\themes");
-watcher.Filter = "kalonline.lua";
-watcher.NotifyFilter = NotifyFilters.LastWrite;
-watcher.Changed += (s, e) =>
-{
-    LuaManager.LoadTheme("kalonline");
-    form.Invalidate();
-};
-watcher.EnableRaisingEvents = true;
-       */
-      public MainForm()
-      {
+      public MainForm() {
          Instance = this;
          InitializeComponent();
          LuaManager.Init("theme_loader.lua");
@@ -57,24 +39,22 @@ watcher.EnableRaisingEvents = true;
                         () => this.Close()),
             ];
       }
-      protected override CreateParams CreateParams
-      {
-         get
-         {
+
+      protected override CreateParams CreateParams {
+         get {
             var cp = base.CreateParams;
             cp.ExStyle |= 0x80000; // WS_EX_LAYERED
             return cp;
          }
       }
-      protected override void OnShown(EventArgs e)
-      {
+
+      protected override void OnShown(EventArgs e) {
          base.OnShown(e);
          SafeRedraw();
       }
-      protected override void OnMouseMove(MouseEventArgs e)
-      {
-         if (_resizing)
-         {
+
+      protected override void OnMouseMove(MouseEventArgs e) {
+         if (_resizing) {
             Point delta = new(Cursor.Position.X - _resizeStartCursor.X, Cursor.Position.Y - _resizeStartCursor.Y);
             int newWidth = Math.Max(300, _resizeStartSize.Width + delta.X);
             int newHeight = Math.Max(200, _resizeStartSize.Height + delta.Y);
@@ -83,8 +63,7 @@ watcher.EnableRaisingEvents = true;
             return;
          }
 
-         if (_dragging)
-         {
+         if (_dragging) {
             Point newLocation = new(this.Left + e.X - _dragStart.X, this.Top + e.Y - _dragStart.Y);
             this.Location = newLocation;
             return;
@@ -94,24 +73,21 @@ watcher.EnableRaisingEvents = true;
              .Contains(e.Location) ? Cursors.SizeNWSE : Cursors.Default;
 
          bool needsRedraw = false;
-         foreach (var btn in _buttons)
-         {
+         foreach (var btn in _buttons) {
             bool prev = btn.IsHovered;
             btn.IsHovered = btn.Bounds.Contains(e.Location);
-            if (prev != btn.IsHovered) needsRedraw = true;
+            if (prev != btn.IsHovered)
+               needsRedraw = true;
          }
 
          if (needsRedraw)
             SafeRedraw();
       }
-      protected override void OnMouseDown(MouseEventArgs e)
-      {
-         if (e.Button == MouseButtons.Left)
-         {
-            foreach (var btn in _buttons)
-            {
-               if (btn.Bounds.Contains(e.Location))
-               {
+
+      protected override void OnMouseDown(MouseEventArgs e) {
+         if (e.Button == MouseButtons.Left) {
+            foreach (var btn in _buttons) {
+               if (btn.Bounds.Contains(e.Location)) {
                   btn.IsPressed = true;
                   SafeRedraw();
                   return;
@@ -119,28 +95,22 @@ watcher.EnableRaisingEvents = true;
             }
 
             Rectangle resizeRect = new(this.Width - _resizeHitSize, this.Height - _resizeHitSize, _resizeHitSize, _resizeHitSize);
-            if (resizeRect.Contains(e.Location))
-            {
+            if (resizeRect.Contains(e.Location)) {
                _resizing = true;
                _resizeStartCursor = Cursor.Position;
                _resizeStartSize = this.Size;
-            }
-            else
-            {
+            } else {
                _dragging = true;
                _dragStart = e.Location;
             }
          }
       }
-      protected override void OnMouseUp(MouseEventArgs e)
-      {
+      protected override void OnMouseUp(MouseEventArgs e) {
          _dragging = false;
          _resizing = false;
 
-         foreach (var btn in _buttons)
-         {
-            if (btn.IsPressed && btn.Bounds.Contains(e.Location))
-            {
+         foreach (var btn in _buttons) {
+            if (btn.IsPressed && btn.Bounds.Contains(e.Location)) {
                btn.IsPressed = false;
                btn.OnClick?.Invoke();
                return;
@@ -150,25 +120,24 @@ watcher.EnableRaisingEvents = true;
 
          SafeRedraw();
       }
-      protected override void OnMouseClick(MouseEventArgs e)
-      {
+
+      protected override void OnMouseClick(MouseEventArgs e) {
          Rectangle closeRect = new(this.Width - 35, 15, 20, 20); // Position des Close-Buttons
-         if (closeRect.Contains(e.Location))
-         {
+         if (closeRect.Contains(e.Location)) {
             this.Close();
          }
       }
-      private void SafeRedraw()
-      {
-         if (this.IsDisposed || !this.IsHandleCreated) return;
+
+      private void SafeRedraw() {
+         if (this.IsDisposed || !this.IsHandleCreated)
+            return;
 
          Bitmap bmp = new(
              this.Width,
              this.Height,
              PixelFormat.Format32bppArgb);
 
-         using (Graphics g = Graphics.FromImage(bmp))
-         {
+         using (Graphics g = Graphics.FromImage(bmp)) {
             g.Clear(Color.Transparent);
 
             UI.Renderer.DrawBackground(g, this.Size);
@@ -179,8 +148,8 @@ watcher.EnableRaisingEvents = true;
          }
          SetBitmap(bmp, 255);
       }
-      private void SetBitmap(Bitmap bitmap, byte opacity)
-      {
+
+      private void SetBitmap(Bitmap bitmap, byte opacity) {
          var screenDc = NativeMethods.GetDC(IntPtr.Zero);
          var memDc = NativeMethods.CreateCompatibleDC(screenDc);
          var hBitmap = bitmap.GetHbitmap(Color.FromArgb(0));
@@ -209,8 +178,7 @@ watcher.EnableRaisingEvents = true;
               ref blend,
               NativeMethods.ULW_ALPHA);
 
-         if (!success)
-         {
+         if (!success) {
             var err = Marshal.GetLastWin32Error();
             Debug.WriteLine($"UpdateLayeredWindow failed: {err}");
          }
