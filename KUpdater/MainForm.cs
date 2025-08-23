@@ -1,4 +1,4 @@
-using KUpdater.UI;
+﻿using KUpdater.UI;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -18,6 +18,7 @@ namespace KUpdater {
       public static class Paths {
          public static readonly string ResourceDir = Path.Combine(AppContext.BaseDirectory, "kUpdater");
       }
+
       public MainForm() {
          Instance = this;
          InitializeComponent();
@@ -27,16 +28,25 @@ namespace KUpdater {
          this.FormBorderStyle = FormBorderStyle.None;
          this.StartPosition = FormStartPosition.CenterScreen;
 
-         _buttons =
-         [
-             new ButtonRegion(() =>
-                    new Rectangle(
-                        this.Width - 35,
-                        16,
-                        18, 18),
-                        "X",
-                        "btn_exit",
-                        () => this.Close()),
+         _buttons = [
+            new ButtonRegion(
+                () => new Rectangle(this.Width - 35, 16, 18, 18),
+                "X",
+                "btn_exit",
+                () => this.Close()
+                ),
+            new ButtonRegion(
+               () => new Rectangle( this.Width - 150, this.Height - 70, 97, 22),
+               "Start",
+               "btn_default",
+               () => StartGame()
+               ),
+            new ButtonRegion(
+               () => new Rectangle( this.Width - 255, this.Height - 70, 97, 22),
+               "Settings",
+               "btn_default",
+               () => OpenSettings()
+               ),
             ];
       }
 
@@ -46,6 +56,11 @@ namespace KUpdater {
             cp.ExStyle |= 0x80000; // WS_EX_LAYERED
             return cp;
          }
+      }
+
+      protected override void OnFormClosed(FormClosedEventArgs e) {
+         Instance = null;
+         base.OnFormClosed(e);
       }
 
       protected override void OnShown(EventArgs e) {
@@ -187,6 +202,54 @@ namespace KUpdater {
          _ = NativeMethods.DeleteObject(hBitmap);
          _ = NativeMethods.DeleteDC(memDc);
          _ = NativeMethods.ReleaseDC(IntPtr.Zero, screenDc);
+      }
+
+      private static void StartGame() {
+         try {
+            string exePath = Path.Combine(Application.StartupPath, "engine.exe");
+
+            if (!File.Exists(exePath))
+               throw new FileNotFoundException("The game executable 'engine.exe' was not found.", exePath);
+
+            Process.Start(new ProcessStartInfo {
+               FileName = exePath,
+               Arguments = "/load /config debug",
+               UseShellExecute = false
+            });
+
+            Environment.Exit(0); // Immediately close the launcher
+         }
+         catch (Exception ex) {
+            MessageBox.Show(
+                $"Unable to launch the game.\n\nDetails: {ex.Message}",
+                "Launch Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+         }
+      }
+
+      private static void OpenSettings() {
+         try {
+            string exePath = Path.Combine(Application.StartupPath, "engine.exe");
+
+            if (!File.Exists(exePath))
+               throw new FileNotFoundException("The game executable 'engine.exe' was not found.", exePath);
+
+            Process.Start(new ProcessStartInfo {
+               FileName = exePath,
+               Arguments = "/setup",
+               UseShellExecute = false
+            });
+         }
+         catch (Exception ex) {
+            MessageBox.Show(
+                $"Unable to open the settings.\n\nDetails: {ex.Message}",
+                "Settings Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+         }
       }
    }
 }
