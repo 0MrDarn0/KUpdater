@@ -51,10 +51,10 @@ public static class LuaManager {
                 Font font = new(fontName, (float)fontSize, style);
                 Renderer.AddText(text, font, new Point((int)x, (int)y), color);
              });
+
          // Fenstergröße initial setzen
-         //_script.Globals["FrameWidth"] = frameWidth;
-         //_script.Globals["FrameHeight"] = frameHeight;
          UpdateWindowSizeFromForm();
+
          // THEME_DIR setzen
          string themeDir = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes");
          _script.Globals["THEME_DIR"] = themeDir.Replace("\\", "/");

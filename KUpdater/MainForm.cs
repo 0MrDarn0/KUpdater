@@ -21,6 +21,8 @@ namespace KUpdater {
       public MainForm() {
          Instance = this;
          InitializeComponent();
+         Renderer.RequestRedraw += SafeRedraw;
+
          LuaManager.Init("theme_loader.lua");
          LuaManager.LoadTheme("kalonline");
 
@@ -74,6 +76,7 @@ namespace KUpdater {
 
       protected override void OnMouseMove(MouseEventArgs e) {
          if (_resizing) {
+            UI.Renderer.PauseAnimation(true);
             Point delta = new(
                Cursor.Position.X - _resizeStartCursor.X,
                Cursor.Position.Y - _resizeStartCursor.Y
@@ -102,10 +105,13 @@ namespace KUpdater {
 
 
          if (_dragging) {
+            UI.Renderer.PauseAnimation(true);
             Point newLocation = new(this.Left + e.X - _dragStart.X, this.Top + e.Y - _dragStart.Y);
             this.Location = newLocation;
             return;
          }
+
+         UI.Renderer.PauseAnimation(false);
 
          this.Cursor = new Rectangle(this.Width - _resizeHitSize, this.Height - _resizeHitSize, _resizeHitSize, _resizeHitSize)
              .Contains(e.Location) ? Cursors.SizeNWSE : Cursors.Default;
@@ -159,14 +165,14 @@ namespace KUpdater {
       }
 
       protected override void OnMouseClick(MouseEventArgs e) {
-         //Rectangle closeRect = new(this.Width - 35, 15, 20, 20); // Position des Close-Buttons
-         //if (closeRect.Contains(e.Location)) {
-         //   MessageBox.Show("Close button clicked!");
-         //   this.Close();
-         //}
+         Rectangle closeRect = new(0, 0, 100, 100);
+         if (closeRect.Contains(e.Location)) {
+            Renderer.InitTextAnimation(this.Size);
+            Renderer.StartTextAnimation();
+         }
       }
 
-      private void SafeRedraw() {
+      internal void SafeRedraw() {
          if (this.IsDisposed || !this.IsHandleCreated)
             return;
 
@@ -185,6 +191,7 @@ namespace KUpdater {
                button.Draw(g);
 
             UI.Renderer.DrawAllTexts(g);
+            UI.Renderer.DrawAnimatedCopyright(g);
          }
          SetBitmap(bmp, 255);
       }
