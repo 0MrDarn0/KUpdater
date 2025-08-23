@@ -19,6 +19,6 @@
         fill_color = "#101010"
     },
     init = function()
-        add_text("칼온라인", FrameWidth - 115, 17, "#FFFF00", "Chiller", 13, "Bold")
+        add_lable("칼온라인", FrameWidth - 115, 17, "#FFFF00", "Chiller", 13, "Bold")
     end
 }

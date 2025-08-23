@@ -3,34 +3,6 @@
 namespace KUpdater.UI {
    public static class Renderer {
       static Renderer() { }
-      private static string Resource(string fileName) => Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", fileName);
-
-      private class TextEntry {
-         public string Text { get; init; } = string.Empty;
-         public Font Font { get; init; } = SystemFonts.DefaultFont;
-         public Point Position { get; init; }
-         public Color Color { get; init; } = Color.White;
-         public TextFormatFlags Flags { get; init; } = TextFormatFlags.Default;
-      }
-      private static readonly List<TextEntry> _texts = new();
-
-      public static void AddText(string text, Font font, Point position, Color color, TextFormatFlags flags = TextFormatFlags.Default) {
-         _texts.Add(new TextEntry { Text = text, Font = font, Position = position, Color = color, Flags = flags });
-      }
-
-      public static void DrawAllTexts(Graphics g) {
-         foreach (var entry in _texts) {
-            TextRenderer.DrawText(g, entry.Text, entry.Font, entry.Position, entry.Color, entry.Flags);
-         }
-      }
-
-      public static void ClearTexts() => _texts.Clear();
-
-      public static void DrawTitle(Graphics g, Size size) {
-         Scripting.Theme theme = Scripting.LuaManager.GetParsedTheme();
-         TextRenderer.DrawText(g, theme.Title, theme.TitleFont, theme.TitlePosition, theme.FontColor);
-      }
-
       public static void DrawBackground(Graphics g, Size size) {
          var bg = Scripting.LuaManager.GetBackground();
 
@@ -66,30 +38,5 @@ namespace KUpdater.UI {
              width - bg.LeftCenter.Width * 2 + fill_width_off,
              height - bg.TopCenter.Height - bg.BottomCenter.Height + fill_height_off));
       }
-
-      public static void DrawButton(Graphics g, Rectangle rect, string text, Font font, bool isHover, bool isPressed) {
-         Color baseColor = isPressed ? Color.DarkRed : isHover ? Color.OrangeRed : Color.Red;
-         using Brush brush = new SolidBrush(baseColor);
-         g.FillRoundedRectangle(brush, rect, 6);
-         TextRenderer.DrawText(g, text, font, rect, Color.White, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-      }
-
-      public static void DrawButtonWithImage(Graphics g, Rectangle rect, string baseName, string text, Font font, bool isHover, bool isPressed) {
-         string state = isPressed ? "click" : isHover ? "hover" : "normal";
-         using var img = Image.FromFile(Resource($"{baseName}_{state}.png"));
-         g.DrawImage(img, rect);
-         TextRenderer.DrawText(g, text, font, rect, Color.Gold, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-      }
-
-      private static void FillRoundedRectangle(this Graphics g, Brush brush, Rectangle bounds, int radius) {
-         using var path = new System.Drawing.Drawing2D.GraphicsPath();
-         path.AddArc(bounds.X, bounds.Y, radius, radius, 180, 90);
-         path.AddArc(bounds.Right - radius, bounds.Y, radius, radius, 270, 90);
-         path.AddArc(bounds.Right - radius, bounds.Bottom - radius, radius, radius, 0, 90);
-         path.AddArc(bounds.X, bounds.Bottom - radius, radius, radius, 90, 90);
-         path.CloseFigure();
-         g.FillPath(brush, path);
-      }
-
    }
 }

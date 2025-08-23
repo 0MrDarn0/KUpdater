@@ -1,4 +1,5 @@
-﻿using KUpdater.UI;
+﻿using KUpdater.Scripting;
+using KUpdater.UI;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -15,7 +16,8 @@ namespace KUpdater {
       private Size _resizeStartSize;
       private readonly int _resizeHitSize = 40;
 
-      private readonly UIManager _ui;
+      private readonly UIManager _uiManager;
+      private readonly LuaManager _luaManager;
 
       public static class Paths {
          public static readonly string ResourceDir = Path.Combine(AppContext.BaseDirectory, "kUpdater");
@@ -25,30 +27,40 @@ namespace KUpdater {
          Instance = this;
          InitializeComponent();
 
-         _ui = new();
-
-         Scripting.LuaManager.Init("theme_loader.lua");
-         Scripting.LuaManager.LoadTheme("kalonline");
+         _uiManager = new();
+         _luaManager = new(_uiManager);
+         _luaManager.Init("theme_loader.lua");
+         _luaManager.LoadTheme("kalonline");
 
          this.FormBorderStyle = FormBorderStyle.None;
          this.StartPosition = FormStartPosition.CenterScreen;
          this.DoubleBuffered = true;
 
-         _ui.Add(new UIButton(
+         var theme = _luaManager.GetParsedTheme();
+         _uiManager.Add(new UILabel(
+            () => {
+               var size = TextRenderer.MeasureText(theme.Title, theme.TitleFont);
+               return new Rectangle(theme.TitlePosition, size);
+            },
+            theme.Title,
+            theme.TitleFont,
+            theme.FontColor));
+
+         _uiManager.Add(new UIButton(
             () => new Rectangle(Width - 35, 16, 18, 18),
             "X",
             new Font("Segoe UI", 10, FontStyle.Bold),
             "btn_exit",
             () => Close()));
 
-         _ui.Add(new UIButton(
+         _uiManager.Add(new UIButton(
              () => new Rectangle(Width - 150, Height - 70, 97, 22),
              "Start",
              new Font("Segoe UI", 9, FontStyle.Bold),
              "btn_default",
              StartGame));
 
-         _ui.Add(new UIButton(
+         _uiManager.Add(new UIButton(
              () => new Rectangle(Width - 255, Height - 70, 97, 22),
              "Settings",
              new Font("Segoe UI", 9, FontStyle.Bold),
@@ -97,7 +109,7 @@ namespace KUpdater {
             newHeight = Math.Max(300, Math.Min(newHeight, maxHeight));
 
             this.Size = new Size(newWidth, newHeight);
-            Scripting.LuaManager.ReInitTheme();
+            _luaManager.ReInitTheme();
             SafeRedraw();
             return;
          }
@@ -112,7 +124,7 @@ namespace KUpdater {
              .Contains(e.Location) ? Cursors.SizeNWSE : Cursors.Default;
 
          // Let UIManager handle hover state for all controls
-         if (_ui.MouseMove(e.Location))
+         if (_uiManager.MouseMove(e.Location))
             SafeRedraw();
       }
 
@@ -132,7 +144,7 @@ namespace KUpdater {
             _dragStart = e.Location;
 
             // Also pass to UIManager so controls can react
-            if (_ui.MouseDown(e.Location))
+            if (_uiManager.MouseDown(e.Location))
                SafeRedraw();
          }
       }
@@ -141,7 +153,7 @@ namespace KUpdater {
          _isResizing = false;
 
          // Pass to UIManager so controls can handle clicks
-         if (_ui.MouseUp(e.Location))
+         if (_uiManager.MouseUp(e.Location))
             SafeRedraw();
       }
 
@@ -158,11 +170,7 @@ namespace KUpdater {
             g.Clear(Color.Transparent);
 
             UI.Renderer.DrawBackground(g, this.Size);
-            UI.Renderer.DrawTitle(g, this.Size);
-
-            _ui.Draw(g);
-
-            UI.Renderer.DrawAllTexts(g);
+            _uiManager.Draw(g);
          }
          SetBitmap(bmp, 255);
       }

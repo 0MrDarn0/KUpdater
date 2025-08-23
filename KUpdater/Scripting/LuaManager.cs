@@ -1,4 +1,5 @@
-﻿using MoonSharp.Interpreter;
+﻿using KUpdater.UI;
+using MoonSharp.Interpreter;
 namespace KUpdater.Scripting {
    public class Theme {
       public string Title { get; set; } = "kUpdater";
@@ -19,17 +20,15 @@ namespace KUpdater.Scripting {
       public Color FillColor { get; set; } = Color.Black;
    }
 
-   public static class LuaManager {
+
+   public class LuaManager(UIManager uiManager) {
       private static Script? _script;
-      private static Script ScriptInstance =>
-          _script ?? throw new InvalidOperationException("LuaManager.Init() must be called before using LuaManager.");
-
       private static string? _currentTheme;
+      private readonly UIManager _uiManager = uiManager;
+      private static Script ScriptInstance => _script ?? throw new InvalidOperationException("LuaManager.Init() must be called before using LuaManager.");
+      private static string ScriptPath(string fileName) => Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", fileName);
 
-      private static string ScriptPath(string fileName) =>
-          Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", fileName);
-
-      public static void Init(string fileName) {
+      public void Init(string fileName) {
          string path = ScriptPath(fileName);
 
          if (!File.Exists(path))
@@ -39,16 +38,27 @@ namespace KUpdater.Scripting {
             _script = new Script();
 
             // C#-Funktion in Lua registrieren
-            ScriptInstance.Globals["add_text"] = (Action<string, double, double, string, string, double, string>)(
-                (text, x, y, colorHex, fontName, fontSize, fontStyle) => {
-                   Color color = ColorTranslator.FromHtml(colorHex);
+            ScriptInstance.Globals["add_lable"] = (Action<string, double, double, string, string, double, string>)(
+            (text, x, y, colorHex, fontName, fontSize, fontStyle) => {
+               Color color = ColorTranslator.FromHtml(colorHex);
 
-                   if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                      style = FontStyle.Regular;
+               if (!Enum.TryParse(fontStyle, true, out FontStyle style))
+                  style = FontStyle.Regular;
 
-                   Font font = new(fontName, (float)fontSize, style);
-                   UI.Renderer.AddText(text, font, new Point((int)x, (int)y), color);
-                });
+               Font font = new(fontName, (float)fontSize, style);
+
+               _uiManager.Add(new UILabel(
+                   () => new Rectangle(
+                       (int)x,
+                       (int)y,
+                       TextRenderer.MeasureText(text, font).Width,
+                       TextRenderer.MeasureText(text, font).Height
+                   ),
+                   text,
+                   font,
+                   color
+               ));
+            });
 
             // Fenstergröße initial setzen
             UpdateWindowSizeFromForm();
@@ -64,7 +74,7 @@ namespace KUpdater.Scripting {
          }
       }
 
-      public static void LoadTheme(string themeName) {
+      public void LoadTheme(string themeName) {
          _currentTheme = themeName;
          ScriptInstance.Call(ScriptInstance.Globals["load_theme"], themeName);
          UpdateWindowSizeFromForm();
@@ -81,22 +91,36 @@ namespace KUpdater.Scripting {
          }
       }
 
-      public static void ReInitTheme() {
+      public void ReInitTheme() {
          if (!string.IsNullOrEmpty(_currentTheme)) {
-            KUpdater.UI.Renderer.ClearTexts();
+            _uiManager.ClearLabels();
             UpdateWindowSizeFromForm();
+
             ScriptInstance.Call(ScriptInstance.Globals["load_theme"], _currentTheme);
+
             var themeTable = GetTheme();
             var initFunc = themeTable.Get("init");
             if (initFunc.Type == DataType.Function)
                ScriptInstance.Call(initFunc);
+
+            // Titel-Label aus Theme hinzufügen
+            var theme = GetParsedTheme();
+            _uiManager.Add(new UILabel(
+                () => {
+                   var size = TextRenderer.MeasureText(theme.Title, theme.TitleFont);
+                   return new Rectangle(theme.TitlePosition, size);
+                },
+                theme.Title,
+                theme.TitleFont,
+                theme.FontColor
+            ));
          }
       }
 
       public static Table GetTheme() =>
           ScriptInstance.Call(ScriptInstance.Globals["get_theme"]).Table;
 
-      public static Theme GetParsedTheme() {
+      public Theme GetParsedTheme() {
          var raw = GetTheme();
          Theme theme = new();
 

@@ -1,13 +1,12 @@
 ﻿namespace KUpdater.UI {
    public class UIButton : IUIElement {
       private readonly Func<Rectangle> _boundsFunc;
-
       public Rectangle Bounds => _boundsFunc();
       public string Text { get; set; }
       public Font Font { get; set; }
       public string ThemeKey { get; set; } // e.g. "btn_exit", "btn_default"
       public Action? OnClick { get; set; }
-
+      public bool Visible { get; set; } = true;
       public bool IsHovered { get; private set; }
       public bool IsPressed { get; private set; }
 
@@ -20,7 +19,14 @@
       }
 
       public void Draw(Graphics g) {
-         Renderer.DrawButtonWithImage(g, Bounds, ThemeKey, Text, Font, IsHovered, IsPressed);
+         if (!Visible)
+            return;
+
+         string state = IsPressed ? "click" : IsHovered ? "hover" : "normal";
+         using var img = Image.FromFile(IUIElement.Resource($"{ThemeKey}_{state}.png"));
+
+         g.DrawImage(img, Bounds);
+         TextRenderer.DrawText(g, Text, Font, Bounds, Color.Gold, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
       }
 
       public bool OnMouseMove(Point p) {
@@ -31,12 +37,8 @@
 
       public bool OnMouseDown(Point p) {
          bool prev = IsPressed;
-         if (Bounds.Contains(p))
-            IsPressed = true;
-         else
-            IsPressed = false;
-
-         return prev != IsPressed; // redraw if pressed state changed
+         IsPressed = Bounds.Contains(p);
+         return prev != IsPressed;
       }
 
       public bool OnMouseUp(Point p) {
@@ -47,7 +49,7 @@
 
          IsPressed = false;
 
-         return prevPressed != IsPressed; // redraw if pressed state changed
+         return prevPressed != IsPressed;
       }
    }
 }
