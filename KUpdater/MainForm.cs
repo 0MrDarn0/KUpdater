@@ -19,10 +19,6 @@ namespace KUpdater {
       private readonly UIManager _uiManager;
       private readonly LuaManager _luaManager;
 
-      public static class Paths {
-         public static readonly string ResourceDir = Path.Combine(AppContext.BaseDirectory, "kUpdater");
-      }
-
       public MainForm() {
          Instance = this;
          InitializeComponent();

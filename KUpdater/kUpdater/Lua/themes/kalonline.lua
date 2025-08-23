@@ -19,6 +19,29 @@
         fill_color = "#101010"
     },
     init = function()
-        add_lable("칼온라인", FrameWidth - 115, 17, "#FFFF00", "Chiller", 13, "Bold")
+        -- Make sure the required functions are available
+        assert(type(add_label) == "function", "add_label function is not registered")
+        assert(type(get_window_size) == "function", "get_window_size function is not registered")
+        
+          -- Get the current window size
+        local width, height = get_window_size()
+
+          -- Add a custom label to the window
+        add_label("칼온라인", width - 115, 17, "#FFFF00", "Chiller", 13, "Bold")
+
+        add_button(
+            "Exit",          -- Text
+            765, 16,         -- X, Y
+            18, 18,          -- Breite, Höhe
+            "Segoe UI", 10,  -- Schriftart, Größe
+            "Bold",          -- Schriftstil
+            "#FF0000",       -- Farbe
+            "btn_exit",      -- ID
+            function()       -- Klick-Callback
+                print("Exit clicked")
+            end
+        )
+
+
     end
 }

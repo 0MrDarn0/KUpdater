@@ -3,7 +3,6 @@
 namespace KUpdater.Assets {
    public static class AssetLoader {
       private static readonly string _basePath = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources");
-
       private static readonly Dictionary<string, Image> _imageCache = [];
       private static readonly Dictionary<string, Icon> _iconCache = [];
       private static readonly Dictionary<string, string> _textCache = [];

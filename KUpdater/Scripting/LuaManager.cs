@@ -1,5 +1,7 @@
 ﻿using KUpdater.UI;
 using MoonSharp.Interpreter;
+using System.Diagnostics;
+
 namespace KUpdater.Scripting {
    public class Theme {
       public string Title { get; set; } = "kUpdater";
@@ -20,13 +22,33 @@ namespace KUpdater.Scripting {
       public Color FillColor { get; set; } = Color.Black;
    }
 
+   public class LuaManager {
+      // 🔹 Zentrale API-Definition
+      private static class LuaApi {
+         // Funktionen
+         public const string AddLabel = "add_label";
+         public const string AddButton = "add_button";
+         public const string GetWindowSize = "get_window_size";
+         public const string LoadTheme = "load_theme";
+         public const string GetTheme = "get_theme";
 
-   public class LuaManager(UIManager uiManager) {
+         // Globale Variablen
+         public const string ThemeDir = "THEME_DIR";
+      }
+
       private static Script? _script;
       private static string? _currentTheme;
-      private readonly UIManager _uiManager = uiManager;
-      private static Script ScriptInstance => _script ?? throw new InvalidOperationException("LuaManager.Init() must be called before using LuaManager.");
-      private static string ScriptPath(string fileName) => Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", fileName);
+      private readonly UIManager _uiManager;
+
+      private static Script ScriptInstance =>
+          _script ?? throw new InvalidOperationException("LuaManager.Init() must be called before using LuaManager.");
+
+      private static string ScriptPath(string fileName) =>
+          Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", fileName);
+
+      public LuaManager(UIManager uiManager) {
+         _uiManager = uiManager;
+      }
 
       public void Init(string fileName) {
          string path = ScriptPath(fileName);
@@ -35,37 +57,19 @@ namespace KUpdater.Scripting {
             throw new FileNotFoundException($"Lua script not found: {path}");
 
          try {
-            _script = new Script();
+            _script = new();
 
-            // C#-Funktion in Lua registrieren
-            ScriptInstance.Globals["add_lable"] = (Action<string, double, double, string, string, double, string>)(
-            (text, x, y, colorHex, fontName, fontSize, fontStyle) => {
-               Color color = ColorTranslator.FromHtml(colorHex);
+            _script.Options.DebugPrint = s => {
+               var msg = $"[{DateTime.Now:HH:mm:ss}] [Lua] >>> [{s}]";
+               Debug.WriteLine(msg);
+            };
 
-               if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                  style = FontStyle.Regular;
-
-               Font font = new(fontName, (float)fontSize, style);
-
-               _uiManager.Add(new UILabel(
-                   () => new Rectangle(
-                       (int)x,
-                       (int)y,
-                       TextRenderer.MeasureText(text, font).Width,
-                       TextRenderer.MeasureText(text, font).Height
-                   ),
-                   text,
-                   font,
-                   color
-               ));
-            });
-
-            // Fenstergröße initial setzen
-            UpdateWindowSizeFromForm();
+            // Lua-Funktionen registrieren
+            RegisterLuaFunctions();
 
             // THEME_DIR setzen
             string themeDir = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes");
-            ScriptInstance.Globals["THEME_DIR"] = themeDir.Replace("\\", "/");
+            ScriptInstance.Globals[LuaApi.ThemeDir] = themeDir.Replace("\\", "/");
 
             ScriptInstance.DoString(File.ReadAllText(path));
          }
@@ -76,34 +80,88 @@ namespace KUpdater.Scripting {
 
       public void LoadTheme(string themeName) {
          _currentTheme = themeName;
-         ScriptInstance.Call(ScriptInstance.Globals["load_theme"], themeName);
-         UpdateWindowSizeFromForm();
+         ScriptInstance.Call(ScriptInstance.Globals[LuaApi.LoadTheme], themeName);
          var themeTable = GetTheme();
          var initFunc = themeTable.Get("init");
          if (initFunc.Type == DataType.Function)
             ScriptInstance.Call(initFunc);
       }
 
-      public static void UpdateWindowSizeFromForm() {
-         if (KUpdater.MainForm.Instance != null) {
-            ScriptInstance.Globals["FrameWidth"] = KUpdater.MainForm.Instance.Width;
-            ScriptInstance.Globals["FrameHeight"] = KUpdater.MainForm.Instance.Height;
-         }
+      private void RegisterLuaFunctions() {
+         RegisterWindowSizeFunction();
+         RegisterAddLabelFunction();
+         RegisterAddButtonFunction();
+      }
+
+      private void RegisterAddLabelFunction() {
+         ScriptInstance.Globals[LuaApi.AddLabel] =
+             (Action<string, double, double, string, string, double, string>)
+             ((text, x, y, colorHex, fontName, fontSize, fontStyle) => {
+                Color color = ColorTranslator.FromHtml(colorHex);
+
+                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
+                   style = FontStyle.Regular;
+
+                Font font = new(fontName, (float)fontSize, style);
+
+                _uiManager.Add(new UILabel(
+                       () => new Rectangle(
+                           (int)x, (int)y,
+                           TextRenderer.MeasureText(text, font).Width,
+                           TextRenderer.MeasureText(text, font).Height),
+                       text, font, color));
+             });
+      }
+
+      private void RegisterAddButtonFunction() {
+         // Lua: add_button("Text", x, y, width, height, "fontName", fontSize, "fontStyle", "color", "id", function() ... end)
+         ScriptInstance.Globals[LuaApi.AddButton] =
+             (Action<string, double, double, double, double, string, double, string, string, string, DynValue>)
+             ((text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, id, callback) => {
+                Color color = ColorTranslator.FromHtml(colorHex);
+
+                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
+                   style = FontStyle.Regular;
+
+                Font font = new(fontName, (float)fontSize, style);
+
+                var button = new UIButton(
+                () => new Rectangle((int)x, (int)y, (int)width, (int)height),
+                text,
+                font,
+                id,
+                () =>
+                {
+                   if (callback.Type == DataType.Function)
+                      ScriptInstance.Call(callback);
+                });
+
+                _uiManager.Add(button);
+             });
+      }
+
+
+      public void RegisterWindowSizeFunction() {
+         ScriptInstance.Globals[LuaApi.GetWindowSize] = (Func<DynValue>)(() => {
+            var form = KUpdater.MainForm.Instance;
+            return DynValue.NewTuple(
+                DynValue.NewNumber(form?.Width ?? 0),
+                DynValue.NewNumber(form?.Height ?? 0)
+            );
+         });
       }
 
       public void ReInitTheme() {
          if (!string.IsNullOrEmpty(_currentTheme)) {
             _uiManager.ClearLabels();
-            UpdateWindowSizeFromForm();
 
-            ScriptInstance.Call(ScriptInstance.Globals["load_theme"], _currentTheme);
+            ScriptInstance.Call(ScriptInstance.Globals[LuaApi.LoadTheme], _currentTheme);
 
             var themeTable = GetTheme();
             var initFunc = themeTable.Get("init");
             if (initFunc.Type == DataType.Function)
                ScriptInstance.Call(initFunc);
 
-            // Titel-Label aus Theme hinzufügen
             var theme = GetParsedTheme();
             _uiManager.Add(new UILabel(
                 () => {
@@ -118,7 +176,7 @@ namespace KUpdater.Scripting {
       }
 
       public static Table GetTheme() =>
-          ScriptInstance.Call(ScriptInstance.Globals["get_theme"]).Table;
+          ScriptInstance.Call(ScriptInstance.Globals[LuaApi.GetTheme]).Table;
 
       public Theme GetParsedTheme() {
          var raw = GetTheme();
