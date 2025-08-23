@@ -6,13 +6,16 @@ using System.Runtime.InteropServices;
 namespace KUpdater {
    public partial class MainForm : Form {
       public static MainForm? Instance { get; private set; }
-      private bool _dragging = false;
+
+      private bool _isDragging = false;
       private Point _dragStart;
-      private bool _resizing = false;
+
+      private bool _isResizing = false;
       private Point _resizeStartCursor;
       private Size _resizeStartSize;
-      private const int _resizeHitSize = 40;
-      private readonly List<ButtonRegion> _buttons;
+      private readonly int _resizeHitSize = 40;
+
+      private readonly UIManager _ui;
 
       public static class Paths {
          public static readonly string ResourceDir = Path.Combine(AppContext.BaseDirectory, "kUpdater");
@@ -21,39 +24,36 @@ namespace KUpdater {
       public MainForm() {
          Instance = this;
          InitializeComponent();
-         Renderer.RequestRedraw += SafeRedraw;
 
-         LuaManager.Init("theme_loader.lua");
-         LuaManager.LoadTheme("kalonline");
+         _ui = new();
+
+         Scripting.LuaManager.Init("theme_loader.lua");
+         Scripting.LuaManager.LoadTheme("kalonline");
 
          this.FormBorderStyle = FormBorderStyle.None;
          this.StartPosition = FormStartPosition.CenterScreen;
+         this.DoubleBuffered = true;
 
-         _buttons = [
-            new ButtonRegion(
-                () => new Rectangle(this.Width - 35, 16, 18, 18),
-                "X",
-                new("Segoe UI", 10, FontStyle.Bold),
-                "btn_exit",
-                () => this.Close()
-                ),
-            new ButtonRegion(
-               () => new Rectangle( this.Width - 150, this.Height - 70, 97, 22),
-               "Start",
-               new("Segoe UI", 10, FontStyle.Bold),
-               "btn_default",
-               () => StartGame()
-               ),
-            new ButtonRegion(
-               () => new Rectangle( this.Width - 255, this.Height - 70, 97, 22),
-               "Settings",
-               new("Segoe UI", 10, FontStyle.Bold),
-               "btn_default",
-               () => OpenSettings()
-               ),
-            ];
+         _ui.Add(new UIButton(
+            () => new Rectangle(Width - 35, 16, 18, 18),
+            "X",
+            new Font("Segoe UI", 10, FontStyle.Bold),
+            "btn_exit",
+            () => Close()));
 
-         //Renderer.AddText("칼온라인 - Sword or Violence", new Font("Chiller", 12, FontStyle.Bold), new Point(50, 100), Color.Yellow);
+         _ui.Add(new UIButton(
+             () => new Rectangle(Width - 150, Height - 70, 97, 22),
+             "Start",
+             new Font("Segoe UI", 9, FontStyle.Bold),
+             "btn_default",
+             StartGame));
+
+         _ui.Add(new UIButton(
+             () => new Rectangle(Width - 255, Height - 70, 97, 22),
+             "Settings",
+             new Font("Segoe UI", 9, FontStyle.Bold),
+             "btn_default",
+             OpenSettings));
       }
 
       protected override CreateParams CreateParams {
@@ -75,8 +75,7 @@ namespace KUpdater {
       }
 
       protected override void OnMouseMove(MouseEventArgs e) {
-         if (_resizing) {
-            UI.Renderer.PauseAnimation(true);
+         if (_isResizing) {
             Point delta = new(
                Cursor.Position.X - _resizeStartCursor.X,
                Cursor.Position.Y - _resizeStartCursor.Y
@@ -98,78 +97,52 @@ namespace KUpdater {
             newHeight = Math.Max(300, Math.Min(newHeight, maxHeight));
 
             this.Size = new Size(newWidth, newHeight);
-            LuaManager.ReInitTheme();
+            Scripting.LuaManager.ReInitTheme();
             SafeRedraw();
             return;
          }
 
-
-         if (_dragging) {
-            UI.Renderer.PauseAnimation(true);
+         if (_isDragging) {
             Point newLocation = new(this.Left + e.X - _dragStart.X, this.Top + e.Y - _dragStart.Y);
             this.Location = newLocation;
             return;
          }
 
-         UI.Renderer.PauseAnimation(false);
-
          this.Cursor = new Rectangle(this.Width - _resizeHitSize, this.Height - _resizeHitSize, _resizeHitSize, _resizeHitSize)
              .Contains(e.Location) ? Cursors.SizeNWSE : Cursors.Default;
 
-         bool needsRedraw = false;
-         foreach (var btn in _buttons) {
-            bool prev = btn.IsHovered;
-            btn.IsHovered = btn.Bounds.Contains(e.Location);
-            if (prev != btn.IsHovered)
-               needsRedraw = true;
-         }
-
-         if (needsRedraw)
+         // Let UIManager handle hover state for all controls
+         if (_ui.MouseMove(e.Location))
             SafeRedraw();
       }
 
       protected override void OnMouseDown(MouseEventArgs e) {
          if (e.Button == MouseButtons.Left) {
-            foreach (var btn in _buttons) {
-               if (btn.Bounds.Contains(e.Location)) {
-                  btn.IsPressed = true;
-                  SafeRedraw();
-                  return;
-               }
-            }
-
+            // Resize hotspot
             Rectangle resizeRect = new(this.Width - _resizeHitSize, this.Height - _resizeHitSize, _resizeHitSize, _resizeHitSize);
             if (resizeRect.Contains(e.Location)) {
-               _resizing = true;
+               _isResizing = true;
                _resizeStartCursor = Cursor.Position;
                _resizeStartSize = this.Size;
-            } else {
-               _dragging = true;
-               _dragStart = e.Location;
+               return;
             }
+
+            // Start dragging if not on a control
+            _isDragging = true;
+            _dragStart = e.Location;
+
+            // Also pass to UIManager so controls can react
+            if (_ui.MouseDown(e.Location))
+               SafeRedraw();
          }
       }
       protected override void OnMouseUp(MouseEventArgs e) {
-         _dragging = false;
-         _resizing = false;
+         _isDragging = false;
+         _isResizing = false;
 
-         foreach (var btn in _buttons) {
-            if (btn.IsPressed && btn.Bounds.Contains(e.Location)) {
-               btn.IsPressed = false;
-               btn.OnClick?.Invoke();
-               return;
-            }
-            btn.IsPressed = false;
-         }
-         SafeRedraw();
-      }
-
-      protected override void OnMouseClick(MouseEventArgs e) {
-         Rectangle closeRect = new(0, 0, 100, 100);
-         if (closeRect.Contains(e.Location)) {
-            Renderer.InitTextAnimation(this.Size);
-            Renderer.StartTextAnimation();
-         }
+         // Pass to UIManager so controls can handle clicks
+         if (_ui.MouseUp(e.Location))
+            SafeRedraw();
       }
 
       internal void SafeRedraw() {
@@ -187,11 +160,9 @@ namespace KUpdater {
             UI.Renderer.DrawBackground(g, this.Size);
             UI.Renderer.DrawTitle(g, this.Size);
 
-            foreach (ButtonRegion button in _buttons)
-               button.Draw(g);
+            _ui.Draw(g);
 
             UI.Renderer.DrawAllTexts(g);
-            UI.Renderer.DrawAnimatedCopyright(g);
          }
          SetBitmap(bmp, 255);
       }

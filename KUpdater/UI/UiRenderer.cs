@@ -5,22 +5,6 @@ namespace KUpdater.UI {
       static Renderer() { }
       private static string Resource(string fileName) => Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", fileName);
 
-      public static event Action? RequestRedraw;
-
-      public static int EinblendGeschwindigkeit = 2;
-      public static int AusblendGeschwindigkeit = 2;
-      public static double SichtbarSekunden = 5.0;
-      public static int FramesPerSecond = 60;
-
-      private static float _animAlpha;
-      private static float _textY;
-      private static float _targetY;
-      private static bool _isAnimatingIn;
-      private static bool _isAnimatingOut;
-      private static bool _isAnimationPaused = false;
-      private static System.Windows.Forms.Timer? _animation_timer;
-      private static DateTime _visibleSince;
-
       private class TextEntry {
          public string Text { get; init; } = string.Empty;
          public Font Font { get; init; } = SystemFonts.DefaultFont;
@@ -31,106 +15,24 @@ namespace KUpdater.UI {
       private static readonly List<TextEntry> _texts = new();
 
       public static void AddText(string text, Font font, Point position, Color color, TextFormatFlags flags = TextFormatFlags.Default) {
-         _texts.Add(new TextEntry {
-            Text = text,
-            Font = font,
-            Position = position,
-            Color = color,
-            Flags = flags
-         });
+         _texts.Add(new TextEntry { Text = text, Font = font, Position = position, Color = color, Flags = flags });
       }
 
       public static void DrawAllTexts(Graphics g) {
          foreach (var entry in _texts) {
-            TextRenderer.DrawText(
-                g,
-                entry.Text,
-                entry.Font,
-                entry.Position,
-                entry.Color,
-                entry.Flags
-            );
+            TextRenderer.DrawText(g, entry.Text, entry.Font, entry.Position, entry.Color, entry.Flags);
          }
       }
 
       public static void ClearTexts() => _texts.Clear();
 
-      private static void DebugDraw(Graphics g, Rectangle rect) {
-         g.DrawRectangle(new(color: Color.Magenta, 1), rect);
-      }
-
-      public static void InitTextAnimation(Size formSize) {
-         _animAlpha = 0f;
-         _textY = -20; // Start oberhalb des sichtbaren Bereichs
-         _targetY = 50; // Zielposition (10px vom oberen Rand)
-      }
-
-      public static void StartTextAnimation() {
-         if (_animation_timer == null) {
-            _animation_timer = new System.Windows.Forms.Timer { Interval = 1000 / FramesPerSecond };
-            _animation_timer.Tick += UpdateAnimation;
-         }
-
-         _isAnimatingIn = true;
-         _isAnimatingOut = false;
-         _animAlpha = 0f;
-         _animation_timer.Start();
-      }
-
-      private static void UpdateAnimation(object? sender, EventArgs e) {
-         if (_isAnimatingIn) {
-            _animAlpha = Math.Min(1f, _animAlpha + 0.05f);
-            _textY += EinblendGeschwindigkeit;
-
-            if (_animAlpha >= 1f && _textY >= _targetY) {
-               _animAlpha = 1f;
-               _textY = _targetY;
-               _isAnimatingIn = false;
-               _visibleSince = DateTime.Now;
-            }
-         } else if (!_isAnimatingOut && _animAlpha >= 1f) {
-            if ((DateTime.Now - _visibleSince).TotalSeconds >= SichtbarSekunden) {
-               _isAnimatingOut = true;
-            }
-         } else if (_isAnimatingOut) {
-            _animAlpha = Math.Max(0f, _animAlpha - 0.05f);
-            _textY -= AusblendGeschwindigkeit;
-
-            if (_animAlpha <= 0f) {
-               _isAnimatingOut = false;
-               _animation_timer?.Stop();
-            }
-         }
-         RequestRedraw?.Invoke();
-      }
-
-      public static void PauseAnimation(bool pause) {
-         if (pause && !_isAnimationPaused) {
-            _animation_timer?.Stop();
-            _isAnimationPaused = true;
-         } else if (!pause && _isAnimationPaused) {
-            _animation_timer?.Start();
-            _isAnimationPaused = false;
-         }
-      }
-
-      public static void DrawAnimatedCopyright(Graphics g) {
-         string text = "kUpdater © 2025 Darn";
-         using Font font = new("Segoe UI", 12f, FontStyle.Bold);
-
-         int alpha = (int)(_animAlpha * 255);
-         using SolidBrush brush = new(Color.FromArgb(alpha, 118, 92, 61));
-
-         g.DrawString(text, font, brush, new PointF(30, _textY));
-      }
-
       public static void DrawTitle(Graphics g, Size size) {
-         Theme theme = LuaManager.GetParsedTheme();
+         Scripting.Theme theme = Scripting.LuaManager.GetParsedTheme();
          TextRenderer.DrawText(g, theme.Title, theme.TitleFont, theme.TitlePosition, theme.FontColor);
       }
 
       public static void DrawBackground(Graphics g, Size size) {
-         var bg = LuaManager.GetBackground();
+         var bg = Scripting.LuaManager.GetBackground();
 
          int width = size.Width;
          int height = size.Height;
@@ -169,49 +71,14 @@ namespace KUpdater.UI {
          Color baseColor = isPressed ? Color.DarkRed : isHover ? Color.OrangeRed : Color.Red;
          using Brush brush = new SolidBrush(baseColor);
          g.FillRoundedRectangle(brush, rect, 6);
-
-         TextRenderer.DrawText(
-             g,
-             text,
-             font,
-             rect,
-             Color.White,
-             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+         TextRenderer.DrawText(g, text, font, rect, Color.White, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
       }
 
       public static void DrawButtonWithImage(Graphics g, Rectangle rect, string baseName, string text, Font font, bool isHover, bool isPressed) {
          string state = isPressed ? "click" : isHover ? "hover" : "normal";
          using var img = Image.FromFile(Resource($"{baseName}_{state}.png"));
-
-         //draw the button
          g.DrawImage(img, rect);
-
-         // draw the text ontop
-         TextRenderer.DrawText(
-             g,
-             text,
-             font,
-             rect,
-             Color.Gold,
-             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-      }
-
-      public static void DrawButtonWithLua(Graphics g, Rectangle rect, string text, bool isHover, bool isPressed) {
-         Theme theme = LuaManager.GetParsedTheme();
-
-         Color color = isPressed ? theme.Button.Pressed :
-                       isHover ? theme.Button.Hover : theme.Button.Normal;
-
-         using Brush brush = new SolidBrush(color);
-         g.FillRoundedRectangle(brush, rect, 6);
-
-         TextRenderer.DrawText(
-             g,
-             text,
-             theme.Button.Font,
-             rect,
-             theme.Button.FontColor,
-             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+         TextRenderer.DrawText(g, text, font, rect, Color.Gold, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
       }
 
       private static void FillRoundedRectangle(this Graphics g, Brush brush, Rectangle bounds, int radius) {

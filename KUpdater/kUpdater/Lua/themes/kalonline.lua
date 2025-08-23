@@ -18,17 +18,6 @@
         left_center = "border_left_center.png",
         fill_color = "#101010"
     },
-    button = {
-        normal = "#B22222",
-        hover = "#DC143C",
-        pressed = "#8B0000",
-        font_color = "#FFFFFF",
-        font = {
-            name = "Segoe UI",
-            size = 14,
-            style = "Regular"
-        }
-    },
     init = function()
         add_text("칼온라인", FrameWidth - 115, 17, "#FFFF00", "Chiller", 13, "Bold")
     end

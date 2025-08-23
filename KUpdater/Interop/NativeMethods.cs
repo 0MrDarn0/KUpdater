@@ -1,7 +1,6 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
-internal static class NativeMethods
-{
+internal static class NativeMethods {
    public const int ULW_ALPHA = 0x00000002;
    public const byte AC_SRC_OVER = 0x00;
    public const byte AC_SRC_ALPHA = 0x01;
@@ -29,8 +28,7 @@ internal static class NativeMethods
    public static extern bool DeleteObject(IntPtr hObject);
 
    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-   public struct BLENDFUNCTION
-   {
+   public struct BLENDFUNCTION {
       public byte BlendOp;
       public byte BlendFlags;
       public byte SourceConstantAlpha;
