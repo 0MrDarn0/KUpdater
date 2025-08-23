@@ -1,4 +1,4 @@
-using System.Drawing.Drawing2D;
+﻿using System.Drawing.Drawing2D;
 
 namespace KUpdater.UI {
    public static class Renderer {
@@ -6,6 +6,7 @@ namespace KUpdater.UI {
        ҳ̸Ҳ̸ҳ
       kalonline:
       칼온라인
+      Sword or Violence
       Schwert oder Gewalt
       웃
       유
@@ -13,8 +14,41 @@ namespace KUpdater.UI {
       private static string Resource(string fileName) => Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", fileName);
 
       static Renderer() {
-
       }
+      private class TextEntry {
+         public string Text { get; init; } = string.Empty;
+         public Font Font { get; init; } = SystemFonts.DefaultFont;
+         public Point Position { get; init; }
+         public Color Color { get; init; } = Color.White;
+         public TextFormatFlags Flags { get; init; } = TextFormatFlags.Default;
+      }
+
+      private static readonly List<TextEntry> _texts = new();
+
+      public static void AddText(string text, Font font, Point position, Color color, TextFormatFlags flags = TextFormatFlags.Default) {
+         _texts.Add(new TextEntry {
+            Text = text,
+            Font = font,
+            Position = position,
+            Color = color,
+            Flags = flags
+         });
+      }
+
+      public static void DrawAllTexts(Graphics g) {
+         foreach (var entry in _texts) {
+            TextRenderer.DrawText(
+                g,
+                entry.Text,
+                entry.Font,
+                entry.Position,
+                entry.Color,
+                entry.Flags
+            );
+         }
+      }
+
+      public static void ClearTexts() => _texts.Clear();
 
       private static void DebugDraw(Graphics g, Rectangle rect) {
          g.DrawRectangle(new(color: Color.Magenta, 1), rect);
@@ -68,34 +102,6 @@ namespace KUpdater.UI {
              width - bg.LeftCenter.Width * 2 + fill_width_off,
              height - bg.TopCenter.Height - bg.BottomCenter.Height + fill_height_off));
       }
-
-      //public static void DrawBackground(Graphics g, Size size)
-      //{
-      //   int width = size.Width;
-      //   int height = size.Height;
-      //   g.Clear(Color.Transparent);
-      //   g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-      //   // Ecken
-      //   g.DrawImage(_topLeftBorder, 0, 0, _topLeftBorder.Width, _topLeftBorder.Height);
-      //   g.DrawImage(_topRightBorder, width - _topRightBorder.Width, 0, _topRightBorder.Width, _topRightBorder.Height);
-      //   g.DrawImage(_bottomLeftBorder, 0, height - _bottomLeftBorder.Height, _bottomLeftBorder.Width, _bottomLeftBorder.Height);
-      //   g.DrawImage(_bottomRightBorder, width - _bottomRightBorder.Width, height - _bottomRightBorder.Height, _bottomRightBorder.Width, _bottomRightBorder.Height);
-      //   // Kanten (stretch)
-      //   int top_width_off = 7;
-      //   int bottom_width_off = 21;
-      //   int left_height_off = 5;
-      //   int right_height_off = 5;
-      //   g.DrawImage(_topCenterBorder, new Rectangle(_topLeftBorder.Width, 0, width - _topLeftBorder.Width - _topRightBorder.Width + top_width_off, _topCenterBorder.Height));
-      //   g.DrawImage(_bottomCenterBorder, new Rectangle(_bottomLeftBorder.Width, height - _bottomCenterBorder.Height, width - _bottomLeftBorder.Width - _bottomRightBorder.Width + bottom_width_off, _bottomCenterBorder.Height));
-      //   g.DrawImage(_leftCenterBorder, new Rectangle(0, _topLeftBorder.Height, _leftCenterBorder.Width, height - _topLeftBorder.Height - _bottomLeftBorder.Height + left_height_off));
-      //   g.DrawImage(_rightCenterBorder, new Rectangle(width - _rightCenterBorder.Width, _topRightBorder.Height, _rightCenterBorder.Width, height - _topRightBorder.Height - _bottomRightBorder.Height + right_height_off));
-
-      //   // Innenfläche
-      //   int fill_pos_off = 5;
-      //   int fill_width_off = 12;
-      //   int fill_height_off = 12;
-      //   g.FillRectangle(Brushes.Black, new Rectangle(_leftCenterBorder.Width - fill_pos_off, _topCenterBorder.Height - fill_pos_off, width - _leftCenterBorder.Width * 2 + fill_width_off, height - _topCenterBorder.Height - _bottomCenterBorder.Height + fill_height_off));
-      //}
 
       public static void DrawButton(Graphics g, Rectangle rect, string text, Font font, bool isHover, bool isPressed) {
          Color baseColor = isPressed ? Color.DarkRed : isHover ? Color.OrangeRed : Color.Red;

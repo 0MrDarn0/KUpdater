@@ -1,4 +1,4 @@
-return {
+﻿return {
     window_title = "kUpdater",
     font_color = "#FFA500",
     title_position = { x = 40, y = -10 },
@@ -28,5 +28,8 @@ return {
             size = 14,
             style = "Regular"
         }
-    }
+    },
+    init = function()
+        add_text("칼온라인", FrameWidth - 115, 17, "#FFFF00", "Chiller", 13, "Bold")
+    end
 }

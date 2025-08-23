@@ -1,7 +1,7 @@
+﻿using KUpdater.UI;
 using MoonSharp.Interpreter;
 
-public class Theme
-{
+public class Theme {
    public string Title { get; set; } = "kUpdater";
    public Color FontColor { get; set; } = Color.Orange;
    public Point TitlePosition { get; set; } = new(20, 10);
@@ -9,117 +9,96 @@ public class Theme
 
    public ButtonStyle Button { get; set; } = new();
 
-   public class ButtonStyle
-   {
+   public class ButtonStyle {
       public Color Normal { get; set; } = Color.Red;
       public Color Hover { get; set; } = Color.OrangeRed;
       public Color Pressed { get; set; } = Color.DarkRed;
       public Color FontColor { get; set; } = Color.White;
       public Font Font { get; set; } = new("Segoe UI", 14f, FontStyle.Regular);
+      public string BaseName { get; set; } = "btn_default";
    }
 }
-public class ThemeBackground
-{
+
+public class ThemeBackground {
    public Image TopLeft, TopCenter, TopRight;
    public Image RightCenter, BottomRight, BottomCenter, BottomLeft, LeftCenter;
    public Color FillColor = Color.Black;
 }
 
-public static class LuaManager
-{
+public static class LuaManager {
    private static Script _script;
-   private static string ScriptPath(string fileName) => Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", fileName);
+   private static string? _currentTheme;
+   private static string ScriptPath(string fileName) =>
+       Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", fileName);
 
-   public static void Init(string fileName)
-   {
+   public static void Init(string fileName) {
       string path = ScriptPath(fileName);
 
       if (!File.Exists(path))
          throw new FileNotFoundException($"Lua script not found: {path}");
 
-      try
-      {
+      try {
          _script = new Script();
+
+         // C#-Funktion in Lua registrieren
+         _script.Globals["add_text"] = (Action<string, double, double, string, string, double, string>)(
+             (text, x, y, colorHex, fontName, fontSize, fontStyle) => {
+                Color color = ColorTranslator.FromHtml(colorHex);
+
+                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
+                   style = FontStyle.Regular;
+
+                Font font = new(fontName, (float)fontSize, style);
+                Renderer.AddText(text, font, new Point((int)x, (int)y), color);
+             });
+         // Fenstergröße initial setzen
+         //_script.Globals["FrameWidth"] = frameWidth;
+         //_script.Globals["FrameHeight"] = frameHeight;
+         UpdateWindowSizeFromForm();
+         // THEME_DIR setzen
+         string themeDir = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes");
+         _script.Globals["THEME_DIR"] = themeDir.Replace("\\", "/");
+
          _script.DoString(File.ReadAllText(path));
+
       }
-      catch (SyntaxErrorException e)
-      {
+      catch (SyntaxErrorException e) {
          Console.WriteLine($"Lua syntax error: {e.DecoratedMessage}");
       }
-
-      // Setze THEME_DIR (Pfad zu Lua/themes)
-      string themeDir = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes");
-      _script.Globals["THEME_DIR"] = themeDir.Replace("\\", "/"); // für Lua
    }
 
-   public static string CallString(string functionName, params object[] args)
-   {
-      return _script.Call(_script.Globals[functionName], args).String;
-   }
-
-   public static Color CallColor(string functionName)
-   {
-      string hex = _script.Call(_script.Globals[functionName]).String;
-      return ColorTranslator.FromHtml(hex);
-   }
-
-   public static Point CallPoint(string functionName)
-   {
-      var table = _script.Call(_script.Globals[functionName]).Table;
-      int x = (int)table.Get("x").Number;
-      int y = (int)table.Get("y").Number;
-      return new Point(x, y);
-   }
-
-   public static string CallButtonColor(bool isHover, bool isPressed)
-   {
-      return _script.Call(_script.Globals["get_button_color"], isHover, isPressed).String;
-   }
-
-   public static Font CallFont(string functionName)
-   {
-      var table = _script.Call(_script.Globals[functionName]).Table;
-
-      string name = table.Get("name").String ?? "Segoe UI";
-      float size = (float)(table.Get("size").Number);
-      string styleStr = table.Get("style").String ?? "Regular";
-
-      if (!Enum.TryParse(styleStr, true, out FontStyle style))
-         style = FontStyle.Regular;
-
-      return new Font(name, size, style);
-   }
-
-   public static void LoadTheme(string themeName)
-   {
+   public static void LoadTheme(string themeName) {
+      _currentTheme = themeName;
       _script.Call(_script.Globals["load_theme"], themeName);
+      UpdateWindowSizeFromForm();
+      var themeTable = GetTheme();
+      var initFunc = themeTable.Get("init");
+      if (initFunc.Type == DataType.Function)
+         _script.Call(initFunc);
    }
 
-   public static Table GetTheme()
-   {
-      return _script.Call(_script.Globals["get_theme"]).Table;
-   }
-   public static Font GetFontFromTable(Table table, string defaultName = "Segoe UI", float defaultSize = 24f, FontStyle defaultStyle = FontStyle.Regular)
-   {
-      string name = table.Get("name").CastToString() ?? defaultName;
-      float size = (float)(table.Get("size").CastToNumber() ?? defaultSize);
-
-      FontStyle style;
-      try
-      {
-         style = Enum.Parse<FontStyle>(table.Get("style").CastToString() ?? defaultStyle.ToString(), true);
+   public static void UpdateWindowSizeFromForm() {
+      if (KUpdater.MainForm.Instance != null) {
+         _script.Globals["FrameWidth"] = KUpdater.MainForm.Instance.Width;
+         _script.Globals["FrameHeight"] = KUpdater.MainForm.Instance.Height;
       }
-      catch
-      {
-         style = defaultStyle;
-      }
-
-      return new Font(name, size, style);
    }
-   public static Theme GetParsedTheme()
-   {
+   public static void ReInitTheme() {
+      if (!string.IsNullOrEmpty(_currentTheme)) {
+         KUpdater.UI.Renderer.ClearTexts();
+         UpdateWindowSizeFromForm();
+         _script.Call(_script.Globals["load_theme"], _currentTheme);
+         var themeTable = GetTheme();
+         var initFunc = themeTable.Get("init");
+         if (initFunc.Type == DataType.Function)
+            _script.Call(initFunc);
+      }
+   }
+   public static Table GetTheme() =>
+       _script.Call(_script.Globals["get_theme"]).Table;
+
+   public static Theme GetParsedTheme() {
       var raw = GetTheme();
-
       Theme theme = new();
 
       theme.Title = raw.Get("window_title").CastToString() ?? theme.Title;
@@ -137,45 +116,11 @@ public static class LuaManager
       return theme;
    }
 
-   private static Color ToColor(DynValue val, Color fallback)
-   {
-      return val.Type == DataType.String ? ColorTranslator.FromHtml(val.String) : fallback;
-   }
-
-   private static Point ToPoint(DynValue val, Point fallback)
-   {
-      if (val.Type != DataType.Table) return fallback;
-      var t = val.Table;
-      int x = (int)(t.Get("x").CastToNumber() ?? fallback.X);
-      int y = (int)(t.Get("y").CastToNumber() ?? fallback.Y);
-      return new Point(x, y);
-   }
-
-   private static Font ToFont(DynValue val, Font fallback)
-   {
-      if (val.Type != DataType.Table) return fallback;
-      var t = val.Table;
-
-      string name = t.Get("name").CastToString() ?? fallback.Name;
-      float size = (float)(t.Get("size").CastToNumber() ?? fallback.Size);
-      FontStyle style;
-
-      try
-      {
-         style = Enum.Parse<FontStyle>(t.Get("style").CastToString() ?? fallback.Style.ToString(), true);
-      }
-      catch { style = fallback.Style; }
-
-      return new Font(name, size, style);
-   }
-
-   public static ThemeBackground GetBackground()
-   {
+   public static ThemeBackground GetBackground() {
       var theme = GetTheme();
       var bg = theme.Get("background").Table;
 
-      ThemeBackground result = new()
-      {
+      return new ThemeBackground {
          TopLeft = LoadImage(bg, "top_left"),
          TopCenter = LoadImage(bg, "top_center"),
          TopRight = LoadImage(bg, "top_right"),
@@ -186,22 +131,49 @@ public static class LuaManager
          LeftCenter = LoadImage(bg, "left_center"),
          FillColor = ToColor(bg.Get("fill_color"), Color.Black)
       };
-
-      return result;
    }
 
-   private static Image LoadImage(Table table, string key)
-   {
+   #region Helper Methods
+
+   private static Color ToColor(DynValue val, Color fallback) =>
+       val.Type == DataType.String ? ColorTranslator.FromHtml(val.String) : fallback;
+
+   private static Point ToPoint(DynValue val, Point fallback) {
+      if (val.Type != DataType.Table)
+         return fallback;
+
+      var t = val.Table;
+      int x = (int)(t.Get("x").CastToNumber() ?? fallback.X);
+      int y = (int)(t.Get("y").CastToNumber() ?? fallback.Y);
+
+      return new Point(x, y);
+   }
+
+   private static Font ToFont(DynValue val, Font fallback) {
+      if (val.Type != DataType.Table)
+         return fallback;
+
+      var t = val.Table;
+      string name = t.Get("name").CastToString() ?? fallback.Name;
+      float size = (float)(t.Get("size").CastToNumber() ?? fallback.Size);
+
+      if (!Enum.TryParse(t.Get("style").CastToString() ?? fallback.Style.ToString(), true, out FontStyle style))
+         style = fallback.Style;
+
+      return new Font(name, size, style);
+   }
+
+   private static Image LoadImage(Table table, string key) {
       string file = table.Get(key).CastToString();
       if (string.IsNullOrWhiteSpace(file))
          throw new Exception($"Missing background image key: {key}");
 
       string path = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", file);
-
       if (!File.Exists(path))
          throw new FileNotFoundException($"Background image not found: {path}");
 
       return Image.FromFile(path);
    }
 
+   #endregion
 }

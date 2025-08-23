@@ -12,7 +12,6 @@ namespace KUpdater {
       private Point _resizeStartCursor;
       private Size _resizeStartSize;
       private const int _resizeHitSize = 40;
-      private readonly Font _buttonFont = new("Segoe UI", 10, FontStyle.Bold);
       private readonly List<ButtonRegion> _buttons;
 
       public static class Paths {
@@ -32,22 +31,27 @@ namespace KUpdater {
             new ButtonRegion(
                 () => new Rectangle(this.Width - 35, 16, 18, 18),
                 "X",
+                new("Segoe UI", 10, FontStyle.Bold),
                 "btn_exit",
                 () => this.Close()
                 ),
             new ButtonRegion(
                () => new Rectangle( this.Width - 150, this.Height - 70, 97, 22),
                "Start",
+               new("Segoe UI", 10, FontStyle.Bold),
                "btn_default",
                () => StartGame()
                ),
             new ButtonRegion(
                () => new Rectangle( this.Width - 255, this.Height - 70, 97, 22),
                "Settings",
+               new("Segoe UI", 10, FontStyle.Bold),
                "btn_default",
                () => OpenSettings()
                ),
             ];
+
+         //Renderer.AddText("칼온라인 - Sword or Violence", new Font("Chiller", 12, FontStyle.Bold), new Point(50, 100), Color.Yellow);
       }
 
       protected override CreateParams CreateParams {
@@ -70,13 +74,32 @@ namespace KUpdater {
 
       protected override void OnMouseMove(MouseEventArgs e) {
          if (_resizing) {
-            Point delta = new(Cursor.Position.X - _resizeStartCursor.X, Cursor.Position.Y - _resizeStartCursor.Y);
-            int newWidth = Math.Max(300, _resizeStartSize.Width + delta.X);
-            int newHeight = Math.Max(200, _resizeStartSize.Height + delta.Y);
-            this.Size = new(newWidth, newHeight);
+            Point delta = new(
+               Cursor.Position.X - _resizeStartCursor.X,
+               Cursor.Position.Y - _resizeStartCursor.Y
+               );
+
+            // Bildschirm-Arbeitsbereich holen (ohne Taskleiste)
+            Rectangle workArea = Screen.FromPoint(Cursor.Position).WorkingArea;
+
+            // Dynamische Maximalwerte
+            int maxWidth = workArea.Width;
+            int maxHeight = workArea.Height;
+
+            // Neue Größe berechnen
+            int newWidth = _resizeStartSize.Width + delta.X;
+            int newHeight = _resizeStartSize.Height + delta.Y;
+
+            // Mindest- und Höchstwerte anwenden
+            newWidth = Math.Max(450, Math.Min(newWidth, maxWidth));
+            newHeight = Math.Max(300, Math.Min(newHeight, maxHeight));
+
+            this.Size = new Size(newWidth, newHeight);
+            LuaManager.ReInitTheme();
             SafeRedraw();
             return;
          }
+
 
          if (_dragging) {
             Point newLocation = new(this.Left + e.X - _dragStart.X, this.Top + e.Y - _dragStart.Y);
@@ -132,15 +155,15 @@ namespace KUpdater {
             }
             btn.IsPressed = false;
          }
-
          SafeRedraw();
       }
 
       protected override void OnMouseClick(MouseEventArgs e) {
-         Rectangle closeRect = new(this.Width - 35, 15, 20, 20); // Position des Close-Buttons
-         if (closeRect.Contains(e.Location)) {
-            this.Close();
-         }
+         //Rectangle closeRect = new(this.Width - 35, 15, 20, 20); // Position des Close-Buttons
+         //if (closeRect.Contains(e.Location)) {
+         //   MessageBox.Show("Close button clicked!");
+         //   this.Close();
+         //}
       }
 
       private void SafeRedraw() {
@@ -159,7 +182,9 @@ namespace KUpdater {
             UI.Renderer.DrawTitle(g, this.Size);
 
             foreach (ButtonRegion button in _buttons)
-               button.Draw(g, _buttonFont);
+               button.Draw(g);
+
+            UI.Renderer.DrawAllTexts(g);
          }
          SetBitmap(bmp, 255);
       }
