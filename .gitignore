@@ -54,3 +54,7 @@ secrets.json
 # Optional: Ressourcengenerator-Dateien, wenn automatisch erstellt
 *.g.cs
 *.g.i.cs
+
+
+# Nur die benutzerspezifischen PublishProfile-Dateien ignorieren
+KUpdater/Properties/PublishProfiles/*.pubxml.user
