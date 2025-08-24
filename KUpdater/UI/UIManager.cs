@@ -2,8 +2,13 @@
    public class UIManager {
       private readonly List<IUIElement> _elements = new();
       public void Add(IUIElement element) => _elements.Add(element);
+
       public void ClearLabels() {
          _elements.RemoveAll(e => e is UILabel);
+      }
+
+      public void ClearButtons() {
+         _elements.RemoveAll(e => e is UIButton);
       }
 
       public void Draw(Graphics g) {

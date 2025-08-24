@@ -37,6 +37,9 @@ namespace KUpdater.Scripting {
          public const string LoadTheme = "load_theme";
          public const string GetTheme = "get_theme";
 
+         public const string StartGame = "start_game";
+         public const string OpenSettings = "open_settings";
+
          // Globale Variablen
          public const string ThemeDir = "THEME_DIR";
       }
@@ -83,6 +86,17 @@ namespace KUpdater.Scripting {
          }
       }
 
+      private static void SafeCall(DynValue function, params object[] args) {
+         if (function.Type == DataType.Function) {
+            try {
+               ScriptInstance.Call(function, args);
+            }
+            catch (InterpreterException ex) {
+               Debug.WriteLine($"Lua runtime error: {ex.DecoratedMessage}");
+            }
+         }
+      }
+
       public void LoadTheme(string themeName) {
          _currentTheme = themeName;
          ScriptInstance.Call(ScriptInstance.Globals[LuaApi.LoadTheme], themeName);
@@ -96,6 +110,8 @@ namespace KUpdater.Scripting {
          RegisterWindowSizeFunction();
          RegisterAddLabelFunction();
          RegisterAddButtonFunction();
+         RegisterStartGameFunction();
+         RegisterOpenSettingsFunction();
       }
 
       private void RegisterAddLabelFunction() {
@@ -156,10 +172,23 @@ namespace KUpdater.Scripting {
          });
       }
 
+      private void RegisterStartGameFunction() {
+         ScriptInstance.Globals[LuaApi.StartGame] = (Action)(() => {
+            GameLauncher.StartGame();
+         });
+      }
+
+      private void RegisterOpenSettingsFunction() {
+         ScriptInstance.Globals[LuaApi.OpenSettings] = (Action)(() => {
+            GameLauncher.OpenSettings();
+         });
+      }
+
+
       public void ReInitTheme() {
          if (!string.IsNullOrEmpty(_currentTheme)) {
             _uiManager.ClearLabels();
-
+            _uiManager.ClearButtons();
             ScriptInstance.Call(ScriptInstance.Globals[LuaApi.LoadTheme], _currentTheme);
 
             var themeTable = GetTheme();
@@ -175,7 +204,11 @@ namespace KUpdater.Scripting {
 
       public static ThemeBackground GetBackground() {
          var theme = GetTheme();
-         var bg = theme.Get("background").Table;
+         var bgVal = theme.Get("background");
+         if (bgVal.Type != DataType.Table)
+            throw new Exception("Theme is missing 'background' table.");
+         var bg = bgVal.Table;
+
 
          return new ThemeBackground {
             TopLeft = LoadImage(bg, "top_left"),
@@ -246,8 +279,10 @@ namespace KUpdater.Scripting {
          if (!File.Exists(path))
             throw new FileNotFoundException($"Background image not found: {path}");
 
-         return Image.FromFile(path);
+         using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+         return Image.FromStream(fs);
       }
+
 
       #endregion
    }

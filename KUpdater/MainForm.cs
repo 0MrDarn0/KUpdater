@@ -39,20 +39,20 @@ namespace KUpdater {
             "btn_exit",
             () => Close()));
 
-         _uiManager.Add(new UIButton(
-             () => new Rectangle(Width - 150, Height - 70, 97, 22),
-             "Start",
-             new Font("Segoe UI", 9, FontStyle.Bold),
-             "btn_default",
-             StartGame));
+         //_uiManager.Add(new UIButton(
+         //    () => new Rectangle(Width - 150, Height - 70, 97, 22),
+         //    "Start",
+         //    new Font("Segoe UI", 9, FontStyle.Bold),
+         //    "btn_default",
+         //    GameLauncher.StartGame));
 
 
-         _uiManager.Add(new UIButton(
-             () => new Rectangle(Width - 255, Height - 70, 97, 22),
-             "Settings",
-             new Font("Segoe UI", 9, FontStyle.Bold),
-             "btn_default",
-             OpenSettings));
+         //_uiManager.Add(new UIButton(
+         //    () => new Rectangle(Width - 255, Height - 70, 97, 22),
+         //    "Settings",
+         //    new Font("Segoe UI", 9, FontStyle.Bold),
+         //    "btn_default",
+         //    GameLauncher.OpenSettings));
       }
 
       protected override CreateParams CreateParams {
@@ -200,54 +200,6 @@ namespace KUpdater {
          _ = NativeMethods.DeleteObject(hBitmap);
          _ = NativeMethods.DeleteDC(memDc);
          _ = NativeMethods.ReleaseDC(IntPtr.Zero, screenDc);
-      }
-
-      private static void StartGame() {
-         try {
-            string exePath = Path.Combine(Application.StartupPath, "engine.exe");
-
-            if (!File.Exists(exePath))
-               throw new FileNotFoundException("The game executable 'engine.exe' was not found.", exePath);
-
-            Process.Start(new ProcessStartInfo {
-               FileName = exePath,
-               Arguments = "/load /config debug",
-               UseShellExecute = false
-            });
-
-            Environment.Exit(0); // Immediately close the launcher
-         }
-         catch (Exception ex) {
-            MessageBox.Show(
-                $"Unable to launch the game.\n\nDetails: {ex.Message}",
-                "Launch Error",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error
-            );
-         }
-      }
-
-      private static void OpenSettings() {
-         try {
-            string exePath = Path.Combine(Application.StartupPath, "engine.exe");
-
-            if (!File.Exists(exePath))
-               throw new FileNotFoundException("The game executable 'engine.exe' was not found.", exePath);
-
-            Process.Start(new ProcessStartInfo {
-               FileName = exePath,
-               Arguments = "/setup",
-               UseShellExecute = false
-            });
-         }
-         catch (Exception ex) {
-            MessageBox.Show(
-                $"Unable to open the settings.\n\nDetails: {ex.Message}",
-                "Settings Error",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error
-            );
-         }
       }
    }
 }

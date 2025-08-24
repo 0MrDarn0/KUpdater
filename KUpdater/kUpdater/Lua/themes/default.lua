@@ -26,26 +26,22 @@ local function initWindow()
     assert(type(add_label) == "function", "add_label function is not registered")
     assert(type(get_window_size) == "function", "get_window_size function is not registered")
     assert(type(add_button) == "function", "add_button function is not registered")
+    assert(type(start_game) == "function", "start_game function is not registered")
+    assert(type(open_settings) == "function", "open_settings function is not registered")
+
 
     local width, height = get_window_size()
 
     -- Titel
-    add_label(
-        "kUpdater",       -- Text
-        40, -10,          -- Position X, Y
-        "#FFA500",        -- Schriftfarbe
-        "Chiller", 40,    -- Schriftart, Größe
-        "Italic"          -- Schriftstil
-    )
-
+    add_label("kUpdater", 40, -10, "#FFA500", "Chiller", 40, "Italic")
     add_label("칼온라인", width - 115, 17, "#FFFF00", "Chiller", 13, "Bold")
 
-    --[[add_button(
-        "Exit", 765, 16, 18, 18,
-        "Segoe UI", 10, "Bold", "#FF0000",
-        "btn_exit",
-        function() print("Exit clicked") end
-    )]]
+    -- Start Button
+    add_button("Start", width - 150, height - 70, 97, 22, "Segoe UI", 10, "Bold", "#FF0000", "btn_default", function() start_game() end)
+
+    -- Settings Button
+    add_button("Settings", width - 255, height - 70, 97, 22, "Segoe UI", 10, "Bold", "#FF0000", "btn_default", function() open_settings() end)
+
 end
 
 -- Rückgabe der gesamten Fensterdefinition
@@ -54,3 +50,10 @@ return {
     layout = layoutConfig,
     init = initWindow
 }
+
+    --[[add_button(
+        "Exit", 765, 16, 18, 18,
+        "Segoe UI", 10, "Bold", "#FF0000",
+        "btn_exit",
+        function() print("Exit clicked") end
+    )]]
