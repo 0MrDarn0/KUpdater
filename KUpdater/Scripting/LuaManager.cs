@@ -39,6 +39,7 @@ namespace KUpdater.Scripting {
 
          public const string StartGame = "start_game";
          public const string OpenSettings = "open_settings";
+         public const string ApplicationExit = "application_exit";
 
          // Globale Variablen
          public const string ThemeDir = "THEME_DIR";
@@ -47,6 +48,7 @@ namespace KUpdater.Scripting {
       private static Script? _script;
       private static string? _currentTheme;
       private readonly UIManager _uiManager;
+      private static readonly Dictionary<string, Image> _imageCache = new();
 
       private static Script ScriptInstance =>
           _script ?? throw new InvalidOperationException("LuaManager.Init() must be called before using LuaManager.");
@@ -112,6 +114,7 @@ namespace KUpdater.Scripting {
          RegisterAddButtonFunction();
          RegisterStartGameFunction();
          RegisterOpenSettingsFunction();
+         RegisterApplicationExitFunction();
       }
 
       private void RegisterAddLabelFunction() {
@@ -184,6 +187,12 @@ namespace KUpdater.Scripting {
          });
       }
 
+      private void RegisterApplicationExitFunction() {
+         ScriptInstance.Globals[LuaApi.ApplicationExit] = (Action)(() => {
+            Application.Exit(); // oder Environment.Exit(0);
+         });
+      }
+
 
       public void ReInitTheme() {
          if (!string.IsNullOrEmpty(_currentTheme)) {
@@ -225,7 +234,11 @@ namespace KUpdater.Scripting {
 
       public static ThemeLayout GetLayout() {
          var theme = GetTheme();
-         var layout = theme.Get("layout").Table;
+         var layoutVal = theme.Get("layout");
+         if (layoutVal.Type != DataType.Table)
+            throw new Exception("Theme is missing 'layout' table.");
+         var layout = layoutVal.Table;
+
 
          return new ThemeLayout {
             TopWidthOffset = (int)(layout.Get("top_width_offset").CastToNumber() ?? 0),
@@ -270,17 +283,24 @@ namespace KUpdater.Scripting {
          return new Font(name, size, style);
       }
 
+
+
       private static Image LoadImage(Table table, string key) {
          string file = table.Get(key).CastToString();
          if (string.IsNullOrWhiteSpace(file))
             throw new Exception($"Missing background image key: {key}");
+
+         if (_imageCache.TryGetValue(file, out var cached))
+            return cached;
 
          string path = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", file);
          if (!File.Exists(path))
             throw new FileNotFoundException($"Background image not found: {path}");
 
          using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-         return Image.FromStream(fs);
+         var img = Image.FromStream(fs);
+         _imageCache[file] = img;
+         return img;
       }
 
 

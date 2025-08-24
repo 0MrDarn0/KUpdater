@@ -28,13 +28,16 @@ local function initWindow()
     assert(type(add_button) == "function", "add_button function is not registered")
     assert(type(start_game) == "function", "start_game function is not registered")
     assert(type(open_settings) == "function", "open_settings function is not registered")
-
+    assert(type(application_exit) == "function", "application_exit function is not registered")
 
     local width, height = get_window_size()
 
     -- Titel
     add_label("kUpdater", 40, -10, "#FFA500", "Chiller", 40, "Italic")
     add_label("칼온라인", width - 115, 17, "#FFFF00", "Chiller", 13, "Bold")
+
+    -- Close Button
+    add_button("X", width - 35, 16, 18, 18, "Segoe UI", 10, "Bold", "#FF0000", "btn_exit", function() application_exit() end)
 
     -- Start Button
     add_button("Start", width - 150, height - 70, 97, 22, "Segoe UI", 10, "Bold", "#FF0000", "btn_default", function() start_game() end)
@@ -43,6 +46,7 @@ local function initWindow()
     add_button("Settings", width - 255, height - 70, 97, 22, "Segoe UI", 10, "Bold", "#FF0000", "btn_default", function() open_settings() end)
 
 end
+
 
 -- Rückgabe der gesamten Fensterdefinition
 return {

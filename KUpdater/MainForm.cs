@@ -32,27 +32,12 @@ namespace KUpdater {
          this.StartPosition = FormStartPosition.CenterScreen;
          this.DoubleBuffered = true;
 
-         _uiManager.Add(new UIButton(
-            () => new Rectangle(Width - 35, 16, 18, 18),
-            "X",
-            new Font("Segoe UI", 10, FontStyle.Bold),
-            "btn_exit",
-            () => Close()));
-
          //_uiManager.Add(new UIButton(
-         //    () => new Rectangle(Width - 150, Height - 70, 97, 22),
-         //    "Start",
-         //    new Font("Segoe UI", 9, FontStyle.Bold),
-         //    "btn_default",
-         //    GameLauncher.StartGame));
-
-
-         //_uiManager.Add(new UIButton(
-         //    () => new Rectangle(Width - 255, Height - 70, 97, 22),
-         //    "Settings",
-         //    new Font("Segoe UI", 9, FontStyle.Bold),
-         //    "btn_default",
-         //    GameLauncher.OpenSettings));
+         //   () => new Rectangle(Width - 35, 16, 18, 18),
+         //   "X",
+         //   new Font("Segoe UI", 10, FontStyle.Bold),
+         //   "btn_exit",
+         //   () => Close()));
       }
 
       protected override CreateParams CreateParams {
