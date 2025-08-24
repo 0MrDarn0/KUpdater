@@ -11,6 +11,16 @@ local backgroundConfig = {
     fill_color = "#101010"
 }
 
+local layoutConfig = {
+    top_width_offset = 7,
+    bottom_width_offset = 21,
+    left_height_offset = 5,
+    right_height_offset = 5,
+    fill_pos_offset = 5,
+    fill_width_offset = 12,
+    fill_height_offset = 12
+}
+
 -- Init-Funktion
 local function initWindow()
     assert(type(add_label) == "function", "add_label function is not registered")
@@ -41,5 +51,6 @@ end
 -- Rückgabe der gesamten Fensterdefinition
 return {
     background = backgroundConfig,
+    layout = layoutConfig,
     init = initWindow
 }

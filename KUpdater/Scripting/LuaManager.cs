@@ -3,12 +3,6 @@ using MoonSharp.Interpreter;
 using System.Diagnostics;
 
 namespace KUpdater.Scripting {
-   public class Theme {
-      public string Title { get; set; } = "kUpdater";
-      public Color FontColor { get; set; } = Color.Orange;
-      public Point TitlePosition { get; set; } = new(20, 10);
-      public Font TitleFont { get; set; } = new("Segoe UI", 24f, FontStyle.Regular);
-   }
 
    public class ThemeBackground {
       public Image TopLeft { get; set; } = new Bitmap(1, 1);
@@ -21,6 +15,17 @@ namespace KUpdater.Scripting {
       public Image LeftCenter { get; set; } = new Bitmap(1, 1);
       public Color FillColor { get; set; } = Color.Black;
    }
+
+   public class ThemeLayout {
+      public int TopWidthOffset { get; set; }
+      public int BottomWidthOffset { get; set; }
+      public int LeftHeightOffset { get; set; }
+      public int RightHeightOffset { get; set; }
+      public int FillPosOffset { get; set; }
+      public int FillWidthOffset { get; set; }
+      public int FillHeightOffset { get; set; }
+   }
+
 
    public class LuaManager {
       // 🔹 Zentrale API-Definition
@@ -184,6 +189,22 @@ namespace KUpdater.Scripting {
             FillColor = ToColor(bg.Get("fill_color"), Color.Black)
          };
       }
+
+      public static ThemeLayout GetLayout() {
+         var theme = GetTheme();
+         var layout = theme.Get("layout").Table;
+
+         return new ThemeLayout {
+            TopWidthOffset = (int)(layout.Get("top_width_offset").CastToNumber() ?? 0),
+            BottomWidthOffset = (int)(layout.Get("bottom_width_offset").CastToNumber() ?? 0),
+            LeftHeightOffset = (int)(layout.Get("left_height_offset").CastToNumber() ?? 0),
+            RightHeightOffset = (int)(layout.Get("right_height_offset").CastToNumber() ?? 0),
+            FillPosOffset = (int)(layout.Get("fill_pos_offset").CastToNumber() ?? 0),
+            FillWidthOffset = (int)(layout.Get("fill_width_offset").CastToNumber() ?? 0),
+            FillHeightOffset = (int)(layout.Get("fill_height_offset").CastToNumber() ?? 0)
+         };
+      }
+
 
 
       #region Helper Methods
