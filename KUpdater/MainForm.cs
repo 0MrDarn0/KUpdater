@@ -26,21 +26,11 @@ namespace KUpdater {
          _uiManager = new();
          _luaManager = new(_uiManager);
          _luaManager.Init("theme_loader.lua");
-         _luaManager.LoadTheme("kalonline");
+         _luaManager.LoadTheme("default");
 
          this.FormBorderStyle = FormBorderStyle.None;
          this.StartPosition = FormStartPosition.CenterScreen;
          this.DoubleBuffered = true;
-
-         //var theme = _luaManager.GetParsedTheme();
-         //_uiManager.Add(new UILabel(
-         //   () => {
-         //      var size = TextRenderer.MeasureText(theme.Title, theme.TitleFont);
-         //      return new Rectangle(theme.TitlePosition, size);
-         //   },
-         //   theme.Title,
-         //   theme.TitleFont,
-         //   theme.FontColor));
 
          _uiManager.Add(new UIButton(
             () => new Rectangle(Width - 35, 16, 18, 18),
