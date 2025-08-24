@@ -57,4 +57,4 @@ secrets.json
 
 
 # Nur die benutzerspezifischen PublishProfile-Dateien ignorieren
-KUpdater/Properties/PublishProfiles/*.pubxml.user
+Properties/PublishProfiles/*.pubxml.user
