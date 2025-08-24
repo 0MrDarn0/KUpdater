@@ -3,13 +3,13 @@
 namespace KUpdater {
    internal static class Program {
       // Unique name for the mutex — use a GUID or app‑specific ID
-      private static readonly string AppMutexName = "Global\\{C0A76B5A-12AB-45C5-B9D9-D693FAA6E7B9}";
+      private static readonly string _appMutexName = "Global\\{C0A76B5A-12AB-45C5-B9D9-D693FAA6E7B9}";
       private static Mutex? _mutex;
 
       [STAThread]
       static void Main() {
 
-         _mutex = new Mutex(initiallyOwned: true, name: AppMutexName, createdNew: out bool createdNew);
+         _mutex = new Mutex(initiallyOwned: true, name: _appMutexName, createdNew: out bool createdNew);
          if (!createdNew) {
             BringExistingInstanceToFront();
             return;
@@ -17,7 +17,6 @@ namespace KUpdater {
 
          ApplicationConfiguration.Initialize();
          Application.Run(new MainForm());
-
          GC.KeepAlive(_mutex);
       }
 
@@ -44,7 +43,5 @@ namespace KUpdater {
             // Ignore errors silently
          }
       }
-
    }
-
 }

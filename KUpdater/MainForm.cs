@@ -32,15 +32,15 @@ namespace KUpdater {
          this.StartPosition = FormStartPosition.CenterScreen;
          this.DoubleBuffered = true;
 
-         var theme = _luaManager.GetParsedTheme();
-         _uiManager.Add(new UILabel(
-            () => {
-               var size = TextRenderer.MeasureText(theme.Title, theme.TitleFont);
-               return new Rectangle(theme.TitlePosition, size);
-            },
-            theme.Title,
-            theme.TitleFont,
-            theme.FontColor));
+         //var theme = _luaManager.GetParsedTheme();
+         //_uiManager.Add(new UILabel(
+         //   () => {
+         //      var size = TextRenderer.MeasureText(theme.Title, theme.TitleFont);
+         //      return new Rectangle(theme.TitlePosition, size);
+         //   },
+         //   theme.Title,
+         //   theme.TitleFont,
+         //   theme.FontColor));
 
          _uiManager.Add(new UIButton(
             () => new Rectangle(Width - 35, 16, 18, 18),
@@ -55,6 +55,7 @@ namespace KUpdater {
              new Font("Segoe UI", 9, FontStyle.Bold),
              "btn_default",
              StartGame));
+
 
          _uiManager.Add(new UIButton(
              () => new Rectangle(Width - 255, Height - 70, 97, 22),

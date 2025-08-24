@@ -74,7 +74,7 @@ namespace KUpdater.Scripting {
             ScriptInstance.DoString(File.ReadAllText(path));
          }
          catch (SyntaxErrorException e) {
-            Console.WriteLine($"Lua syntax error: {e.DecoratedMessage}");
+            Debug.WriteLine($"Lua syntax error: {e.DecoratedMessage}");
          }
       }
 
@@ -161,34 +161,12 @@ namespace KUpdater.Scripting {
             var initFunc = themeTable.Get("init");
             if (initFunc.Type == DataType.Function)
                ScriptInstance.Call(initFunc);
-
-            var theme = GetParsedTheme();
-            _uiManager.Add(new UILabel(
-                () => {
-                   var size = TextRenderer.MeasureText(theme.Title, theme.TitleFont);
-                   return new Rectangle(theme.TitlePosition, size);
-                },
-                theme.Title,
-                theme.TitleFont,
-                theme.FontColor
-            ));
          }
       }
 
       public static Table GetTheme() =>
           ScriptInstance.Call(ScriptInstance.Globals[LuaApi.GetTheme]).Table;
 
-      public Theme GetParsedTheme() {
-         var raw = GetTheme();
-         Theme theme = new();
-
-         theme.Title = raw.Get("window_title").CastToString() ?? theme.Title;
-         theme.FontColor = ToColor(raw.Get("font_color"), theme.FontColor);
-         theme.TitlePosition = ToPoint(raw.Get("title_position"), theme.TitlePosition);
-         theme.TitleFont = ToFont(raw.Get("title_font"), theme.TitleFont);
-
-         return theme;
-      }
 
       public static ThemeBackground GetBackground() {
          var theme = GetTheme();
@@ -206,6 +184,7 @@ namespace KUpdater.Scripting {
             FillColor = ToColor(bg.Get("fill_color"), Color.Black)
          };
       }
+
 
       #region Helper Methods
 
