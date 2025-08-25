@@ -1,35 +1,109 @@
 ﻿using KUpdater.Scripting;
-using System.Drawing.Drawing2D;
+using SkiaSharp;
+using System.Drawing.Imaging;
 
 namespace KUpdater.UI {
    public static class Renderer {
       static Renderer() { }
-      public static void DrawBackground(Graphics g, Size size) {
+
+      public static SKColor ToSKColor(this System.Drawing.Color color) => new SKColor(color.R, color.G, color.B, color.A);
+      public static SKBitmap ToSKBitmap(this Image image) {
+         if (image is not Bitmap bmp) {
+            // Falls es kein Bitmap ist, vorher konvertieren
+            using var temp = new Bitmap(image);
+            return temp.ToSKBitmap();
+         }
+
+         // Skia-Bitmap in passendem Format anlegen
+         var skBmp = new SKBitmap(bmp.Width, bmp.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+
+         // GDI+ Bitmap sperren
+         var data = bmp.LockBits(
+        new Rectangle(0, 0, bmp.Width, bmp.Height),
+        ImageLockMode.ReadOnly,
+        PixelFormat.Format32bppPArgb // passt zu Bgra8888 + Premul
+    );
+
+         try {
+            // Bytes direkt kopieren
+            unsafe {
+               Buffer.MemoryCopy(
+                   source: (void*)data.Scan0,
+                   destination: (void*)skBmp.GetPixels(),
+                   destinationSizeInBytes: skBmp.ByteCount,
+                   sourceBytesToCopy: bmp.Height * data.Stride
+               );
+            }
+         }
+         finally {
+            bmp.UnlockBits(data);
+         }
+
+         return skBmp;
+      }
+
+      public static void DrawBackground(SKCanvas canvas, Size size) {
          var bg = LuaManager.GetBackground();
          var layout = LuaManager.GetLayout();
 
          int width = size.Width;
          int height = size.Height;
-         g.Clear(Color.Transparent);
-         g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+
+         canvas.Clear(SKColors.Transparent);
 
          // Ecken
-         g.DrawImage(bg.TopLeft, 0, 0, bg.TopLeft.Width, bg.TopLeft.Height);
-         g.DrawImage(bg.TopRight, width - bg.TopRight.Width, 0, bg.TopRight.Width, bg.TopRight.Height);
-         g.DrawImage(bg.BottomLeft, 0, height - bg.BottomLeft.Height, bg.BottomLeft.Width, bg.BottomLeft.Height);
-         g.DrawImage(bg.BottomRight, width - bg.BottomRight.Width, height - bg.BottomRight.Height, bg.BottomRight.Width, bg.BottomRight.Height);
+         canvas.DrawBitmap(bg.TopLeft.ToSKBitmap(), new SKPoint(0, 0));
+         canvas.DrawBitmap(bg.TopRight.ToSKBitmap(), new SKPoint(width - bg.TopRight.Width, 0));
+         canvas.DrawBitmap(bg.BottomLeft.ToSKBitmap(), new SKPoint(0, height - bg.BottomLeft.Height));
+         canvas.DrawBitmap(bg.BottomRight.ToSKBitmap(), new SKPoint(width - bg.BottomRight.Width, height - bg.BottomRight.Height));
 
-         // Kanten (stretch)
-         g.DrawImage(bg.TopCenter, new Rectangle(bg.TopLeft.Width, 0, width - bg.TopLeft.Width - bg.TopRight.Width + layout.TopWidthOffset, bg.TopCenter.Height));
-         g.DrawImage(bg.BottomCenter, new Rectangle(bg.BottomLeft.Width, height - bg.BottomCenter.Height, width - bg.BottomLeft.Width - bg.BottomRight.Width + layout.BottomWidthOffset, bg.BottomCenter.Height));
-         g.DrawImage(bg.LeftCenter, new Rectangle(0, bg.TopLeft.Height, bg.LeftCenter.Width, height - bg.TopLeft.Height - bg.BottomLeft.Height + layout.LeftHeightOffset));
-         g.DrawImage(bg.RightCenter, new Rectangle(width - bg.RightCenter.Width, bg.TopRight.Height, bg.RightCenter.Width, height - bg.TopRight.Height - bg.BottomRight.Height + layout.RightHeightOffset));
+         // Kanten (gestreckt)
+         {
+            float left   = bg.TopLeft.Width;
+            float top    = 0;
+            float right  = left + (width - bg.TopLeft.Width - bg.TopRight.Width + layout.TopWidthOffset);
+            float bottom = top + bg.TopCenter.Height;
+            canvas.DrawBitmap(bg.TopCenter.ToSKBitmap(), new SKRect(left, top, right, bottom));
+         }
+
+         {
+            float left   = bg.BottomLeft.Width;
+            float top    = height - bg.BottomCenter.Height;
+            float right  = left + (width - bg.BottomLeft.Width - bg.BottomRight.Width + layout.BottomWidthOffset);
+            float bottom = top + bg.BottomCenter.Height;
+            canvas.DrawBitmap(bg.BottomCenter.ToSKBitmap(), new SKRect(left, top, right, bottom));
+         }
+
+         {
+            float left   = 0;
+            float top    = bg.TopLeft.Height;
+            float right  = left + bg.LeftCenter.Width;
+            float bottom = top + (height - bg.TopLeft.Height - bg.BottomLeft.Height + layout.LeftHeightOffset);
+            canvas.DrawBitmap(bg.LeftCenter.ToSKBitmap(), new SKRect(left, top, right, bottom));
+         }
+
+         {
+            float left   = width - bg.RightCenter.Width;
+            float top    = bg.TopRight.Height;
+            float right  = left + bg.RightCenter.Width;
+            float bottom = top + (height - bg.TopRight.Height - bg.BottomRight.Height + layout.RightHeightOffset);
+            canvas.DrawBitmap(bg.RightCenter.ToSKBitmap(), new SKRect(left, top, right, bottom));
+         }
 
          // Innenfläche
-         g.FillRectangle(new SolidBrush(bg.FillColor),
-             new Rectangle(bg.LeftCenter.Width - layout.FillPosOffset, bg.TopCenter.Height - layout.FillPosOffset,
-             width - bg.LeftCenter.Width * 2 + layout.FillWidthOffset,
-             height - bg.TopCenter.Height - bg.BottomCenter.Height + layout.FillHeightOffset));
+         var fillPaint = new SKPaint {
+            Color = bg.FillColor.ToSKColor(),
+            IsAntialias = true
+         };
+
+         {
+            float left   = bg.LeftCenter.Width - layout.FillPosOffset;
+            float top    = bg.TopCenter.Height - layout.FillPosOffset;
+            float right  = left + (width - bg.LeftCenter.Width * 2 + layout.FillWidthOffset);
+            float bottom = top + (height - bg.TopCenter.Height - bg.BottomCenter.Height + layout.FillHeightOffset);
+            canvas.DrawRect(new SKRect(left, top, right, bottom), fillPaint);
+         }
       }
+
    }
 }

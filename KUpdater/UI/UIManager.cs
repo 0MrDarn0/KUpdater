@@ -1,4 +1,6 @@
-﻿namespace KUpdater.UI {
+﻿using SkiaSharp;
+
+namespace KUpdater.UI {
    public class UIManager {
       private readonly List<IUIElement> _elements = new();
       public void Add(IUIElement element) => _elements.Add(element);
@@ -15,6 +17,12 @@
          foreach (var el in _elements)
             if (el.Visible)
                el.Draw(g);
+      }
+
+      public void Draw(SKCanvas canvas) {
+         foreach (var el in _elements)
+            if (el.Visible)
+               el.Draw(canvas);
       }
 
       public bool MouseMove(Point p) {

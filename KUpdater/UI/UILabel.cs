@@ -1,7 +1,8 @@
-﻿namespace KUpdater.UI {
+﻿using SkiaSharp;
+
+namespace KUpdater.UI {
    public class UILabel : IUIElement {
       private readonly Func<Rectangle> _boundsFunc;
-
       public Rectangle Bounds => _boundsFunc();
       public string Text { get; set; }
       public Font Font { get; set; }
@@ -22,6 +23,29 @@
             return;
          TextRenderer.DrawText(g, Text, Font, Bounds.Location, Color, Flags);
       }
+
+      public void Draw(SKCanvas canvas) {
+         if (!Visible)
+            return;
+
+         var bounds = Bounds;
+
+         using var font = new SKFont {
+            Typeface = SKTypeface.FromFamilyName(Font.Name),
+            Size = Font.Size * 1.33f // pt → px grob
+         };
+
+         using var paint = new SKPaint {
+            Color = new SKColor(Color.R, Color.G, Color.B, Color.A),
+            IsAntialias = true
+         };
+
+         var x = bounds.X;
+         var y = bounds.Y + font.Size;
+
+         canvas.DrawText(Text, x, y, SKTextAlign.Left, font, paint);
+      }
+
 
       public bool OnMouseMove(Point p) => false;
       public bool OnMouseDown(Point p) => false;

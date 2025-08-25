@@ -1,5 +1,6 @@
 ﻿using KUpdater.Scripting;
 using KUpdater.UI;
+using SkiaSharp;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -23,21 +24,16 @@ namespace KUpdater {
          Instance = this;
          InitializeComponent();
 
+         FormBorderStyle = FormBorderStyle.None;
+         StartPosition = FormStartPosition.CenterScreen;
+         DoubleBuffered = true;
+         BackColor = Color.Lime;
+         TransparencyKey = Color.Empty;
+
          _uiManager = new();
          _luaManager = new(_uiManager);
          _luaManager.Init("theme_loader.lua");
          _luaManager.LoadTheme("default");
-
-         this.FormBorderStyle = FormBorderStyle.None;
-         this.StartPosition = FormStartPosition.CenterScreen;
-         this.DoubleBuffered = true;
-
-         //_uiManager.Add(new UIButton(
-         //   () => new Rectangle(Width - 35, 16, 18, 18),
-         //   "X",
-         //   new Font("Segoe UI", 10, FontStyle.Bold),
-         //   "btn_exit",
-         //   () => Close()));
       }
 
       protected override CreateParams CreateParams {
@@ -58,12 +54,17 @@ namespace KUpdater {
          SafeRedraw();
       }
 
+      protected override void OnResize(EventArgs e) {
+         base.OnResize(e);
+         _luaManager?.ReInitTheme();
+         SafeRedraw();
+      }
+
       protected override void OnMouseMove(MouseEventArgs e) {
          if (_isResizing) {
             Point delta = new(
                Cursor.Position.X - _resizeStartCursor.X,
-               Cursor.Position.Y - _resizeStartCursor.Y
-               );
+               Cursor.Position.Y - _resizeStartCursor.Y);
 
             // Bildschirm-Arbeitsbereich holen (ohne Taskleiste)
             Rectangle workArea = Screen.FromPoint(Cursor.Position).WorkingArea;
@@ -80,9 +81,8 @@ namespace KUpdater {
             newWidth = Math.Max(450, Math.Min(newWidth, maxWidth));
             newHeight = Math.Max(300, Math.Min(newHeight, maxHeight));
 
+            // Nur Größe setzen – Rest macht OnResize
             this.Size = new Size(newWidth, newHeight);
-            _luaManager.ReInitTheme();
-            SafeRedraw();
             return;
          }
 
@@ -92,8 +92,12 @@ namespace KUpdater {
             return;
          }
 
-         this.Cursor = new Rectangle(this.Width - _resizeHitSize, this.Height - _resizeHitSize, _resizeHitSize, _resizeHitSize)
-             .Contains(e.Location) ? Cursors.SizeNWSE : Cursors.Default;
+         this.Cursor = new Rectangle(
+             this.Width - _resizeHitSize,
+             this.Height - _resizeHitSize,
+             _resizeHitSize,
+             _resizeHitSize
+         ).Contains(e.Location) ? Cursors.SizeNWSE : Cursors.Default;
 
          // Let UIManager handle hover state for all controls
          if (_uiManager.MouseMove(e.Location))
@@ -101,25 +105,30 @@ namespace KUpdater {
       }
 
       protected override void OnMouseDown(MouseEventArgs e) {
-         if (e.Button == MouseButtons.Left) {
-            // Resize hotspot
-            Rectangle resizeRect = new(this.Width - _resizeHitSize, this.Height - _resizeHitSize, _resizeHitSize, _resizeHitSize);
-            if (resizeRect.Contains(e.Location)) {
-               _isResizing = true;
-               _resizeStartCursor = Cursor.Position;
-               _resizeStartSize = this.Size;
-               return;
-            }
+         if (e.Button != MouseButtons.Left)
+            return;
 
-            // Start dragging if not on a control
-            _isDragging = true;
-            _dragStart = e.Location;
-
-            // Also pass to UIManager so controls can react
-            if (_uiManager.MouseDown(e.Location))
-               SafeRedraw();
+         // Erst an UIManager weitergeben
+         bool handled = _uiManager.MouseDown(e.Location);
+         if (handled) {
+            SafeRedraw();
+            return; // Wenn ein Element reagiert, nicht weiterziehen!
          }
+
+         // Resize hotspot
+         Rectangle resizeRect = new(this.Width - _resizeHitSize, this.Height - _resizeHitSize, _resizeHitSize, _resizeHitSize);
+         if (resizeRect.Contains(e.Location)) {
+            _isResizing = true;
+            _resizeStartCursor = Cursor.Position;
+            _resizeStartSize = this.Size;
+            return;
+         }
+
+         // Fensterbewegung starten
+         _isDragging = true;
+         _dragStart = e.Location;
       }
+
       protected override void OnMouseUp(MouseEventArgs e) {
          _isDragging = false;
          _isResizing = false;
@@ -130,20 +139,24 @@ namespace KUpdater {
       }
 
       internal void SafeRedraw() {
-         if (this.IsDisposed || !this.IsHandleCreated)
+         if (IsDisposed || !IsHandleCreated)
             return;
 
-         Bitmap bmp = new(
-             this.Width,
-             this.Height,
-             PixelFormat.Format32bppArgb);
+         using var skBmp = new SKBitmap(Width, Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+         using var surface = SKSurface.Create(skBmp.Info, skBmp.GetPixels(), skBmp.RowBytes);
+         var canvas = surface.Canvas;
 
-         using (Graphics g = Graphics.FromImage(bmp)) {
-            g.Clear(Color.Transparent);
+         // Hintergrund + UI zeichnen
+         UI.Renderer.DrawBackground(canvas, new Size(Width, Height));
+         _uiManager.Draw(canvas);
 
-            UI.Renderer.DrawBackground(g, this.Size);
-            _uiManager.Draw(g);
-         }
+         // Skia → GDI Bitmap kopieren
+         using var bmp = new Bitmap(Width, Height, PixelFormat.Format32bppArgb);
+         var bmpData = bmp.LockBits(new Rectangle(0, 0, Width, Height),
+                               ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+         Marshal.Copy(skBmp.Bytes, 0, bmpData.Scan0, skBmp.Bytes.Length);
+         bmp.UnlockBits(bmpData);
+
          SetBitmap(bmp, 255);
       }
 

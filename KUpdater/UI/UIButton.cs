@@ -1,4 +1,6 @@
-﻿namespace KUpdater.UI {
+﻿using SkiaSharp;
+
+namespace KUpdater.UI {
    public class UIButton : IUIElement {
       private readonly Func<Rectangle> _boundsFunc;
       public Rectangle Bounds => _boundsFunc();
@@ -28,6 +30,34 @@
          g.DrawImage(img, Bounds);
          TextRenderer.DrawText(g, Text, Font, Bounds, Color.Gold, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
       }
+
+      public void Draw(SKCanvas canvas) {
+         if (!Visible)
+            return;
+
+         string state = IsPressed ? "click" : IsHovered ? "hover" : "normal";
+         using var img = SKBitmap.Decode(IUIElement.Resource($"{ThemeKey}_{state}.png"));
+
+         var bounds = Bounds;
+         var destRect = new SKRect(bounds.X, bounds.Y, bounds.Right, bounds.Bottom);
+         canvas.DrawBitmap(img, destRect);
+
+         using var font = new SKFont {
+            Typeface = SKTypeface.FromFamilyName(Font.Name),
+            Size = Font.Size * 1.33f
+         };
+
+         using var paint = new SKPaint {
+            Color = SKColors.Gold,
+            IsAntialias = true
+         };
+
+         var x = bounds.X + bounds.Width / 2;
+         var y = bounds.Y + bounds.Height / 2 + font.Size / 2 - 4;
+
+         canvas.DrawText(Text, x, y, SKTextAlign.Center, font, paint);
+      }
+
 
       public bool OnMouseMove(Point p) {
          bool prev = IsHovered;
