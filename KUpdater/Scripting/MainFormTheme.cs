@@ -5,11 +5,13 @@ using System.Diagnostics;
 namespace KUpdater.Scripting {
 
    public class MainFormTheme : Lua, ITheme {
+      private readonly Form _form;
       private readonly UIElementManager _uiElementManager;
       private readonly Dictionary<string, Image> _imageCache = new();
       private string? _currentTheme;
 
-      public MainFormTheme(UIElementManager uiElementManager) : base("theme_loader.lua") {
+      public MainFormTheme(Form form, UIElementManager uiElementManager) : base("theme_loader.lua") {
+         _form = form;
          _uiElementManager = uiElementManager;
          SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
          LoadTheme("main_form");
@@ -17,10 +19,9 @@ namespace KUpdater.Scripting {
 
       protected override void RegisterGlobals() {
          SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
-            var form = MainForm.Instance;
             return DynValue.NewTuple(
-               DynValue.NewNumber(form?.Width ?? 0),
-               DynValue.NewNumber(form?.Height ?? 0));
+               DynValue.NewNumber(_form?.Width ?? 0),
+               DynValue.NewNumber(_form?.Height ?? 0));
          }));
 
 

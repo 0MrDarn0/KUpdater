@@ -20,7 +20,7 @@ namespace KUpdater {
       public MainForm() {
          Instance = this;
          _uiElementManager = new();
-         _mainFormTheme = new(_uiElementManager);
+         _mainFormTheme = new(this, _uiElementManager);
          _uiRenderer = new(this, _uiElementManager, _mainFormTheme);
 
          InitializeComponent();
