@@ -44,8 +44,13 @@ namespace KUpdater.UI {
          var destRect = new SKRect(bounds.X, bounds.Y, bounds.Right, bounds.Bottom);
          canvas.DrawBitmap(img, destRect);
 
+         SKFontStyleWeight weight = Font.Style.HasFlag(FontStyle.Bold) ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal;
+         SKFontStyleSlant slant = Font.Style.HasFlag(FontStyle.Italic) ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
+
+         var typeface = SKTypeface.FromFamilyName(Font.Name, new SKFontStyle(weight, SKFontStyleWidth.Normal, slant));
+
          using var font = new SKFont {
-            Typeface = SKTypeface.FromFamilyName(Font.Name),
+            Typeface = typeface,
             Size = Font.Size * 1.33f
          };
 
@@ -54,8 +59,10 @@ namespace KUpdater.UI {
             IsAntialias = true
          };
 
+         var metrics = font.Metrics;
          var x = bounds.X + bounds.Width / 2;
-         var y = bounds.Y + bounds.Height / 2 + font.Size / 2 - 4;
+         var y = bounds.Y + bounds.Height / 2 - (metrics.Ascent + metrics.Descent) / 2 - metrics.Descent * 0.3f;
+
 
          canvas.DrawText(Text, x, y, SKTextAlign.Center, font, paint);
       }

@@ -30,18 +30,24 @@ namespace KUpdater.UI {
 
          var bounds = Bounds;
 
+         SKFontStyleWeight weight = Font.Style.HasFlag(FontStyle.Bold) ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal;
+         SKFontStyleSlant slant = Font.Style.HasFlag(FontStyle.Italic) ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
+
+         var typeface = SKTypeface.FromFamilyName(Font.Name, new SKFontStyle(weight, SKFontStyleWidth.Normal, slant));
+
          using var font = new SKFont {
-            Typeface = SKTypeface.FromFamilyName(Font.Name),
-            Size = Font.Size * 1.33f // pt → px grob
+            Typeface = typeface,
+            Size = Font.Size * 1.33f
          };
 
          using var paint = new SKPaint {
-            Color = new SKColor(Color.R, Color.G, Color.B, Color.A),
+            Color = Color.ToSKColor(),
             IsAntialias = true
          };
 
+         var metrics = font.Metrics;
          var x = bounds.X;
-         var y = bounds.Y + font.Size;
+         var y = bounds.Y + bounds.Height / 2 - (metrics.Ascent + metrics.Descent) / 2;
 
          canvas.DrawText(Text, x, y, SKTextAlign.Left, font, paint);
       }
