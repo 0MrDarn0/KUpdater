@@ -28,6 +28,15 @@ namespace KUpdater {
          FormBorderStyle = FormBorderStyle.None;
          StartPosition = FormStartPosition.CenterScreen;
          DoubleBuffered = true;
+
+         var copyrightLabel = new UICopyrightLabel(
+             () => new Rectangle(Width - 75, Height - 44, 200, 30),
+             "© 2025 Darn",
+             new Font("Segoe UI", 6, FontStyle.Bold),
+             Color.LightGoldenrodYellow
+         );
+
+         _uiElementManager.Add(copyrightLabel);
       }
 
       protected override CreateParams CreateParams {
