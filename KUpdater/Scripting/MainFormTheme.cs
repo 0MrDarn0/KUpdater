@@ -51,7 +51,7 @@ namespace KUpdater.Scripting {
                Font font = new(fontName, (float)fontSize, style);
 
                var button = new UIButton(
-                  () => new Rectangle((int)x, (int)y, (int)width, (int)height), text, font, id,
+                  () => new Rectangle((int)x, (int)y, (int)width, (int)height), text, font, color, id,
                   () => CallDynFunction(callback));
 
                _uiElementManager.Add(button);

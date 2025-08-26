@@ -8,11 +8,11 @@ namespace KUpdater.UI {
    public class UIRenderer {
       private readonly Form _form;
       private readonly ITheme _theme;
-      private readonly UIElementManager _uiManager;
+      private readonly UIElementManager _uiElementManager;
 
-      public UIRenderer(Form form, UIElementManager uiManager, ITheme theme) {
+      public UIRenderer(Form form, UIElementManager uiElementManager, ITheme theme) {
          _form = form;
-         _uiManager = uiManager;
+         _uiElementManager = uiElementManager;
          _theme = theme;
       }
 
@@ -28,7 +28,7 @@ namespace KUpdater.UI {
          var canvas = surface.Canvas;
 
          DrawBackground(canvas, new Size(width, height));
-         _uiManager.Draw(canvas);
+         _uiElementManager.Draw(canvas);
 
          using var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
          var bmpData = bmp.LockBits(new Rectangle(0, 0, width, height),

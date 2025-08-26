@@ -37,13 +37,13 @@ local function initWindow()
     add_label("칼온라인", width - 115, 17, "#FFFF00", "Malgun Gothic", 11, "Bold")
 
     -- Close Button
-    add_button("X", width - 35, 16, 18, 18, "Segoe UI", 10, "Bold", "#FF0000", "btn_exit", function() application_exit() end)
+    add_button("X", width - 35, 16, 18, 18, "Segoe UI", 10, "Bold", "#FFA500", "btn_exit", function() application_exit() end)
 
     -- Start Button
-    add_button("Start", width - 150, height - 70, 97, 22, "Segoe UI", 13, "Bold", "#FF0000", "btn_default", function() start_game() end)
+    add_button("Start", width - 150, height - 70, 97, 22, "Segoe UI", 13, "Bold", "#FFA500", "btn_default", function() start_game() end)
 
     -- Settings Button
-    add_button("Settings", width - 255, height - 70, 97, 22, "Segoe UI", 13, "Bold", "#FF0000", "btn_default", function() open_settings() end)
+    add_button("Settings", width - 255, height - 70, 97, 22, "Segoe UI", 13, "Bold", "#FFA500", "btn_default", function() open_settings() end)
 
 end
 

@@ -6,16 +6,18 @@ namespace KUpdater.UI {
       public Rectangle Bounds => _boundsFunc();
       public string Text { get; set; }
       public Font Font { get; set; }
+      public Color Color { get; set; }
       public string ThemeKey { get; set; } // e.g. "btn_exit", "btn_default"
       public Action? OnClick { get; set; }
       public bool Visible { get; set; } = true;
       public bool IsHovered { get; private set; }
       public bool IsPressed { get; private set; }
 
-      public UIButton(Func<Rectangle> boundsFunc, string text, Font font, string themeKey, Action? onClick) {
+      public UIButton(Func<Rectangle> boundsFunc, string text, Font font, Color color, string themeKey, Action? onClick) {
          _boundsFunc = boundsFunc;
          Text = text;
          Font = font;
+         Color = color;
          ThemeKey = themeKey;
          OnClick = onClick;
       }
@@ -28,7 +30,7 @@ namespace KUpdater.UI {
          using var img = Image.FromFile(IUIElement.Resource($"{ThemeKey}_{state}.png"));
 
          g.DrawImage(img, Bounds);
-         TextRenderer.DrawText(g, Text, Font, Bounds, Color.Gold, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+         TextRenderer.DrawText(g, Text, Font, Bounds, Color, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
       }
 
       public void Draw(SKCanvas canvas) {
@@ -48,7 +50,7 @@ namespace KUpdater.UI {
          };
 
          using var paint = new SKPaint {
-            Color = SKColors.Gold,
+            Color = Color.ToSKColor(),
             IsAntialias = true
          };
 
