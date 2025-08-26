@@ -56,11 +56,7 @@ namespace KUpdater.Scripting {
       public void LoadTheme(string themeName) {
          _currentTheme = themeName;
          CallFunction(LuaKeys.Theme.LoadTheme, themeName);
-
-         var themeTable = GetTheme();
-         var initFunc = themeTable.Get("init");
-         if (initFunc.Type == DataType.Function)
-            _script.Call(initFunc);
+         CallDynFunction(GetTheme().Get("init"));
       }
 
       public void ReInitTheme() {
