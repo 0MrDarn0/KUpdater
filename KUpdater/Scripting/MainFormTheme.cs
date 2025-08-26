@@ -27,25 +27,32 @@ namespace KUpdater.Scripting {
          SetGlobal(LuaKeys.UI.AddLabel, (Action<string, double, double, string, string, double, string>)
             ((text, x, y, colorHex, fontName, fontSize, fontStyle) => {
                Color color = ColorTranslator.FromHtml(colorHex);
+
                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
                   style = FontStyle.Regular;
+
                Font font = new(fontName, (float)fontSize, style);
-               _uiElementManager.Add(new UILabel(() => new Rectangle((int)x, (int)y,
+
+               _uiElementManager.Add(new UILabel(
+                  () => new Rectangle((int)x, (int)y,
                   TextRenderer.MeasureText(text, font).Width,
-                  TextRenderer.MeasureText(text, font).Height), text, font, color));
+                  TextRenderer.MeasureText(text, font).Height),
+                  text, font, color));
             }));
 
          SetGlobal(LuaKeys.UI.AddButton, (Action<string, double, double, double, double, string, double, string, string, string, DynValue>)
             ((text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, id, callback) => {
                Color color = ColorTranslator.FromHtml(colorHex);
+
                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
                   style = FontStyle.Regular;
+
                Font font = new(fontName, (float)fontSize, style);
-               var button = new UIButton(() => new Rectangle((int)x, (int)y, (int)width, (int)height),
-                  text, font, id, () => {
-                     if (callback.Type == DataType.Function)
-                        _script.Call(callback);
-                  });
+
+               var button = new UIButton(
+                  () => new Rectangle((int)x, (int)y, (int)width, (int)height), text, font, id,
+                  () => CallDynFunction(callback));
+
                _uiElementManager.Add(button);
             }));
 
