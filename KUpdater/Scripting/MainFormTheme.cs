@@ -1,5 +1,6 @@
 ﻿using KUpdater.UI;
 using MoonSharp.Interpreter;
+using System.Diagnostics;
 
 namespace KUpdater.Scripting {
 
@@ -68,9 +69,17 @@ namespace KUpdater.Scripting {
       }
 
       public Table GetTheme() => CallFunction(LuaKeys.Theme.GetTheme).Table;
+      public Table GetThemeTable(string key) {
+         var value = GetTheme().Get(key);
+         if (value.Type != DataType.Table) {
+            Debug.WriteLine($"[Lua] Theme key '{key}' is not a table.");
+            return new Table(_script);
+         }
+         return value.Table;
+      }
 
       public ThemeBackground GetBackground() {
-         var bg = GetTheme().Get("background").Table;
+         var bg = GetThemeTable("background");
          return new ThemeBackground {
             TopLeft = LoadImage(bg, "top_left"),
             TopCenter = LoadImage(bg, "top_center"),
@@ -85,7 +94,7 @@ namespace KUpdater.Scripting {
       }
 
       public ThemeLayout GetLayout() {
-         var layout = GetTheme().Get("layout").Table;
+         var layout = GetThemeTable("layout");
          return new ThemeLayout {
             TopWidthOffset = (int)(layout.Get("top_width_offset").CastToNumber() ?? 0),
             BottomWidthOffset = (int)(layout.Get("bottom_width_offset").CastToNumber() ?? 0),
