@@ -22,9 +22,12 @@ namespace KUpdater.Scripting {
          // Kann von abgeleiteten Klassen überschrieben werden
       }
 
+      protected DynValue CallDynFunction(DynValue func, params object[] args)
+         => func.Type == DataType.Function ? _script.Call(func, args) : DynValue.Nil;
+
       protected DynValue CallFunction(string functionName, params object[] args) {
          var func = _script.Globals.Get(functionName);
-         return func.Type == DataType.Function ? _script.Call(func, args) : DynValue.Nil;
+         return CallDynFunction(func, args);
       }
 
       protected Table GetGlobalTable(string name) =>
