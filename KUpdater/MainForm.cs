@@ -1,9 +1,5 @@
 ﻿using KUpdater.Scripting;
 using KUpdater.UI;
-using SkiaSharp;
-using System.Diagnostics;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 
 namespace KUpdater {
    public partial class MainForm : Form {
@@ -18,22 +14,20 @@ namespace KUpdater {
       private readonly int _resizeHitSize = 40;
 
       private readonly UIManager _uiManager;
-      private readonly LuaManager _luaManager;
+      private readonly MainFormTheme _mainFormTheme;
+      private readonly UIRenderer _uiRenderer;
 
       public MainForm() {
          Instance = this;
+         _uiManager = new();
+         _mainFormTheme = new("main_form", _uiManager);
+         _uiRenderer = new(this, _uiManager, _mainFormTheme);
+
          InitializeComponent();
 
          FormBorderStyle = FormBorderStyle.None;
          StartPosition = FormStartPosition.CenterScreen;
          DoubleBuffered = true;
-         BackColor = Color.Lime;
-         TransparencyKey = Color.Empty;
-
-         _uiManager = new();
-         _luaManager = new(_uiManager);
-         _luaManager.Init("theme_loader.lua");
-         _luaManager.LoadTheme("default");
       }
 
       protected override CreateParams CreateParams {
@@ -51,13 +45,13 @@ namespace KUpdater {
 
       protected override void OnShown(EventArgs e) {
          base.OnShown(e);
-         SafeRedraw();
+         _uiRenderer.Redraw();
       }
 
       protected override void OnResize(EventArgs e) {
          base.OnResize(e);
-         _luaManager?.ReInitTheme();
-         SafeRedraw();
+         _mainFormTheme?.ReInitTheme();
+         _uiRenderer.Redraw();
       }
 
       protected override void OnMouseMove(MouseEventArgs e) {
@@ -101,7 +95,7 @@ namespace KUpdater {
 
          // Let UIManager handle hover state for all controls
          if (_uiManager.MouseMove(e.Location))
-            SafeRedraw();
+            _uiRenderer.Redraw();
       }
 
       protected override void OnMouseDown(MouseEventArgs e) {
@@ -111,7 +105,7 @@ namespace KUpdater {
          // Erst an UIManager weitergeben
          bool handled = _uiManager.MouseDown(e.Location);
          if (handled) {
-            SafeRedraw();
+            _uiRenderer.Redraw();
             return; // Wenn ein Element reagiert, nicht weiterziehen!
          }
 
@@ -135,69 +129,7 @@ namespace KUpdater {
 
          // Pass to UIManager so controls can handle clicks
          if (_uiManager.MouseUp(e.Location))
-            SafeRedraw();
-      }
-
-      internal void SafeRedraw() {
-         if (IsDisposed || !IsHandleCreated)
-            return;
-
-         using var skBmp = new SKBitmap(Width, Height, SKColorType.Bgra8888, SKAlphaType.Premul);
-         using var surface = SKSurface.Create(skBmp.Info, skBmp.GetPixels(), skBmp.RowBytes);
-         var canvas = surface.Canvas;
-
-         // Hintergrund + UI zeichnen
-         UI.Renderer.DrawBackground(canvas, new Size(Width, Height));
-         _uiManager.Draw(canvas);
-
-         // Skia → GDI Bitmap kopieren
-         using var bmp = new Bitmap(Width, Height, PixelFormat.Format32bppArgb);
-         var bmpData = bmp.LockBits(new Rectangle(0, 0, Width, Height),
-                               ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-         Marshal.Copy(skBmp.Bytes, 0, bmpData.Scan0, skBmp.Bytes.Length);
-         bmp.UnlockBits(bmpData);
-
-         SetBitmap(bmp, 255);
-      }
-
-      private void SetBitmap(Bitmap bitmap, byte opacity) {
-         var screenDc = NativeMethods.GetDC(IntPtr.Zero);
-         var memDc = NativeMethods.CreateCompatibleDC(screenDc);
-         var hBitmap = bitmap.GetHbitmap(Color.FromArgb(0));
-         var oldBitmap = NativeMethods.SelectObject(memDc, hBitmap);
-
-         Size size = new(bitmap.Width, bitmap.Height);
-         Point source = new(0, 0);
-         Point topPos = new(this.Left, this.Top);
-
-         var blend = new NativeMethods.BLENDFUNCTION
-         {
-            BlendOp = NativeMethods.AC_SRC_OVER,
-            BlendFlags = 0,
-            SourceConstantAlpha = opacity,
-            AlphaFormat = NativeMethods.AC_SRC_ALPHA
-         };
-
-         var success = NativeMethods.UpdateLayeredWindow(
-              this.Handle,
-              screenDc,
-              ref topPos,
-              ref size,
-              memDc,
-              ref source,
-              0,
-              ref blend,
-              NativeMethods.ULW_ALPHA);
-
-         if (!success) {
-            var err = Marshal.GetLastWin32Error();
-            Debug.WriteLine($"UpdateLayeredWindow failed: {err}");
-         }
-
-         _ = NativeMethods.SelectObject(memDc, oldBitmap);
-         _ = NativeMethods.DeleteObject(hBitmap);
-         _ = NativeMethods.DeleteDC(memDc);
-         _ = NativeMethods.ReleaseDC(IntPtr.Zero, screenDc);
+            _uiRenderer.Redraw();
       }
    }
 }

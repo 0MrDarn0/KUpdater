@@ -1,50 +1,86 @@
 ﻿using KUpdater.Scripting;
 using SkiaSharp;
+using System.Diagnostics;
 using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 
 namespace KUpdater.UI {
-   public static class Renderer {
-      static Renderer() { }
+   public class UIRenderer {
+      private readonly Form _form;
+      private readonly ITheme _theme;
+      private readonly UIManager _uiManager;
 
-      public static SKColor ToSKColor(this System.Drawing.Color color) => new SKColor(color.R, color.G, color.B, color.A);
-      public static SKBitmap ToSKBitmap(this Image image) {
-         if (image is not Bitmap bmp) {
-            // Falls es kein Bitmap ist, vorher konvertieren
-            using var temp = new Bitmap(image);
-            return temp.ToSKBitmap();
-         }
-
-         // Skia-Bitmap in passendem Format anlegen
-         var skBmp = new SKBitmap(bmp.Width, bmp.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
-
-         // GDI+ Bitmap sperren
-         var data = bmp.LockBits(
-        new Rectangle(0, 0, bmp.Width, bmp.Height),
-        ImageLockMode.ReadOnly,
-        PixelFormat.Format32bppPArgb // passt zu Bgra8888 + Premul
-    );
-
-         try {
-            // Bytes direkt kopieren
-            unsafe {
-               Buffer.MemoryCopy(
-                   source: (void*)data.Scan0,
-                   destination: (void*)skBmp.GetPixels(),
-                   destinationSizeInBytes: skBmp.ByteCount,
-                   sourceBytesToCopy: bmp.Height * data.Stride
-               );
-            }
-         }
-         finally {
-            bmp.UnlockBits(data);
-         }
-
-         return skBmp;
+      public UIRenderer(Form form, UIManager uiManager, ITheme theme) {
+         _form = form;
+         _uiManager = uiManager;
+         _theme = theme;
       }
 
-      public static void DrawBackground(SKCanvas canvas, Size size) {
-         var bg = LuaManager.GetBackground();
-         var layout = LuaManager.GetLayout();
+      public void Redraw() {
+         if (_form.IsDisposed || !_form.IsHandleCreated)
+            return;
+
+         int width = _form.Width;
+         int height = _form.Height;
+
+         using var skBmp = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
+         using var surface = SKSurface.Create(skBmp.Info, skBmp.GetPixels(), skBmp.RowBytes);
+         var canvas = surface.Canvas;
+
+         DrawBackground(canvas, new Size(width, height));
+         _uiManager.Draw(canvas);
+
+         using var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+         var bmpData = bmp.LockBits(new Rectangle(0, 0, width, height),
+            ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+         Marshal.Copy(skBmp.Bytes, 0, bmpData.Scan0, skBmp.Bytes.Length);
+         bmp.UnlockBits(bmpData);
+
+         SetBitmap(bmp, 255);
+      }
+
+      public void SetBitmap(Bitmap bitmap, byte opacity) {
+         var screenDc = NativeMethods.GetDC(IntPtr.Zero);
+         var memDc = NativeMethods.CreateCompatibleDC(screenDc);
+         var hBitmap = bitmap.GetHbitmap(Color.FromArgb(0));
+         var oldBitmap = NativeMethods.SelectObject(memDc, hBitmap);
+
+         Size size = new(bitmap.Width, bitmap.Height);
+         Point source = new(0, 0);
+         Point topPos = new(_form.Left, _form.Top);
+
+         var blend = new NativeMethods.BLENDFUNCTION {
+            BlendOp = NativeMethods.AC_SRC_OVER,
+            BlendFlags = 0,
+            SourceConstantAlpha = opacity,
+            AlphaFormat = NativeMethods.AC_SRC_ALPHA
+         };
+
+         var success = NativeMethods.UpdateLayeredWindow(
+         _form.Handle,
+         screenDc,
+         ref topPos,
+         ref size,
+         memDc,
+         ref source,
+         0,
+         ref blend,
+         NativeMethods.ULW_ALPHA);
+
+         if (!success) {
+            var err = Marshal.GetLastWin32Error();
+            Debug.WriteLine($"UpdateLayeredWindow failed: {err}");
+         }
+
+         _ = NativeMethods.SelectObject(memDc, oldBitmap);
+         _ = NativeMethods.DeleteObject(hBitmap);
+         _ = NativeMethods.DeleteDC(memDc);
+         _ = NativeMethods.ReleaseDC(IntPtr.Zero, screenDc);
+      }
+
+      public void DrawBackground(SKCanvas canvas, Size size) {
+         var bg = _theme.GetBackground();
+         var layout = _theme.GetLayout();
 
          int width = size.Width;
          int height = size.Height;
