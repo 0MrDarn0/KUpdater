@@ -15,15 +15,15 @@ namespace KUpdater.Scripting {
       }
 
       protected override void RegisterGlobals() {
-         _script.Globals[LuaKeys.UI.GetWindowSize] = (Func<DynValue>)(() => {
+         SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
             var form = MainForm.Instance;
             return DynValue.NewTuple(
                DynValue.NewNumber(form?.Width ?? 0),
                DynValue.NewNumber(form?.Height ?? 0));
-         });
+         }));
 
-         _script.Globals[LuaKeys.UI.AddLabel] =
-            (Action<string, double, double, string, string, double, string>)
+
+         SetGlobal(LuaKeys.UI.AddLabel, (Action<string, double, double, string, string, double, string>)
             ((text, x, y, colorHex, fontName, fontSize, fontStyle) => {
                Color color = ColorTranslator.FromHtml(colorHex);
                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
@@ -32,10 +32,9 @@ namespace KUpdater.Scripting {
                _uiElementManager.Add(new UILabel(() => new Rectangle((int)x, (int)y,
                   TextRenderer.MeasureText(text, font).Width,
                   TextRenderer.MeasureText(text, font).Height), text, font, color));
-            });
+            }));
 
-         _script.Globals[LuaKeys.UI.AddButton] =
-            (Action<string, double, double, double, double, string, double, string, string, string, DynValue>)
+         SetGlobal(LuaKeys.UI.AddButton, (Action<string, double, double, double, double, string, double, string, string, string, DynValue>)
             ((text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, id, callback) => {
                Color color = ColorTranslator.FromHtml(colorHex);
                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
@@ -47,11 +46,11 @@ namespace KUpdater.Scripting {
                         _script.Call(callback);
                   });
                _uiElementManager.Add(button);
-            });
+            }));
 
-         _script.Globals[LuaKeys.Actions.StartGame] = (Action)(() => GameLauncher.StartGame());
-         _script.Globals[LuaKeys.Actions.OpenSettings] = (Action)(() => GameLauncher.OpenSettings());
-         _script.Globals[LuaKeys.Actions.ApplicationExit] = (Action)(() => Application.Exit());
+         SetGlobal(LuaKeys.Actions.StartGame, (Action)(() => GameLauncher.StartGame()));
+         SetGlobal(LuaKeys.Actions.OpenSettings, (Action)(() => GameLauncher.OpenSettings()));
+         SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
       }
 
       public void LoadTheme(string themeName) {
