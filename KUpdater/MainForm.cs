@@ -13,15 +13,15 @@ namespace KUpdater {
       private Size _resizeStartSize;
       private readonly int _resizeHitSize = 40;
 
-      private readonly UIManager _uiManager;
+      private readonly UIElementManager _uiElementManager;
       private readonly MainFormTheme _mainFormTheme;
       private readonly UIRenderer _uiRenderer;
 
       public MainForm() {
          Instance = this;
-         _uiManager = new();
-         _mainFormTheme = new("main_form", _uiManager);
-         _uiRenderer = new(this, _uiManager, _mainFormTheme);
+         _uiElementManager = new();
+         _mainFormTheme = new(_uiElementManager);
+         _uiRenderer = new(this, _uiElementManager, _mainFormTheme);
 
          InitializeComponent();
 
@@ -93,8 +93,8 @@ namespace KUpdater {
              _resizeHitSize
          ).Contains(e.Location) ? Cursors.SizeNWSE : Cursors.Default;
 
-         // Let UIManager handle hover state for all controls
-         if (_uiManager.MouseMove(e.Location))
+         // Let UIElementManager handle hover state for all controls
+         if (_uiElementManager.MouseMove(e.Location))
             _uiRenderer.Redraw();
       }
 
@@ -102,8 +102,8 @@ namespace KUpdater {
          if (e.Button != MouseButtons.Left)
             return;
 
-         // Erst an UIManager weitergeben
-         bool handled = _uiManager.MouseDown(e.Location);
+         // Erst an UIElementManager weitergeben
+         bool handled = _uiElementManager.MouseDown(e.Location);
          if (handled) {
             _uiRenderer.Redraw();
             return; // Wenn ein Element reagiert, nicht weiterziehen!
@@ -127,8 +127,8 @@ namespace KUpdater {
          _isDragging = false;
          _isResizing = false;
 
-         // Pass to UIManager so controls can handle clicks
-         if (_uiManager.MouseUp(e.Location))
+         // Pass to UIElementManager so controls can handle clicks
+         if (_uiElementManager.MouseUp(e.Location))
             _uiRenderer.Redraw();
       }
    }

@@ -4,14 +4,14 @@ using MoonSharp.Interpreter;
 namespace KUpdater.Scripting {
 
    public class MainFormTheme : Lua, ITheme {
-      private readonly UIManager _uiManager;
+      private readonly UIElementManager _uiElementManager;
       private readonly Dictionary<string, Image> _imageCache = new();
       private string? _currentTheme;
 
-      public MainFormTheme(string themeName, UIManager uiManager) : base("theme_loader.lua") {
-         _uiManager = uiManager;
+      public MainFormTheme(UIElementManager uiElementManager) : base("theme_loader.lua") {
+         _uiElementManager = uiElementManager;
          SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
-         LoadTheme(themeName);
+         LoadTheme("main_form");
       }
 
       protected override void RegisterGlobals() {
@@ -29,7 +29,7 @@ namespace KUpdater.Scripting {
                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
                   style = FontStyle.Regular;
                Font font = new(fontName, (float)fontSize, style);
-               _uiManager.Add(new UILabel(() => new Rectangle((int)x, (int)y,
+               _uiElementManager.Add(new UILabel(() => new Rectangle((int)x, (int)y,
                   TextRenderer.MeasureText(text, font).Width,
                   TextRenderer.MeasureText(text, font).Height), text, font, color));
             });
@@ -46,7 +46,7 @@ namespace KUpdater.Scripting {
                      if (callback.Type == DataType.Function)
                         _script.Call(callback);
                   });
-               _uiManager.Add(button);
+               _uiElementManager.Add(button);
             });
 
          _script.Globals[LuaKeys.Actions.StartGame] = (Action)(() => GameLauncher.StartGame());
@@ -66,8 +66,8 @@ namespace KUpdater.Scripting {
 
       public void ReInitTheme() {
          if (!string.IsNullOrEmpty(_currentTheme)) {
-            _uiManager.ClearLabels();
-            _uiManager.ClearButtons();
+            _uiElementManager.ClearLabels();
+            _uiElementManager.ClearButtons();
             LoadTheme(_currentTheme);
          }
       }

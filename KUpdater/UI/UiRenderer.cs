@@ -8,9 +8,9 @@ namespace KUpdater.UI {
    public class UIRenderer {
       private readonly Form _form;
       private readonly ITheme _theme;
-      private readonly UIManager _uiManager;
+      private readonly UIElementManager _uiManager;
 
-      public UIRenderer(Form form, UIManager uiManager, ITheme theme) {
+      public UIRenderer(Form form, UIElementManager uiManager, ITheme theme) {
          _form = form;
          _uiManager = uiManager;
          _theme = theme;

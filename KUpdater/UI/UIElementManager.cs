@@ -1,7 +1,7 @@
 ﻿using SkiaSharp;
 
 namespace KUpdater.UI {
-   public class UIManager {
+   public class UIElementManager {
       private readonly List<IUIElement> _elements = new();
       public void Add(IUIElement element) => _elements.Add(element);
 
