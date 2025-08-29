@@ -1,13 +1,13 @@
 ﻿-- Hintergrund-Konfiguration
 local background_config = {
-    top_left = "border_top_left.png",
-    top_center = "border_top_center.png",
-    top_right = "border_top_right.png",
-    right_center = "border_right_center.png",
-    bottom_right = "border_bottom_right.png",
-    bottom_center = "border_bottom_center.png",
-    bottom_left = "border_bottom_left.png",
-    left_center = "border_left_center.png",
+    top_left = "main_tl_default.png",
+    top_center = "main_tc_default.png",
+    top_right = "main_tr_default.png",
+    right_center = "main_rc_default.png",
+    bottom_right = "main_br_default.png",
+    bottom_center = "main_bc_default.png",
+    bottom_left = "main_bl_default.png",
+    left_center = "main_lc_default.png",
     fill_color = "#101010"
 }
 

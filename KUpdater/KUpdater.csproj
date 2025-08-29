@@ -41,37 +41,28 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-    <None Update="kUpdater\Resources\border_bottom_center.png">
+    <None Update="kUpdater\Resources\main_bc_default.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="kUpdater\Resources\border_bottom_left.png">
+    <None Update="kUpdater\Resources\main_bl_default.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="kUpdater\Resources\border_bottom_right.png">
+    <None Update="kUpdater\Resources\main_br_default.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="kUpdater\Resources\border_left_center.png">
+    <None Update="kUpdater\Resources\main_lc_default.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="kUpdater\Resources\border_right_center.png">
+    <None Update="kUpdater\Resources\main_rc_default.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="kUpdater\Resources\border_top_center.png">
+    <None Update="kUpdater\Resources\main_tc_default.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="kUpdater\Resources\border_top_left.png">
+    <None Update="kUpdater\Resources\main_tl_default.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="kUpdater\Resources\border_top_left_1.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="kUpdater\Resources\border_top_left_2.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="kUpdater\Resources\border_top_left_moon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="kUpdater\Resources\border_top_right.png">
+    <None Update="kUpdater\Resources\main_tr_default.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="kUpdater\Resources\btn_default_click.png">
