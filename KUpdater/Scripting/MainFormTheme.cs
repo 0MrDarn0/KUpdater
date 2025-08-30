@@ -57,6 +57,22 @@ namespace KUpdater.Scripting {
                _uiElementManager.Add(button);
             }));
 
+
+         SetGlobal("open_website", (Action<string>)((url) => {
+            try {
+               var psi = new ProcessStartInfo
+            {
+                  FileName = url,
+                  UseShellExecute = true
+               };
+               Process.Start(psi);
+            }
+            catch (Exception ex) {
+               Console.WriteLine($"Failed to open website: {ex.Message}");
+            }
+         }));
+
+
          SetGlobal(LuaKeys.Actions.StartGame, (Action)(() => GameLauncher.StartGame()));
          SetGlobal(LuaKeys.Actions.OpenSettings, (Action)(() => GameLauncher.OpenSettings()));
          SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));

@@ -18,7 +18,7 @@ local layout_config = {
     right_height_offset = 5,
     fill_pos_offset = 5,
     fill_width_offset = 12,
-    fill_height_offset = 12
+    fill_height_offset = 10
 }
 
 local function get_color(name)
@@ -60,6 +60,7 @@ local function get_color(name)
     return color_table[string.lower(name)] or "#FFFFFF" -- fallback: white
 end
 
+
 -- Init-Funktion
 local function init_window()
     assert(type(add_label) == "function", "add_label function is not registered")
@@ -68,6 +69,7 @@ local function init_window()
     assert(type(start_game) == "function", "start_game function is not registered")
     assert(type(open_settings) == "function", "open_settings function is not registered")
     assert(type(application_exit) == "function", "application_exit function is not registered")
+    assert(type(open_website) == "function", "open_website function is not registered")
 
     local width, height = get_window_size()
 
@@ -86,19 +88,14 @@ local function init_window()
     local btn_font_size = 11
     local btn_font_style = "Regular"
 
-
     -- Titel
     add_label("kUpdater", 45, -10, titel_color, titel_font, titel_font_size, titel_font_style)
     add_label("칼온라인", width - 115, 12, subtitle_color, subtitle_font, subtitle_font_size, subtitle_font_style)
 
-    -- Close Button
     add_button("X", width - 35, 16, 18, 18, btn_font, 10, btn_font_style, btn_color, "btn_exit", function() application_exit() end)
-
-    -- Start Button
     add_button("Start", width - 150, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() start_game() end)
-
-    -- Settings Button
     add_button("Settings", width - 255, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() open_settings() end)
+    add_button("Website", width - 360, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() open_website("https://google.com") end)
 
 end
 
