@@ -1,128 +1,80 @@
 ﻿using KUpdater.UI;
 using MoonSharp.Interpreter;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 
 namespace KUpdater.Scripting {
+
    public class MainFormTheme : Lua, ITheme {
       private readonly Form _form;
       private readonly UIElementManager _uiElementManager;
-      private readonly ConcurrentDictionary<string, Image> _imageCache = new();
+      private readonly Dictionary<string, Image> _imageCache = new();
       private string? _currentTheme;
 
-      public MainFormTheme(Form form, UIElementManager uiElementManager)
-          : base("theme_loader.lua") {
+      public MainFormTheme(Form form, UIElementManager uiElementManager) : base("theme_loader.lua") {
          _form = form;
          _uiElementManager = uiElementManager;
-
-         SetGlobal(LuaKeys.Theme.ThemeDir,
-             Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
-
-         _ = LoadThemeAsync("main_form");
-      }
-
-      public async Task LoadThemeAsync(string themeName) {
-         _currentTheme = themeName;
-         ClearImageCache();
-
-         CallFunction(LuaKeys.Theme.LoadTheme, themeName);
-         await PreloadThemeImagesAsync(GetThemeTable("background"));
-         CallDynFunction(GetTheme().Get("init"));
-      }
-
-      public async Task ReInitThemeAsync() {
-         if (!string.IsNullOrEmpty(_currentTheme)) {
-            _uiElementManager.ClearAll();
-            await LoadThemeAsync(_currentTheme);
-         }
-      }
-
-      private async Task PreloadThemeImagesAsync(Table backgroundTable) {
-         var keys = new[]
-            {
-                "top_left", "top_center", "top_right",
-                "right_center", "bottom_right", "bottom_center",
-                "bottom_left", "left_center"
-            };
-
-         var tasks = keys
-                .Select(k => backgroundTable.Get(k).CastToString())
-                .Where(file => !string.IsNullOrWhiteSpace(file))
-                .Select(file => LoadImageAsync(file));
-
-         await Task.WhenAll(tasks);
-      }
-
-      public async Task<Image> LoadImageAsync(string file) {
-         if (_imageCache.TryGetValue(file, out var cached))
-            return cached;
-
-         return await Task.Run(() => {
-            string path = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", file);
-            if (!File.Exists(path))
-               return new Bitmap(1, 1);
-
-            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var img = Image.FromStream(fs);
-            return _imageCache.GetOrAdd(file, img);
-         });
-      }
-
-      public void ClearImageCache() {
-         foreach (var img in _imageCache.Values)
-            img?.Dispose();
-         _imageCache.Clear();
+         SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
+         LoadTheme("main_form");
       }
 
       protected override void RegisterGlobals() {
          base.RegisterGlobals();
 
          ExposeToLua("UIElementManager", _uiElementManager);
+         //ExposeToLua<Updater>();
 
-         SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() =>
-             DynValue.NewTuple(
-                 DynValue.NewNumber(_form?.Width ?? 0),
-                 DynValue.NewNumber(_form?.Height ?? 0))));
+         SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
+            return DynValue.NewTuple(
+               DynValue.NewNumber(_form?.Width ?? 0),
+               DynValue.NewNumber(_form?.Height ?? 0));
+         }));
+
 
          SetGlobal(LuaKeys.UI.AddLabel, (Action<string, string, double, double, string, string, double, string>)
-             ((id, text, x, y, colorHex, fontName, fontSize, fontStyle) => {
-                var color = ColorTranslator.FromHtml(colorHex);
-                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                   style = FontStyle.Regular;
+            ((id, text, x, y, colorHex, fontName, fontSize, fontStyle) => {
+               Color color = ColorTranslator.FromHtml(colorHex);
 
-                var font = new Font(fontName, (float)fontSize, style);
+               if (!Enum.TryParse(fontStyle, true, out FontStyle style))
+                  style = FontStyle.Regular;
 
-                _uiElementManager.Add(new UILabel(id,
-                       () => new Rectangle((int)x, (int)y,
-                           TextRenderer.MeasureText(text, font).Width,
-                           TextRenderer.MeasureText(text, font).Height),
-                       text, font, color));
-             }));
+               Font font = new(fontName, (float)fontSize, style);
+
+               _uiElementManager.Add(new UILabel(id,
+                  () => new Rectangle((int)x, (int)y,
+                  TextRenderer.MeasureText(text, font).Width,
+                  TextRenderer.MeasureText(text, font).Height),
+                  text, font, color));
+            }));
 
          SetGlobal(LuaKeys.UI.AddButton, (Action<string, string, double, double, double, double, string, double, string, string, string, DynValue>)
-             ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, imageKey, callback) => {
-                var color = ColorTranslator.FromHtml(colorHex);
-                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                   style = FontStyle.Regular;
+            ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, imageKey, callback) => {
+               Color color = ColorTranslator.FromHtml(colorHex);
 
-                var font = new Font(fontName, (float)fontSize, style);
+               if (!Enum.TryParse(fontStyle, true, out FontStyle style))
+                  style = FontStyle.Regular;
 
-                var button = new UIButton(id,
-                        () => new Rectangle((int)x, (int)y, (int)width, (int)height),
-                        text, font, color, imageKey,
-                        () => CallDynFunction(callback));
+               Font font = new(fontName, (float)fontSize, style);
 
-                _uiElementManager.Add(button);
-             }));
+               var button = new UIButton(id,
+                  () => new Rectangle((int)x, (int)y, (int)width, (int)height), text, font, color, imageKey,
+                  () => CallDynFunction(callback));
 
-         SetGlobal("update_label", (Action<string, string>)((id, text) => _uiElementManager.UpdateLabel(id, text)));
-         SetGlobal("reinit_theme", (Action)(async () => await ReInitThemeAsync()));
-         SetGlobal("open_website", (Action<string>)(url => {
+               _uiElementManager.Add(button);
+            }));
+
+
+         SetGlobal("update_label", (Action<string, string>)((id, text) => { _uiElementManager.UpdateLabel(id, text); }));
+         SetGlobal("reinit_theme", (Action)(() => ReInitTheme()));
+
+
+         SetGlobal("open_website", (Action<string>)((url) => {
             try {
-               Process.Start(new ProcessStartInfo {
+               var psi = new ProcessStartInfo
+            {
                   FileName = url,
                   UseShellExecute = true
-               });
+               };
+               Process.Start(psi);
             }
             catch (Exception ex) {
                Console.WriteLine($"Failed to open website: {ex.Message}");
@@ -134,8 +86,27 @@ namespace KUpdater.Scripting {
          SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
       }
 
-      public Table GetTheme() => CallFunction(LuaKeys.Theme.GetTheme).Table;
+      public void ClearImageCache() {
+         foreach (var img in _imageCache.Values)
+            img?.Dispose();
+         _imageCache.Clear();
+      }
 
+      public void LoadTheme(string themeName) {
+         _currentTheme = themeName;
+         ClearImageCache();
+         CallFunction(LuaKeys.Theme.LoadTheme, themeName);
+         CallDynFunction(GetTheme().Get("init"));
+      }
+
+      public void ReInitTheme() {
+         if (!string.IsNullOrEmpty(_currentTheme)) {
+            _uiElementManager.ClearAll();
+            LoadTheme(_currentTheme);
+         }
+      }
+
+      public Table GetTheme() => CallFunction(LuaKeys.Theme.GetTheme).Table;
       public Table GetThemeTable(string key) {
          var value = GetTheme().Get(key);
          if (value.Type != DataType.Table) {
@@ -192,6 +163,6 @@ namespace KUpdater.Scripting {
       }
 
       private Color ToColor(DynValue val, Color fallback) =>
-          val.Type == DataType.String ? ColorTranslator.FromHtml(val.String) : fallback;
+         val.Type == DataType.String ? ColorTranslator.FromHtml(val.String) : fallback;
    }
 }
