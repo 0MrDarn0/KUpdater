@@ -2,6 +2,7 @@
 
 namespace KUpdater.UI {
    public class UIButton : IUIElement {
+      public string Id { get; }
       private readonly Func<Rectangle> _boundsFunc;
       public Rectangle Bounds => _boundsFunc();
       public string Text { get; set; }
@@ -13,7 +14,8 @@ namespace KUpdater.UI {
       public bool IsHovered { get; private set; }
       public bool IsPressed { get; private set; }
 
-      public UIButton(Func<Rectangle> boundsFunc, string text, Font font, Color color, string themeKey, Action? onClick) {
+      public UIButton(string id, Func<Rectangle> boundsFunc, string text, Font font, Color color, string themeKey, Action? onClick) {
+         Id = id;
          _boundsFunc = boundsFunc;
          Text = text;
          Font = font;

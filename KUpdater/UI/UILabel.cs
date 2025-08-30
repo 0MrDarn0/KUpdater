@@ -2,6 +2,7 @@
 
 namespace KUpdater.UI {
    public class UILabel : IUIElement {
+      public string Id { get; }
       private readonly Func<Rectangle> _boundsFunc;
       public Rectangle Bounds => _boundsFunc();
       public string Text { get; set; }
@@ -10,7 +11,8 @@ namespace KUpdater.UI {
       public TextFormatFlags Flags { get; set; }
       public bool Visible { get; set; } = true;
 
-      public UILabel(Func<Rectangle> boundsFunc, string text, Font font, Color color, TextFormatFlags flags = TextFormatFlags.Default) {
+      public UILabel(string id, Func<Rectangle> boundsFunc, string text, Font font, Color color, TextFormatFlags flags = TextFormatFlags.Default) {
+         Id = id;
          _boundsFunc = boundsFunc;
          Text = text;
          Font = font;

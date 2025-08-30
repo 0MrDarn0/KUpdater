@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KUpdater", "KUpdater\KUpdat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KUpdateCreator", "KUpdateCreator\KUpdateCreator.csproj", "{C0A6C518-D2EF-4617-A99C-02354C58B314}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManifestBuilder", "ManifestBuilder\ManifestBuilder.csproj", "{C5444651-A794-4C04-B46A-7C13BF5162D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{C0A6C518-D2EF-4617-A99C-02354C58B314}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C0A6C518-D2EF-4617-A99C-02354C58B314}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C0A6C518-D2EF-4617-A99C-02354C58B314}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5444651-A794-4C04-B46A-7C13BF5162D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5444651-A794-4C04-B46A-7C13BF5162D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5444651-A794-4C04-B46A-7C13BF5162D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5444651-A794-4C04-B46A-7C13BF5162D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

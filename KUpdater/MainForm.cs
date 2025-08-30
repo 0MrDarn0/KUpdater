@@ -19,6 +19,7 @@ namespace KUpdater {
 
       public MainForm() {
          Instance = this;
+
          _uiElementManager = new();
          _mainFormTheme = new(this, _uiElementManager);
          _uiRenderer = new(this, _uiElementManager, _mainFormTheme);
@@ -29,7 +30,7 @@ namespace KUpdater {
          StartPosition = FormStartPosition.CenterScreen;
          DoubleBuffered = true;
 
-         var copyrightLabel = new UICopyrightLabel(
+         var copyrightLabel = new UICopyrightLabel("lb_copyright",
              () => new Rectangle(Width - 75, Height - 44, 200, 30),
              "© 2025 Darn",
              new Font("Segoe UI", 6, FontStyle.Bold),
@@ -54,13 +55,13 @@ namespace KUpdater {
 
       protected override void OnShown(EventArgs e) {
          base.OnShown(e);
-         _uiRenderer.Redraw();
+         _uiRenderer?.Redraw();
       }
 
       protected override void OnResize(EventArgs e) {
          base.OnResize(e);
          _mainFormTheme?.ReInitTheme();
-         _uiRenderer.Redraw();
+         _uiRenderer?.Redraw();
       }
 
       protected override void OnMouseMove(MouseEventArgs e) {

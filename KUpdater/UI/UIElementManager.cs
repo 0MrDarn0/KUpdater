@@ -13,6 +13,15 @@ namespace KUpdater.UI {
          _elements.RemoveAll(e => e is UIButton);
       }
 
+      public T? FindById<T>(string id) where T : class, IUIElement
+         => _elements.OfType<T>().FirstOrDefault(e => e.Id == id);
+
+      public void UpdateLabel(string id, string newText) {
+         var label = FindById<UILabel>(id);
+         if (label != null)
+            label.Text = newText;
+      }
+
       public void Draw(Graphics g) {
          foreach (var el in _elements)
             if (el.Visible)

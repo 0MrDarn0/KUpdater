@@ -1,4 +1,6 @@
-﻿-- Hintergrund-Konfiguration
+﻿--__debug_globals()
+
+-- Hintergrund-Konfiguration
 local background_config = {
     top_left = "main_tl_default.png",
     top_center = "main_tc_default.png",
@@ -60,6 +62,10 @@ local function get_color(name)
     return color_table[string.lower(name)] or "#FFFFFF" -- fallback: white
 end
 
+function reload_theme()
+   assert(type(reinit_theme) == "function", "reinit_theme function is not registered")
+   reinit_theme()
+end
 
 -- Init-Funktion
 local function init_window()
@@ -88,14 +94,23 @@ local function init_window()
     local btn_font_size = 11
     local btn_font_style = "Regular"
 
-    -- Titel
-    add_label("kUpdater", 45, -10, titel_color, titel_font, titel_font_size, titel_font_style)
-    add_label("칼온라인", width - 115, 12, subtitle_color, subtitle_font, subtitle_font_size, subtitle_font_style)
+    -- Title
+    add_label("lb_title", "kUpdater", 45, -10, titel_color, titel_font, titel_font_size, titel_font_style)
+    add_label("lb_subtitle", "칼온라인", width - 115, 12, subtitle_color, subtitle_font, subtitle_font_size, subtitle_font_style)
 
-    add_button("X", width - 35, 16, 18, 18, btn_font, 10, btn_font_style, btn_color, "btn_exit", function() application_exit() end)
-    add_button("Start", width - 150, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() start_game() end)
-    add_button("Settings", width - 255, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() open_settings() end)
-    add_button("Website", width - 360, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() open_website("https://google.com") end)
+    add_button("btn_close", "X", width - 35, 16, 18, 18, btn_font, 10, btn_font_style, btn_color, "btn_exit", function() application_exit() end)
+    add_button("btn_start", "Start", width - 150, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() start_game() end)
+    add_button("btn_settings", "Settings", width - 255, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() open_settings() end)
+    add_button("btn_website", "Website", width - 360, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() open_website("https://google.com") end)
+
+    --debug_update_plan()
+
+    -- Create an Updater instance
+    --local updater = Updater("http://darn.bplaced.net/", "api/manifest.php")
+
+    -- Call the sync method to print the update plan
+    --updater:PrintUpdatePlan()
+
 
 end
 

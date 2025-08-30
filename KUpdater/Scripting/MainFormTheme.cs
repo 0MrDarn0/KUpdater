@@ -1,4 +1,5 @@
-﻿using KUpdater.UI;
+﻿using KUpdater.Core;
+using KUpdater.UI;
 using MoonSharp.Interpreter;
 using System.Diagnostics;
 
@@ -18,6 +19,11 @@ namespace KUpdater.Scripting {
       }
 
       protected override void RegisterGlobals() {
+         base.RegisterGlobals();
+
+         ExposeToLua("UIElementManager", _uiElementManager);
+         ExposeToLua<Updater>();
+
          SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
             return DynValue.NewTuple(
                DynValue.NewNumber(_form?.Width ?? 0),
@@ -25,8 +31,8 @@ namespace KUpdater.Scripting {
          }));
 
 
-         SetGlobal(LuaKeys.UI.AddLabel, (Action<string, double, double, string, string, double, string>)
-            ((text, x, y, colorHex, fontName, fontSize, fontStyle) => {
+         SetGlobal(LuaKeys.UI.AddLabel, (Action<string, string, double, double, string, string, double, string>)
+            ((id, text, x, y, colorHex, fontName, fontSize, fontStyle) => {
                Color color = ColorTranslator.FromHtml(colorHex);
 
                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
@@ -34,15 +40,15 @@ namespace KUpdater.Scripting {
 
                Font font = new(fontName, (float)fontSize, style);
 
-               _uiElementManager.Add(new UILabel(
+               _uiElementManager.Add(new UILabel(id,
                   () => new Rectangle((int)x, (int)y,
                   TextRenderer.MeasureText(text, font).Width,
                   TextRenderer.MeasureText(text, font).Height),
                   text, font, color));
             }));
 
-         SetGlobal(LuaKeys.UI.AddButton, (Action<string, double, double, double, double, string, double, string, string, string, DynValue>)
-            ((text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, id, callback) => {
+         SetGlobal(LuaKeys.UI.AddButton, (Action<string, string, double, double, double, double, string, double, string, string, string, DynValue>)
+            ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, imageKey, callback) => {
                Color color = ColorTranslator.FromHtml(colorHex);
 
                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
@@ -50,12 +56,16 @@ namespace KUpdater.Scripting {
 
                Font font = new(fontName, (float)fontSize, style);
 
-               var button = new UIButton(
-                  () => new Rectangle((int)x, (int)y, (int)width, (int)height), text, font, color, id,
+               var button = new UIButton(id,
+                  () => new Rectangle((int)x, (int)y, (int)width, (int)height), text, font, color, imageKey,
                   () => CallDynFunction(callback));
 
                _uiElementManager.Add(button);
             }));
+
+
+         SetGlobal("update_label", (Action<string, string>)((id, text) => { _uiElementManager.UpdateLabel(id, text); }));
+         SetGlobal("reinit_theme", (Action)(() => ReInitTheme()));
 
 
          SetGlobal("open_website", (Action<string>)((url) => {
@@ -71,7 +81,6 @@ namespace KUpdater.Scripting {
                Console.WriteLine($"Failed to open website: {ex.Message}");
             }
          }));
-
 
          SetGlobal(LuaKeys.Actions.StartGame, (Action)(() => GameLauncher.StartGame()));
          SetGlobal(LuaKeys.Actions.OpenSettings, (Action)(() => GameLauncher.OpenSettings()));

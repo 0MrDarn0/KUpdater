@@ -2,6 +2,7 @@
 
 namespace KUpdater.UI {
    public class UICopyrightLabel : IUIElement {
+      public string Id { get; }
       private readonly Func<Rectangle> _boundsFunc;
       public Rectangle Bounds => _boundsFunc();
       public bool Visible { get; set; } = true;
@@ -9,7 +10,8 @@ namespace KUpdater.UI {
       public Font Font { get; set; }
       public Color BaseColor { get; set; }
 
-      public UICopyrightLabel(Func<Rectangle> boundsFunc, string text, Font font, Color baseColor) {
+      public UICopyrightLabel(string id, Func<Rectangle> boundsFunc, string text, Font font, Color baseColor) {
+         Id = id;
          _boundsFunc = boundsFunc;
          Text = text;
          Font = font;
