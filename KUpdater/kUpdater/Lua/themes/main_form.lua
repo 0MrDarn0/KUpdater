@@ -1,6 +1,4 @@
-﻿--__debug_globals()
-
--- Hintergrund-Konfiguration
+﻿-- Hintergrund-Konfiguration
 local background_config = {
     top_left = "main_tl_default.png",
     top_center = "main_tc_default.png",
@@ -102,15 +100,6 @@ local function init_window()
     add_button("btn_start", "Start", width - 150, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() start_game() end)
     add_button("btn_settings", "Settings", width - 255, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() open_settings() end)
     add_button("btn_website", "Website", width - 360, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() open_website("https://google.com") end)
-
-    --debug_update_plan()
-
-    -- Create an Updater instance
-    --local updater = Updater("http://darn.bplaced.net/", "api/manifest.php")
-
-    -- Call the sync method to print the update plan
-    --updater:PrintUpdatePlan()
-
 
 end
 

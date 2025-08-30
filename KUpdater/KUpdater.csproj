@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -16,6 +16,7 @@
 		<PublishSingleFile>true</PublishSingleFile>
 		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
 
 	
@@ -88,7 +89,6 @@
 	<ItemGroup>
 	  <PackageReference Include="MoonSharp" Version="2.0.0" />
 	  <PackageReference Include="SkiaSharp" Version="3.119.0" />
-	  <PackageReference Include="SkiaSharp.Views.Desktop.Common" Version="3.119.0" />
 	  <PackageReference Include="SkiaSharp.Views.WindowsForms" Version="3.119.0" />
 	</ItemGroup>
 
