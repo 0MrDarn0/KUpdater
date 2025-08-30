@@ -1,5 +1,4 @@
-﻿using KUpdater.Core;
-using KUpdater.UI;
+﻿using KUpdater.UI;
 using MoonSharp.Interpreter;
 using System.Diagnostics;
 
@@ -22,7 +21,7 @@ namespace KUpdater.Scripting {
          base.RegisterGlobals();
 
          ExposeToLua("UIElementManager", _uiElementManager);
-         ExposeToLua<Updater>();
+         //ExposeToLua<Updater>();
 
          SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
             return DynValue.NewTuple(

@@ -46,7 +46,7 @@ namespace KUpdater.Scripting {
       protected void SetGlobal(string name, object value) =>
          _script.Globals[name] = DynValue.FromObject(_script, value);
 
-      public void ExposeToLua<T>(string globalName = null, T instance = default) {
+      public void ExposeToLua<T>(string? globalName = null, T? instance = default) {
          var type = typeof(T);
          globalName ??= type.Name;
 
