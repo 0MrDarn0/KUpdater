@@ -86,16 +86,22 @@ namespace KUpdater.Scripting {
          SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
       }
 
+      public void ClearImageCache() {
+         foreach (var img in _imageCache.Values)
+            img?.Dispose();
+         _imageCache.Clear();
+      }
+
       public void LoadTheme(string themeName) {
          _currentTheme = themeName;
+         ClearImageCache();
          CallFunction(LuaKeys.Theme.LoadTheme, themeName);
          CallDynFunction(GetTheme().Get("init"));
       }
 
       public void ReInitTheme() {
          if (!string.IsNullOrEmpty(_currentTheme)) {
-            _uiElementManager.ClearLabels();
-            _uiElementManager.ClearButtons();
+            _uiElementManager.ClearAll();
             LoadTheme(_currentTheme);
          }
       }

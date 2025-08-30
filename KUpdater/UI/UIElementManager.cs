@@ -4,14 +4,9 @@ namespace KUpdater.UI {
    public class UIElementManager {
       private readonly List<IUIElement> _elements = new();
       public void Add(IUIElement element) => _elements.Add(element);
-
-      public void ClearLabels() {
-         _elements.RemoveAll(e => e is UILabel);
-      }
-
-      public void ClearButtons() {
-         _elements.RemoveAll(e => e is UIButton);
-      }
+      public void ClearAll() => _elements.Clear();
+      public void ClearLabels() => _elements.RemoveAll(e => e is UILabel);
+      public void ClearButtons() => _elements.RemoveAll(e => e is UIButton);
 
       public T? FindById<T>(string id) where T : class, IUIElement
          => _elements.OfType<T>().FirstOrDefault(e => e.Id == id);
