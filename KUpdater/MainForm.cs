@@ -1,4 +1,5 @@
-﻿using KUpdater.Scripting;
+﻿using KUpdater.Core;
+using KUpdater.Scripting;
 using KUpdater.UI;
 
 namespace KUpdater {
@@ -53,9 +54,24 @@ namespace KUpdater {
          base.OnFormClosed(e);
       }
 
-      protected override void OnShown(EventArgs e) {
+      protected override async void OnShown(EventArgs e) {
          base.OnShown(e);
          _uiRenderer?.Redraw();
+
+         try {
+            MessageBox.Show("Starte Updatecheck...");
+
+            string metadataUrl = "http://darn.bplaced.net/KUpdater/update.json";
+            string rootDir = AppDomain.CurrentDomain.BaseDirectory;
+
+            var source = new HttpUpdateSource();
+            var updater = new Updater(source, metadataUrl, rootDir);
+
+            await updater.RunUpdateAsync();
+         }
+         catch (Exception ex) {
+            MessageBox.Show($"Update fehlgeschlagen: {ex.Message}", "Updater", MessageBoxButtons.OK, MessageBoxIcon.Error);
+         }
       }
 
       protected override void OnResize(EventArgs e) {
