@@ -62,9 +62,13 @@ namespace KUpdater {
          base.OnShown(e);
          _uiRenderer?.Redraw();
 
+         var configLoader = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig");
+         UpdaterConfig config = configLoader.Load();
+
+
          var updater = new Updater(new HttpUpdateSource(),
-        "http://darn.bplaced.net/KUpdater/update.json",
-        AppDomain.CurrentDomain.BaseDirectory);
+            config.Url,
+            AppDomain.CurrentDomain.BaseDirectory);
 
          // Status an Lua weiterreichen
          updater.StatusChanged += msg =>
