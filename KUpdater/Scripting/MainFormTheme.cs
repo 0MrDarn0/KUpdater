@@ -1,6 +1,7 @@
 ﻿using KUpdater.UI;
 using MoonSharp.Interpreter;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace KUpdater.Scripting {
 
@@ -9,19 +10,24 @@ namespace KUpdater.Scripting {
       private readonly UIElementManager _uiElementManager;
       private readonly Dictionary<string, Image> _imageCache = new();
       private string? _currentTheme;
+      public string _lastStatus = "Status: Waiting...";
+      public double _lastProgress = 0.0;
 
       public MainFormTheme(Form form, UIElementManager uiElementManager) : base("theme_loader.lua") {
          _form = form;
          _uiElementManager = uiElementManager;
          SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
          LoadTheme("main_form");
+
+      }
+
+      public void ApplyLastState() {
+         _uiElementManager.UpdateLabel("lb_update_status", _lastStatus);
+         _uiElementManager.UpdateProgressBar("pb_update_progress", _lastProgress);
       }
 
       protected override void RegisterGlobals() {
          base.RegisterGlobals();
-
-         ExposeToLua("UIElementManager", _uiElementManager);
-         //ExposeToLua<Updater>();
 
          SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
             return DynValue.NewTuple(
@@ -30,45 +36,61 @@ namespace KUpdater.Scripting {
          }));
 
 
-         SetGlobal(LuaKeys.UI.AddLabel, (Action<string, string, double, double, string, string, double, string>)
-            ((id, text, x, y, colorHex, fontName, fontSize, fontStyle) => {
-               Color color = ColorTranslator.FromHtml(colorHex);
+         SetGlobal(LuaKeys.UI.AddLabel,
+             (Action<string, string, double, double, string, string, double, string>)
+             ((id, text, x, y, colorHex, fontName, fontSize, fontStyle) =>
+             {
+                Color color = ColorTranslator.FromHtml(colorHex);
+                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
+                   style = FontStyle.Regular;
+                Font font = new(fontName, (float)fontSize, style);
 
-               if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                  style = FontStyle.Regular;
-
-               Font font = new(fontName, (float)fontSize, style);
-
-               _uiElementManager.Add(new UILabel(id,
-                  () => new Rectangle((int)x, (int)y,
-                  TextRenderer.MeasureText(text, font).Width,
-                  TextRenderer.MeasureText(text, font).Height),
-                  text, font, color));
-            }));
-
-         SetGlobal(LuaKeys.UI.AddButton, (Action<string, string, double, double, double, double, string, double, string, string, string, DynValue>)
-            ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, imageKey, callback) => {
-               Color color = ColorTranslator.FromHtml(colorHex);
-
-               if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                  style = FontStyle.Regular;
-
-               Font font = new(fontName, (float)fontSize, style);
-
-               var button = new UIButton(id,
-                  () => new Rectangle((int)x, (int)y, (int)width, (int)height), text, font, color, imageKey,
-                  () => CallDynFunction(callback));
-
-               _uiElementManager.Add(button);
-            }));
+                _uiElementManager.Add(new UILabel(id,
+                   () => new Rectangle(
+                      (int)(x < 0 ? _form.Width + x : x), 
+                      (int)(y < 0 ? y : y),                
+                      TextRenderer.MeasureText(text, font).Width,
+                      TextRenderer.MeasureText(text, font).Height),
+                   text, font, color));
+             }));
 
 
-         SetGlobal("add_progressbar", (Action<string, double, double, double, double>)
-            ((id, x, y, width, height) => {
-               var bar = new UIProgressBar(id,
-                  () => new Rectangle((int)x, (int)y, (int)width, (int)height));
-               _uiElementManager.Add(bar);
-            }));
+
+         SetGlobal(LuaKeys.UI.AddButton,
+             (Action<string, string, double, double, double, double, string, double, string, string, string, DynValue>)
+             ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, imageKey, callback) =>
+             {
+                Color color = ColorTranslator.FromHtml(colorHex);
+                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
+                   style = FontStyle.Regular;
+                Font font = new(fontName, (float)fontSize, style);
+
+                var button = new UIButton(
+                   id,
+                   () => new Rectangle(
+                      (int)(x < 0 ? _form.Width + x : x),
+                      (int)(y < 0 ? _form.Height + y : y),
+                      (int)width, (int)height),
+                   text, font, color, imageKey, () => CallDynFunction(callback));
+                _uiElementManager.Add(button);
+             }));
+
+
+
+         SetGlobal("add_progressbar",
+             (Action<string, double, double, double, double>)
+             ((id, x, y, width, height) =>
+             {
+                var bar = new UIProgressBar(
+                   id,
+                   () => new Rectangle(
+                      (int)(x < 0 ? _form.Width + x : x),
+                      (int)(y < 0 ? _form.Height + y : y),
+                      (int)(width < 0 ? _form.Width + width : width),
+                      (int)height));
+                _uiElementManager.Add(bar);
+             }));
+
 
 
          SetGlobal("update_progress", (Action<string, double>) ((id, value) => { _uiElementManager.UpdateProgressBar(id, value); }));
@@ -93,6 +115,14 @@ namespace KUpdater.Scripting {
          SetGlobal(LuaKeys.Actions.StartGame, (Action)(() => GameLauncher.StartGame()));
          SetGlobal(LuaKeys.Actions.OpenSettings, (Action)(() => GameLauncher.OpenSettings()));
          SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
+
+         // 🔥 Automatische Registrierung aller IUIElement-Klassen
+         foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
+             .Where(t => typeof(IUIElement).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
+            var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!
+            .MakeGenericMethod(type);
+            method.Invoke(this, [null, null]);
+         }
       }
 
       public void ClearImageCache() {
@@ -112,6 +142,7 @@ namespace KUpdater.Scripting {
          if (!string.IsNullOrEmpty(_currentTheme)) {
             _uiElementManager.ClearAll();
             LoadTheme(_currentTheme);
+            ApplyLastState();
          }
       }
 

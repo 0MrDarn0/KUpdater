@@ -1,6 +1,7 @@
 ﻿using KUpdater.Core;
 using KUpdater.Scripting;
 using KUpdater.UI;
+using System.Diagnostics;
 using static KUpdater.Scripting.LuaKeys;
 
 namespace KUpdater {
@@ -19,7 +20,8 @@ namespace KUpdater {
       private readonly MainFormTheme _mainFormTheme;
       private readonly UIRenderer _uiRenderer;
 
-
+      private readonly System.Windows.Forms.Timer _renderTimer;
+      private bool _needsRender;
 
       public MainForm() {
          Instance = this;
@@ -42,6 +44,19 @@ namespace KUpdater {
          );
 
          _uiElementManager.Add(copyrightLabel);
+
+         _renderTimer = new System.Windows.Forms.Timer { Interval = 16 }; // ~60 FPS
+         _renderTimer.Tick += (s, e) =>
+         {
+            if (!_needsRender)
+               return;
+            _needsRender = false;
+
+            // letzten Zustand anwenden
+            _mainFormTheme.ApplyLastState();
+            _uiRenderer.Redraw();
+         };
+         _renderTimer.Start();
       }
 
 
@@ -65,32 +80,29 @@ namespace KUpdater {
          var configLoader = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig");
          UpdaterConfig config = configLoader.Load();
 
+         var updater = new Updater(new HttpUpdateSource(), config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
-         var updater = new Updater(new HttpUpdateSource(),
-            config.Url,
-            AppDomain.CurrentDomain.BaseDirectory);
 
-         // Status an Lua weiterreichen
          updater.StatusChanged += msg =>
          {
-            _mainFormTheme.InvokeFunction("on_update_status", msg);
-            _uiRenderer?.Redraw();
+            _mainFormTheme._lastStatus = msg;
+            _needsRender = true;
          };
 
-         // Progress an Lua weiterreichen
          updater.ProgressChanged += val =>
          {
-            _mainFormTheme.InvokeFunction("on_update_progress", val / 100.0);
-            _uiRenderer?.Redraw();
+            _mainFormTheme._lastProgress = val / 100.0;
+            _needsRender = true;
          };
 
          await updater.RunUpdateAsync();
       }
 
+
       protected override void OnResize(EventArgs e) {
          base.OnResize(e);
          _mainFormTheme?.ReInitTheme();
-         _uiRenderer?.Redraw();
+         _needsRender = true;
       }
 
       protected override void OnMouseMove(MouseEventArgs e) {

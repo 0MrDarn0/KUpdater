@@ -5,6 +5,10 @@ internal static class NativeMethods {
    public const byte AC_SRC_OVER = 0x00;
    public const byte AC_SRC_ALPHA = 0x01;
    public const int SW_RESTORE = 9;
+   public const uint RDW_INVALIDATE = 0x0001;
+   public const uint RDW_UPDATENOW = 0x0100;
+   public const uint RDW_FRAME = 0x0400;
+   public const uint RDW_ALLCHILDREN = 0x0080;
 
    [DllImport("user32.dll", SetLastError = true)]
    public static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, ref Point pptDst,
@@ -44,6 +48,12 @@ internal static class NativeMethods {
 
    [DllImport("user32.dll")]
    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+   [DllImport("user32.dll")]
+   public static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+   [DllImport("user32.dll", SetLastError = true)]
+   public static extern bool RedrawWindow(IntPtr hWnd, IntPtr lprcUpdate, IntPtr hrgnUpdate, uint flags);
+
 
 
 }

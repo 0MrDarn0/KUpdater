@@ -21,6 +21,8 @@ namespace KUpdater.UI {
          if (_form.IsDisposed || !_form.IsHandleCreated)
             return;
 
+         //Debug.WriteLine($"[UIRenderer] Redraw at {DateTime.Now:HH:mm:ss.fff}");
+
          int width = _form.Width;
          int height = _form.Height;
 
@@ -41,6 +43,8 @@ namespace KUpdater.UI {
       }
 
       public void SetBitmap(Bitmap bitmap, byte opacity) {
+         //Debug.WriteLine($"UpdateLayeredWindow called at {DateTime.Now:HH:mm:ss.fff}");
+
          var screenDc = NativeMethods.GetDC(IntPtr.Zero);
          var memDc = NativeMethods.CreateCompatibleDC(screenDc);
          var hBitmap = bitmap.GetHbitmap(Color.FromArgb(0));

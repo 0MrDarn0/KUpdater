@@ -1,4 +1,5 @@
 ﻿using SkiaSharp;
+using System.Diagnostics;
 
 namespace KUpdater.UI {
    public class UIElementManager {
@@ -13,15 +14,16 @@ namespace KUpdater.UI {
 
       public void UpdateLabel(string id, string newText) {
          var label = FindById<UILabel>(id);
-         if (label != null)
-            label.Text = newText;
+         //Debug.WriteLine($"UpdateLabel {id} -> {newText}, found={label != null}");
+         label?.Text = newText;
       }
 
       public void UpdateProgressBar(string id, double value) {
          var bar = FindById<UIProgressBar>(id);
-         if (bar != null)
-            bar.Progress = (float)Math.Clamp(value, 0.0, 1.0);
+         //Debug.WriteLine($"UpdateProgress {id} -> {value}, found={bar != null}");
+         bar?.Progress = (float)Math.Clamp(value, 0.0, 1.0);
       }
+
 
       public void Draw(Graphics g) {
          foreach (var el in _elements)
