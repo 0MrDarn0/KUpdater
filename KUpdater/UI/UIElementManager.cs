@@ -17,6 +17,12 @@ namespace KUpdater.UI {
             label.Text = newText;
       }
 
+      public void UpdateProgressBar(string id, double value) {
+         var bar = FindById<UIProgressBar>(id);
+         if (bar != null)
+            bar.Progress = (float)Math.Clamp(value, 0.0, 1.0);
+      }
+
       public void Draw(Graphics g) {
          foreach (var el in _elements)
             if (el.Visible)

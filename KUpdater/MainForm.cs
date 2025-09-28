@@ -1,6 +1,7 @@
 ﻿using KUpdater.Core;
 using KUpdater.Scripting;
 using KUpdater.UI;
+using static KUpdater.Scripting.LuaKeys;
 
 namespace KUpdater {
    public partial class MainForm : Form {
@@ -17,6 +18,8 @@ namespace KUpdater {
       private readonly UIElementManager _uiElementManager;
       private readonly MainFormTheme _mainFormTheme;
       private readonly UIRenderer _uiRenderer;
+
+
 
       public MainForm() {
          Instance = this;
@@ -41,6 +44,7 @@ namespace KUpdater {
          _uiElementManager.Add(copyrightLabel);
       }
 
+
       protected override CreateParams CreateParams {
          get {
             var cp = base.CreateParams;
@@ -58,20 +62,25 @@ namespace KUpdater {
          base.OnShown(e);
          _uiRenderer?.Redraw();
 
-         try {
-            MessageBox.Show("Starte Updatecheck...");
+         var updater = new Updater(new HttpUpdateSource(),
+        "http://darn.bplaced.net/KUpdater/update.json",
+        AppDomain.CurrentDomain.BaseDirectory);
 
-            string metadataUrl = "http://darn.bplaced.net/KUpdater/update.json";
-            string rootDir = AppDomain.CurrentDomain.BaseDirectory;
+         // Status an Lua weiterreichen
+         updater.StatusChanged += msg =>
+         {
+            _mainFormTheme.InvokeFunction("on_update_status", msg);
+            _uiRenderer?.Redraw();
+         };
 
-            var source = new HttpUpdateSource();
-            var updater = new Updater(source, metadataUrl, rootDir);
+         // Progress an Lua weiterreichen
+         updater.ProgressChanged += val =>
+         {
+            _mainFormTheme.InvokeFunction("on_update_progress", val / 100.0);
+            _uiRenderer?.Redraw();
+         };
 
-            await updater.RunUpdateAsync();
-         }
-         catch (Exception ex) {
-            MessageBox.Show($"Update fehlgeschlagen: {ex.Message}", "Updater", MessageBoxButtons.OK, MessageBoxIcon.Error);
-         }
+         await updater.RunUpdateAsync();
       }
 
       protected override void OnResize(EventArgs e) {

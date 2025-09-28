@@ -101,7 +101,23 @@ local function init_window()
     add_button("btn_settings", "Settings", width - 255, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() open_settings() end)
     add_button("btn_website", "Website", width - 360, height - 70, 97, 22, btn_font, btn_font_size, btn_font_style, btn_color, "btn_default", function() open_website("https://google.com") end)
 
+    -- Status-Label hinzufügen
+    add_label("lb_update_status", "Status: Waiting...", 27, height - 50, "#FFFFFF", "Segoe UI", 10, "Regular")
+
+    -- Progressbar hinzufügen
+    add_progressbar("pb_update_progress", 27, height - 30, width - 53, 5)
+
 end
+
+
+function on_update_status(message)
+    update_label("lb_update_status", message)
+end
+
+function on_update_progress(value)
+    update_progress("pb_update_progress", value)
+end
+
 
 
 -- Rückgabe der gesamten Fensterdefinition

@@ -63,6 +63,15 @@ namespace KUpdater.Scripting {
             }));
 
 
+         SetGlobal("add_progressbar", (Action<string, double, double, double, double>)
+            ((id, x, y, width, height) => {
+               var bar = new UIProgressBar(id,
+                  () => new Rectangle((int)x, (int)y, (int)width, (int)height));
+               _uiElementManager.Add(bar);
+            }));
+
+
+         SetGlobal("update_progress", (Action<string, double>) ((id, value) => { _uiElementManager.UpdateProgressBar(id, value); }));
          SetGlobal("update_label", (Action<string, string>)((id, text) => { _uiElementManager.UpdateLabel(id, text); }));
          SetGlobal("reinit_theme", (Action)(() => ReInitTheme()));
 

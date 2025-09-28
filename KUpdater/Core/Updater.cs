@@ -1,17 +1,19 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
-using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace KUpdater.Core {
-
    public class Updater {
       private readonly IUpdateSource _source;
       private readonly string _metadataUrl;
       private readonly string _rootDirectory;
       private readonly string _localVersionFile;
+
+      public event Action<string>? StatusChanged;
+      public event Action<int>? ProgressChanged;
 
       public Updater(IUpdateSource source, string metadataUrl, string rootDirectory) {
          _source = source ?? throw new ArgumentNullException(nameof(source));
@@ -22,7 +24,7 @@ namespace KUpdater.Core {
 
       public async Task RunUpdateAsync() {
          try {
-            Console.WriteLine("Checking for updates...");
+            StatusChanged?.Invoke("Prüfe Version...");
 
             var metadata = await GetMetadataAsync();
             var currentVersion = GetLocalVersion();
@@ -32,7 +34,7 @@ namespace KUpdater.Core {
             if (!needsUpdate) {
                foreach (var file in metadata.Files) {
                   var localFile = new FileInfo(Path.Combine(_rootDirectory, file.Path));
-                  if (!localFile.VerifySha256(file.Sha256)) {
+                  if (!localFile.Exists || ComputeSha256(localFile.FullName) != file.Sha256) {
                      needsUpdate = true;
                      break;
                   }
@@ -40,18 +42,18 @@ namespace KUpdater.Core {
             }
 
             if (!needsUpdate) {
-               Console.WriteLine($"Already up to date (v{currentVersion}).");
+               StatusChanged?.Invoke($"Bereits aktuell (v{currentVersion}).");
                return;
             }
 
-            Console.WriteLine($"Update required: {currentVersion} → {metadata.Version}");
-            await DownloadAndExtractAsync(metadata.PackageUrl);
+            StatusChanged?.Invoke($"Update erforderlich: {currentVersion} → {metadata.Version}");
+            await DownloadAndExtractAsync(metadata);
 
             SaveLocalVersion(metadata.Version);
-            Console.WriteLine("Update applied successfully.");
+            StatusChanged?.Invoke("Update erfolgreich angewendet.");
          }
          catch (Exception ex) {
-            Console.Error.WriteLine($"Update failed: {ex.Message}");
+            StatusChanged?.Invoke($"Update fehlgeschlagen: {ex.Message}");
          }
       }
 
@@ -70,16 +72,68 @@ namespace KUpdater.Core {
          File.WriteAllText(_localVersionFile, version);
       }
 
-      private async Task DownloadAndExtractAsync(string packageUrl) {
+      private async Task DownloadAndExtractAsync(UpdateMetadata metadata) {
          string tempZip = Path.Combine(Path.GetTempPath(), "update.zip");
 
-         await using (var fs = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None))
-         await using (var stream = await _source.GetPackageStreamAsync(packageUrl)) {
-            await stream.CopyToAsync(fs);
+         StatusChanged?.Invoke("Lade Updatepaket...");
+
+         await using (var stream = await _source.GetPackageStreamAsync(metadata.PackageUrl))
+         await using (var fs = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None)) {
+            byte[] buffer = new byte[8192];
+            long totalRead = 0;
+
+            long totalLength = await _source.GetPackageSizeAsync(metadata.PackageUrl) ?? -1;
+
+            int read;
+            while ((read = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0) {
+               await fs.WriteAsync(buffer, 0, read);
+               totalRead += read;
+
+               if (totalLength > 0) {
+                  int percent = (int)((totalRead * 100L) / totalLength);
+                  ProgressChanged?.Invoke(percent);
+               }
+            }
          }
 
-         ZipFile.ExtractToDirectory(tempZip, _rootDirectory, overwriteFiles: true);
+         StatusChanged?.Invoke("Entpacke Dateien...");
+
+         using (var archive = ZipFile.OpenRead(tempZip)) {
+            int count = archive.Entries.Count;
+            int current = 0;
+
+            foreach (var entry in archive.Entries) {
+               string destinationPath = Path.Combine(_rootDirectory, entry.FullName);
+               Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+               entry.ExtractToFile(destinationPath, overwrite: true);
+
+               // Hash prüfen
+               var metaFile = Array.Find(metadata.Files, f =>
+                string.Equals(f.Path.Replace("\\", "/"), entry.FullName.Replace("\\", "/"), StringComparison.OrdinalIgnoreCase));
+
+               if (metaFile != null) {
+                  string actualHash = ComputeSha256(destinationPath);
+                  if (!string.Equals(actualHash, metaFile.Sha256, StringComparison.OrdinalIgnoreCase)) {
+                     throw new InvalidDataException($"Hash mismatch für {entry.FullName}");
+                  }
+               }
+
+               current++;
+               int percent = 100 * current / count;
+               ProgressChanged?.Invoke(percent);
+            }
+         }
+
          File.Delete(tempZip);
+         StatusChanged?.Invoke("Update abgeschlossen.");
+      }
+
+
+      private static string ComputeSha256(string filePath) {
+         using var sha = SHA256.Create();
+         using var stream = File.OpenRead(filePath);
+         var hash = sha.ComputeHash(stream);
+         return BitConverter.ToString(hash).Replace("-", "").ToUpperInvariant();
       }
    }
 
@@ -93,18 +147,4 @@ namespace KUpdater.Core {
       public string Path { get; set; } = "";
       public string Sha256 { get; set; } = "";
    }
-
 }
-
-
-
-   /*
-   {
-     "version": "1.2.3",
-     "files": [
-       { "path": "app.exe", "sha256": "ABC123..." },
-       { "path": "lib.dll", "sha256": "DEF456..." }
-     ],
-     "packageUrl": "https://example.com/update.zip"
-   }
-    */

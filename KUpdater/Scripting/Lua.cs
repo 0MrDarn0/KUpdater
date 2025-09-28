@@ -40,6 +40,14 @@ namespace KUpdater.Scripting {
          return CallDynFunction(func, args);
       }
 
+      public DynValue InvokeFunction(DynValue func, params object[] args) => CallDynFunction(func, args);
+
+      public DynValue InvokeFunction(string functionName, params object[] args) {
+         var func = _script.Globals.Get(functionName);
+         return CallDynFunction(func, args);
+      }
+
+
       protected Table GetGlobalTable(string name) =>
          _script.Globals.Get(name).Type == DataType.Table ? _script.Globals.Get(name).Table : new Table(_script);
 
