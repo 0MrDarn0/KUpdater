@@ -56,5 +56,6 @@ secrets.json
 *.g.i.cs
 
 
-# Nur die benutzerspezifischen PublishProfile-Dateien ignorieren
-Properties/PublishProfiles/*.pubxml.user
+# Benutzer-spezifische Publish-Profile ausschließen
+*.pubxml.user
+
