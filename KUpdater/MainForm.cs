@@ -1,8 +1,6 @@
 ﻿using KUpdater.Core;
 using KUpdater.Scripting;
 using KUpdater.UI;
-using System.Diagnostics;
-using static KUpdater.Scripting.LuaKeys;
 
 namespace KUpdater {
    public partial class MainForm : Form {
@@ -36,23 +34,12 @@ namespace KUpdater {
          StartPosition = FormStartPosition.CenterScreen;
          DoubleBuffered = true;
 
-         var copyrightLabel = new UICopyrightLabel("lb_copyright",
-             () => new Rectangle(Width - 75, Height - 44, 200, 30),
-             "© 2025 Darn",
-             new Font("Segoe UI", 6, FontStyle.Bold),
-             Color.LightGoldenrodYellow
-         );
-
-         _uiElementManager.Add(copyrightLabel);
-
          _renderTimer = new System.Windows.Forms.Timer { Interval = 16 }; // ~60 FPS
-         _renderTimer.Tick += (s, e) =>
-         {
+         _renderTimer.Tick += (s, e) => {
             if (!_needsRender)
                return;
-            _needsRender = false;
 
-            // letzten Zustand anwenden
+            _needsRender = false;
             _mainFormTheme.ApplyLastState();
             _uiRenderer.Redraw();
          };
@@ -83,14 +70,12 @@ namespace KUpdater {
          var updater = new Updater(new HttpUpdateSource(), config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
 
-         updater.StatusChanged += msg =>
-         {
+         updater.StatusChanged += msg => {
             _mainFormTheme._lastStatus = msg;
             _needsRender = true;
          };
 
-         updater.ProgressChanged += val =>
-         {
+         updater.ProgressChanged += val => {
             _mainFormTheme._lastProgress = val / 100.0;
             _needsRender = true;
          };

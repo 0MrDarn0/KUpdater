@@ -1,9 +1,6 @@
-﻿using System;
-using System.IO;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Collections.Generic;
 
 class UpdateBuilder {
    static void Main(string[] args) {

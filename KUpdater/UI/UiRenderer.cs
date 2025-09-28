@@ -1,9 +1,8 @@
-﻿using KUpdater.Scripting;
-using SkiaSharp;
-using System.Data;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using KUpdater.Scripting;
+using SkiaSharp;
 
 namespace KUpdater.UI {
    public class UIRenderer {

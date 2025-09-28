@@ -1,6 +1,4 @@
-﻿using System.Net.Http;
-
-namespace KUpdater.Core {
+﻿namespace KUpdater.Core {
 
    public class HttpUpdateSource : IUpdateSource {
       private readonly HttpClient _http;

@@ -1,7 +1,7 @@
-﻿using KUpdater.UI;
-using MoonSharp.Interpreter;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
+using KUpdater.UI;
+using MoonSharp.Interpreter;
 
 namespace KUpdater.Scripting {
 
@@ -37,29 +37,27 @@ namespace KUpdater.Scripting {
 
 
          SetGlobal(LuaKeys.UI.AddLabel,
-             (Action<string, string, double, double, string, string, double, string>)
-             ((id, text, x, y, colorHex, fontName, fontSize, fontStyle) =>
-             {
-                Color color = ColorTranslator.FromHtml(colorHex);
-                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                   style = FontStyle.Regular;
-                Font font = new(fontName, (float)fontSize, style);
-
-                _uiElementManager.Add(new UILabel(id,
-                   () => new Rectangle(
-                      (int)(x < 0 ? _form.Width + x : x), 
-                      (int)(y < 0 ? y : y),                
-                      TextRenderer.MeasureText(text, font).Width,
-                      TextRenderer.MeasureText(text, font).Height),
-                   text, font, color));
-             }));
+            (Action<string, string, double, double, string, string, double, string>)
+            ((id, text, x, y, colorHex, fontName, fontSize, fontStyle) => {
+               Color color = ColorTranslator.FromHtml(colorHex);
+               if (!Enum.TryParse(fontStyle, true, out FontStyle style))
+                  style = FontStyle.Regular;
+               Font font = new(fontName, (float)fontSize, style);
+               _uiElementManager.Add(new UILabel(
+                  id,
+                  () => new Rectangle(
+                     (int)(x < 0 ? _form.Width + x : x),
+                     (int)(y < 0 ? _form.Height + y : y),
+                     TextRenderer.MeasureText(text, font).Width,
+                     TextRenderer.MeasureText(text, font).Height),
+                  text, font, color));
+            }));
 
 
 
          SetGlobal(LuaKeys.UI.AddButton,
              (Action<string, string, double, double, double, double, string, double, string, string, string, DynValue>)
-             ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, imageKey, callback) =>
-             {
+             ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, imageKey, callback) => {
                 Color color = ColorTranslator.FromHtml(colorHex);
                 if (!Enum.TryParse(fontStyle, true, out FontStyle style))
                    style = FontStyle.Regular;
@@ -79,8 +77,7 @@ namespace KUpdater.Scripting {
 
          SetGlobal("add_progressbar",
              (Action<string, double, double, double, double>)
-             ((id, x, y, width, height) =>
-             {
+             ((id, x, y, width, height) => {
                 var bar = new UIProgressBar(
                    id,
                    () => new Rectangle(
@@ -93,7 +90,7 @@ namespace KUpdater.Scripting {
 
 
 
-         SetGlobal("update_progress", (Action<string, double>) ((id, value) => { _uiElementManager.UpdateProgressBar(id, value); }));
+         SetGlobal("update_progress", (Action<string, double>)((id, value) => { _uiElementManager.UpdateProgressBar(id, value); }));
          SetGlobal("update_label", (Action<string, string>)((id, text) => { _uiElementManager.UpdateLabel(id, text); }));
          SetGlobal("reinit_theme", (Action)(() => ReInitTheme()));
 

@@ -1,5 +1,4 @@
 ﻿using SkiaSharp;
-using System.Diagnostics;
 
 namespace KUpdater.UI {
    public class UIElementManager {

@@ -1,4 +1,4 @@
-UpdaterConfig = {
+﻿UpdaterConfig = {
     Url = "http://darn.bplaced.net/KUpdater/update.json",
     Network = {
         Proxy = {

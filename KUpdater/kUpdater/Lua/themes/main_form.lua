@@ -43,10 +43,10 @@ return {
 
   -- Init-Funktion direkt inline
   init = function()
-    --local width, height = get_window_size()
+    local width, height = get_window_size()
 
     -- Title
-    add_label("lb_title", "kUpdater", 35, -10, titel_color, "Chiller", 40, "Italic")
+    add_label("lb_title", "kUpdater", 35, 0, titel_color, "Chiller", 40, "Italic")
     add_label("lb_subtitle", "칼온라인",  -115, 12, subtitle_color, "Malgun Gothic", 13, "Bold")
 
     -- Buttons
@@ -72,9 +72,10 @@ return {
 
 
     -- Status-Label
-    add_label("lb_update_status", "Status: Waiting...", 27, -50, "#FFFFFF", "Segoe UI", 10, "Regular")
+    add_label("lb_update_status", "Status: Waiting...", 27, height - 50, "#FFFFFF", "Segoe UI", 10, "Regular")
+
     -- Progressbar
-    add_progressbar("pb_update_progress", 27, -30, -53, 5)
+    add_progressbar("pb_update_progress", 27, height- 30, -53, 5)
 
   end,
 

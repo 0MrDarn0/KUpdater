@@ -1,5 +1,5 @@
-﻿using MoonSharp.Interpreter;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using MoonSharp.Interpreter;
 
 namespace KUpdater.Scripting {
 
