@@ -43,4 +43,16 @@ Lua for scripting and theme control
 SkiaSharp for advanced graphics
 
 📜 License
-This project is licensed under the GPL‑3.0.
+This project is licensed under the GNU General Public License v3.0 (GPL‑3.0).
+
+That means:
+
+✅ You are free to use this software for any purpose.
+
+✅ You are free to study, modify, and improve the code.
+
+✅ You are free to share the software and your modifications with others.
+
+🔄 If you distribute modified versions, you must also share the source code under the same license.
+
+🙌 Attribution is required — please keep the original copyright notices and clearly mark your changes.
