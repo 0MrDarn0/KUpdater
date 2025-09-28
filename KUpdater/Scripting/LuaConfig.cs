@@ -48,7 +48,7 @@ namespace KUpdater.Scripting {
             if (prop.PropertyType == typeof(string))
                converted = val.CastToString();
             else if (prop.PropertyType == typeof(int))
-               converted = (int)val.CastToNumber();
+               converted = (int)(val.CastToNumber() ?? 0);
             else if (prop.PropertyType == typeof(double))
                converted = val.CastToNumber();
             else if (prop.PropertyType == typeof(bool))
