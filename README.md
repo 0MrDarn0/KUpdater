@@ -1,43 +1,46 @@
 📦 KUpdater – KalOnline Client Updater
+KUpdater is a modern, fully customizable launcher and updater for KalOnline. It combines a sleek, theme‑driven UI with Lua scripting flexibility and robust update handling.
 
 ✨ Features
-🎨 Theme‑System
+🎨 Theme System
+Fully configurable background images, layout offsets, and color schemes
 
-Hintergrundgrafiken, Layout‑Offsets und Farben frei konfigurierbar
+Themes defined in Lua and switchable on the fly
 
-Themes werden in Lua definiert und können live gewechselt werden
-
-Fallback‑Mechanismus, falls Dateien fehlen oder fehlerhaft sind
-
+Built‑in fallback mechanism if theme files are missing or corrupted
 
 🖌 Custom Rendering
+Entirely custom‑drawn interface (no default WinForms look)
 
-Komplett selbst gezeichnete Oberfläche (kein Standard‑WinForms‑Look)
+Support for transparent windows and anti‑aliasing for smooth visuals
 
-Unterstützung für transparente Fenster und Anti‑Aliasing
+⚙ Lua Integration
+Create UI elements such as labels and buttons directly from Lua
 
+Lua API for window sizing, theme loading, and UI interaction
 
-⚙ Lua‑Integration
+Enables dynamic, script‑driven customization
 
-UI‑Elemente wie Labels und Buttons können direkt aus Lua erstellt werden
+🖱 UI System
+IUIElement interface for building custom controls
 
-Lua‑API für Fenstergröße, Theme‑Laden und UI‑Interaktion
+Includes UIButton and UILabel as reference implementations
 
+Hover and click effects with theme‑dependent graphics
 
-🖱 UI‑System
+🚀 Launcher Functions
+Launch the game with custom parameters
 
-IUIElement‑Interface für eigene Steuerelemente
+Open game settings directly from the launcher
 
-UIButton und UILabel als Beispiele
+Automatically closes after the game starts
 
-Hover‑ und Klick‑Effekte mit themenabhängigen Grafiken
+🔧 Tech Stack
+C# / .NET for core logic and UI rendering
 
+Lua for scripting and theme control
 
-🚀 Launcher‑Funktionen
+SkiaSharp for advanced graphics
 
-Startet das Spiel mit Parametern
-
-Öffnet direkt die Spieleinstellungen
-
-Schließt sich automatisch nach dem Start
-
+📜 License
+This project is licensed under the GPL‑3.0.
