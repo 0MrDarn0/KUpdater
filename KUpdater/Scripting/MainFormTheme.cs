@@ -2,14 +2,18 @@
 using System.Reflection;
 using KUpdater.UI;
 using MoonSharp.Interpreter;
+using SkiaSharp;
 
 namespace KUpdater.Scripting {
 
-   public class MainFormTheme : Lua, ITheme {
+   public class MainFormTheme : Lua, ITheme, IDisposable {
       private readonly Form _form;
       private readonly UIElementManager _uiElementManager;
-      private readonly Dictionary<string, Image> _imageCache = new();
+      private readonly Dictionary<string, SKBitmap> _imageCache = [];
       private string? _currentTheme;
+      private ThemeBackground? _cachedBackground;
+      private ThemeLayout? _cachedLayout;
+
       public string _lastStatus = "Status: Waiting...";
       public double _lastProgress = 0.0;
 
@@ -25,6 +29,10 @@ namespace KUpdater.Scripting {
          _uiElementManager.UpdateLabel("lb_update_status", _lastStatus);
          _uiElementManager.UpdateProgressBar("pb_update_progress", _lastProgress);
       }
+
+      private void UpdateLabel(string id, string text) => _uiElementManager.UpdateLabel(id, text);
+      private void UpdateProgressBar(string id, double value) => _uiElementManager.UpdateProgressBar(id, value);
+
 
       protected override void RegisterGlobals() {
          base.RegisterGlobals();
@@ -90,8 +98,8 @@ namespace KUpdater.Scripting {
 
 
 
-         SetGlobal("update_progress", (Action<string, double>)((id, value) => { _uiElementManager.UpdateProgressBar(id, value); }));
-         SetGlobal("update_label", (Action<string, string>)((id, text) => { _uiElementManager.UpdateLabel(id, text); }));
+         SetGlobal("update_progress", (Action<string, double>)UpdateProgressBar);
+         SetGlobal("update_label", (Action<string, string>)UpdateLabel);
          SetGlobal("reinit_theme", (Action)(() => ReInitTheme()));
 
 
@@ -129,11 +137,24 @@ namespace KUpdater.Scripting {
       }
 
       public void LoadTheme(string themeName) {
+         if (_script == null)
+            throw new ObjectDisposedException(nameof(MainFormTheme));
+
          _currentTheme = themeName;
          ClearImageCache();
+         _cachedBackground = null;
+         _cachedLayout = null;
+
+         // Lua-Funktion "load_theme" aufrufen
          CallFunction(LuaKeys.Theme.LoadTheme, themeName);
-         CallDynFunction(GetTheme().Get("init"));
+
+         // Init-Funktion nur aufrufen, wenn vorhanden
+         var theme = GetTheme();
+         var initFunc = theme.Get("init");
+         if (initFunc.Type == DataType.Function)
+            CallDynFunction(initFunc);
       }
+
 
       public void ReInitTheme() {
          if (!string.IsNullOrEmpty(_currentTheme)) {
@@ -152,23 +173,25 @@ namespace KUpdater.Scripting {
          }
          return value.Table;
       }
+      public ThemeBackground GetBackground() => _cachedBackground ??= BuildBackground();
+      public ThemeLayout GetLayout() => _cachedLayout ??= BuildLayout();
 
-      public ThemeBackground GetBackground() {
+      public ThemeBackground BuildBackground() {
          var bg = GetThemeTable("background");
          return new ThemeBackground {
-            TopLeft = LoadImage(bg, "top_left"),
-            TopCenter = LoadImage(bg, "top_center"),
-            TopRight = LoadImage(bg, "top_right"),
-            RightCenter = LoadImage(bg, "right_center"),
-            BottomRight = LoadImage(bg, "bottom_right"),
-            BottomCenter = LoadImage(bg, "bottom_center"),
-            BottomLeft = LoadImage(bg, "bottom_left"),
-            LeftCenter = LoadImage(bg, "left_center"),
+            TopLeft = LoadSkiaBitmap(bg, "top_left"),
+            TopCenter = LoadSkiaBitmap(bg, "top_center"),
+            TopRight = LoadSkiaBitmap(bg, "top_right"),
+            RightCenter = LoadSkiaBitmap(bg, "right_center"),
+            BottomRight = LoadSkiaBitmap(bg, "bottom_right"),
+            BottomCenter = LoadSkiaBitmap(bg, "bottom_center"),
+            BottomLeft = LoadSkiaBitmap(bg, "bottom_left"),
+            LeftCenter = LoadSkiaBitmap(bg, "left_center"),
             FillColor = ToColor(bg.Get("fill_color"), Color.Black)
          };
       }
 
-      public ThemeLayout GetLayout() {
+      public ThemeLayout BuildLayout() {
          var layout = GetThemeTable("layout");
          return new ThemeLayout {
             TopWidthOffset = (int)(layout.Get("top_width_offset").CastToNumber() ?? 0),
@@ -181,25 +204,60 @@ namespace KUpdater.Scripting {
          };
       }
 
-      private Image LoadImage(Table table, string key) {
+      //private Image LoadImage(Table table, string key) {
+      //   string file = table.Get(key).CastToString();
+      //   if (string.IsNullOrWhiteSpace(file))
+      //      return new Bitmap(1, 1);
+
+      //   if (_imageCache.TryGetValue(file, out var cached))
+      //      return cached;
+
+      //   string path = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", file);
+      //   if (!File.Exists(path))
+      //      return new Bitmap(1, 1);
+
+      //   using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+      //   var img = Image.FromStream(fs);
+      //   _imageCache[file] = img;
+      //   return img;
+      //}
+
+      private SKBitmap LoadSkiaBitmap(Table table, string key) {
          string file = table.Get(key).CastToString();
          if (string.IsNullOrWhiteSpace(file))
-            return new Bitmap(1, 1);
+            return new SKBitmap(1, 1);
 
          if (_imageCache.TryGetValue(file, out var cached))
-            return cached;
+            return (SKBitmap)cached;
 
          string path = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", file);
          if (!File.Exists(path))
-            return new Bitmap(1, 1);
+            return new SKBitmap(1, 1);
 
          using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-         var img = Image.FromStream(fs);
-         _imageCache[file] = img;
-         return img;
+         using var img = Image.FromStream(fs);
+         var skBmp = img.ToSKBitmap();
+         _imageCache[file] = skBmp;
+         return skBmp;
       }
+
 
       private Color ToColor(DynValue val, Color fallback) =>
          val.Type == DataType.String ? ColorTranslator.FromHtml(val.String) : fallback;
+
+      public override void Dispose() {
+         // eigene Ressourcen freigeben
+         foreach (var bmp in _imageCache.Values) {
+            bmp?.Dispose();
+         }
+         _imageCache.Clear();
+
+         _cachedBackground = null;
+         _cachedLayout = null;
+
+         // Basisklasse aufräumen (Lua-Script + Globals)
+         base.Dispose();
+      }
+
    }
 }

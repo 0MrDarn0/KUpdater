@@ -18,8 +18,6 @@ namespace KUpdater {
       private readonly MainFormTheme _mainFormTheme;
       private readonly UIRenderer _uiRenderer;
 
-      private readonly System.Windows.Forms.Timer _renderTimer;
-      private bool _needsRender;
 
       public MainForm() {
          Instance = this;
@@ -34,16 +32,6 @@ namespace KUpdater {
          StartPosition = FormStartPosition.CenterScreen;
          DoubleBuffered = true;
 
-         _renderTimer = new System.Windows.Forms.Timer { Interval = 16 }; // ~60 FPS
-         _renderTimer.Tick += (s, e) => {
-            if (!_needsRender)
-               return;
-
-            _needsRender = false;
-            _mainFormTheme.ApplyLastState();
-            _uiRenderer.Redraw();
-         };
-         _renderTimer.Start();
       }
 
 
@@ -56,13 +44,15 @@ namespace KUpdater {
       }
 
       protected override void OnFormClosed(FormClosedEventArgs e) {
+         _uiRenderer.Dispose();
+         _mainFormTheme.Dispose();
          Instance = null;
          base.OnFormClosed(e);
       }
 
       protected override async void OnShown(EventArgs e) {
          base.OnShown(e);
-         _uiRenderer?.Redraw();
+         _uiRenderer.RequestRender();
 
          var configLoader = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig");
          UpdaterConfig config = configLoader.Load();
@@ -72,12 +62,12 @@ namespace KUpdater {
 
          updater.StatusChanged += msg => {
             _mainFormTheme._lastStatus = msg;
-            _needsRender = true;
+            _uiRenderer.RequestRender();
          };
 
          updater.ProgressChanged += val => {
             _mainFormTheme._lastProgress = val / 100.0;
-            _needsRender = true;
+            _uiRenderer.RequestRender();
          };
 
          await updater.RunUpdateAsync();
@@ -87,7 +77,12 @@ namespace KUpdater {
       protected override void OnResize(EventArgs e) {
          base.OnResize(e);
          _mainFormTheme?.ReInitTheme();
-         _needsRender = true;
+         _uiRenderer.RequestRender();
+      }
+
+      protected override void OnResizeEnd(EventArgs e) {
+         base.OnResizeEnd(e);
+         GC.Collect(); // Nach Resize mal aufräumen
       }
 
       protected override void OnMouseMove(MouseEventArgs e) {
@@ -131,7 +126,7 @@ namespace KUpdater {
 
          // Let UIElementManager handle hover state for all controls
          if (_uiElementManager.MouseMove(e.Location))
-            _uiRenderer.Redraw();
+            _uiRenderer.RequestRender();
       }
 
       protected override void OnMouseDown(MouseEventArgs e) {
@@ -141,7 +136,7 @@ namespace KUpdater {
          // Erst an UIElementManager weitergeben
          bool handled = _uiElementManager.MouseDown(e.Location);
          if (handled) {
-            _uiRenderer.Redraw();
+            _uiRenderer.RequestRender();
             return; // Wenn ein Element reagiert, nicht weiterziehen!
          }
 
@@ -165,7 +160,7 @@ namespace KUpdater {
 
          // Pass to UIElementManager so controls can handle clicks
          if (_uiElementManager.MouseUp(e.Location))
-            _uiRenderer.Redraw();
+            _uiRenderer.RequestRender();
       }
    }
 }

@@ -3,7 +3,7 @@ using MoonSharp.Interpreter;
 
 namespace KUpdater.Scripting {
 
-   public abstract class Lua {
+   public abstract class Lua : IDisposable {
       protected Script _script;
 
       public Lua(string scriptFile) {
@@ -140,6 +140,14 @@ namespace KUpdater.Scripting {
                   throw new ScriptRuntimeException($"Error creating {type.Name}: {ex.Message}");
                }
             });
+         }
+      }
+
+
+      public virtual void Dispose() {
+         if (_script != null) {
+            _script.Globals.Clear();
+            _script = null!;
          }
       }
 

@@ -5,40 +5,88 @@ using KUpdater.Scripting;
 using SkiaSharp;
 
 namespace KUpdater.UI {
-   public class UIRenderer {
+   public class UIRenderer : IDisposable {
       private readonly Form _form;
       private readonly ITheme _theme;
       private readonly UIElementManager _uiElementManager;
+      private readonly System.Windows.Forms.Timer _renderTimer;
+      private bool _needsRender;
+      private SKBitmap? _cachedSkBitmap;
+      private SKSurface? _cachedSurface;
+      private Bitmap? _cachedBmp;
+      private bool _disposed;
+      private readonly SKPaint _fillPaint = new() { IsAntialias = true };
 
       public UIRenderer(Form form, UIElementManager uiElementManager, ITheme theme) {
          _form = form;
          _uiElementManager = uiElementManager;
          _theme = theme;
+
+         _renderTimer = new System.Windows.Forms.Timer { Interval = 33 };
+         _renderTimer.Tick += (s, e) => {
+            if (!_needsRender || _disposed || _form.IsDisposed)
+               return;
+
+            _needsRender = false;
+            (_theme as MainFormTheme)?.ApplyLastState();
+            Redraw();
+         };
+         _renderTimer.Start();
+      }
+
+      public void RequestRender() => _needsRender = true;
+
+      public void EnsureBuffers(int width, int height) {
+         if (_cachedSkBitmap == null || _cachedSkBitmap.Width != width || _cachedSkBitmap.Height != height) {
+            _cachedSurface?.Dispose();
+            _cachedSkBitmap?.Dispose();
+            _cachedSkBitmap = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
+            _cachedSurface = SKSurface.Create(_cachedSkBitmap.Info, _cachedSkBitmap.GetPixels(), _cachedSkBitmap.RowBytes);
+         }
+
+         if (_cachedBmp == null || _cachedBmp.Width != width || _cachedBmp.Height != height) {
+            _cachedBmp?.Dispose();
+            _cachedBmp = new Bitmap(width, height, PixelFormat.Format32bppPArgb);
+         }
       }
 
       public void Redraw() {
-         if (_form.IsDisposed || !_form.IsHandleCreated)
+         if (_form.IsDisposed || !_form.IsHandleCreated || _disposed)
             return;
 
          //Debug.WriteLine($"[UIRenderer] Redraw at {DateTime.Now:HH:mm:ss.fff}");
+         //Debug.WriteLine($"GDI Handles: {System.Diagnostics.Process.GetCurrentProcess().HandleCount}, MemorySize: {System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64}");
 
          int width = _form.Width;
          int height = _form.Height;
+         EnsureBuffers(width, height);
 
-         using var skBmp = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
-         using var surface = SKSurface.Create(skBmp.Info, skBmp.GetPixels(), skBmp.RowBytes);
-         var canvas = surface.Canvas;
+         var canvas = _cachedSurface!.Canvas;
 
          DrawBackground(canvas, new Size(width, height));
          _uiElementManager.Draw(canvas);
 
-         using var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-         var bmpData = bmp.LockBits(new Rectangle(0, 0, width, height),
-            ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-         Marshal.Copy(skBmp.Bytes, 0, bmpData.Scan0, skBmp.Bytes.Length);
-         bmp.UnlockBits(bmpData);
+         var bmpData = _cachedBmp!.LockBits(
+            new Rectangle(0, 0, width, height),
+            ImageLockMode.WriteOnly,
+            PixelFormat.Format32bppPArgb);
 
-         SetBitmap(bmp, 255);
+         try {
+            // Bytes direkt kopieren
+            unsafe {
+               Buffer.MemoryCopy(
+                   source: (void*)_cachedSkBitmap!.GetPixels(),     // Skia Speicher
+                   destination: (void*)bmpData.Scan0,             // GDI Speicher
+                   destinationSizeInBytes: bmpData.Stride * bmpData.Height,
+                   sourceBytesToCopy: _cachedSkBitmap.ByteCount
+               );
+            }
+         }
+         finally {
+            _cachedBmp.UnlockBits(bmpData);
+         }
+
+         SetBitmap(_cachedBmp, 255);
       }
 
       public void SetBitmap(Bitmap bitmap, byte opacity) {
@@ -92,58 +140,72 @@ namespace KUpdater.UI {
          canvas.Clear(SKColors.Transparent);
 
          // Ecken
-         canvas.DrawBitmap(bg.TopLeft.ToSKBitmap(), new SKPoint(0, 0));
-         canvas.DrawBitmap(bg.TopRight.ToSKBitmap(), new SKPoint(width - bg.TopRight.Width, 0));
-         canvas.DrawBitmap(bg.BottomLeft.ToSKBitmap(), new SKPoint(0, height - bg.BottomLeft.Height));
-         canvas.DrawBitmap(bg.BottomRight.ToSKBitmap(), new SKPoint(width - bg.BottomRight.Width, height - bg.BottomRight.Height));
+         canvas.DrawBitmap(bg.TopLeft, new SKPoint(0, 0));
+         canvas.DrawBitmap(bg.TopRight, new SKPoint(width - bg.TopRight!.Width, 0));
+         canvas.DrawBitmap(bg.BottomLeft, new SKPoint(0, height - bg.BottomLeft!.Height));
+         canvas.DrawBitmap(bg.BottomRight, new SKPoint(width - bg.BottomRight!.Width, height - bg.BottomRight.Height));
 
          // Kanten (gestreckt)
          {
-            float left   = bg.TopLeft.Width;
+            float left   = bg.TopLeft!.Width;
             float top    = 0;
             float right  = left + (width - bg.TopLeft.Width - bg.TopRight.Width + layout.TopWidthOffset);
-            float bottom = top + bg.TopCenter.Height;
-            canvas.DrawBitmap(bg.TopCenter.ToSKBitmap(), new SKRect(left, top, right, bottom));
+            float bottom = top + bg.TopCenter!.Height;
+            canvas.DrawBitmap(bg.TopCenter, new SKRect(left, top, right, bottom));
          }
 
          {
             float left   = bg.BottomLeft.Width;
-            float top    = height - bg.BottomCenter.Height;
+            float top    = height - bg.BottomCenter!.Height;
             float right  = left + (width - bg.BottomLeft.Width - bg.BottomRight.Width + layout.BottomWidthOffset);
             float bottom = top + bg.BottomCenter.Height;
-            canvas.DrawBitmap(bg.BottomCenter.ToSKBitmap(), new SKRect(left, top, right, bottom));
+            canvas.DrawBitmap(bg.BottomCenter, new SKRect(left, top, right, bottom));
          }
 
          {
             float left   = 0;
             float top    = bg.TopLeft.Height;
-            float right  = left + bg.LeftCenter.Width;
+            float right  = left + bg.LeftCenter!.Width;
             float bottom = top + (height - bg.TopLeft.Height - bg.BottomLeft.Height + layout.LeftHeightOffset);
-            canvas.DrawBitmap(bg.LeftCenter.ToSKBitmap(), new SKRect(left, top, right, bottom));
+            canvas.DrawBitmap(bg.LeftCenter, new SKRect(left, top, right, bottom));
          }
 
          {
-            float left   = width - bg.RightCenter.Width;
+            float left   = width - bg.RightCenter!.Width;
             float top    = bg.TopRight.Height;
             float right  = left + bg.RightCenter.Width;
             float bottom = top + (height - bg.TopRight.Height - bg.BottomRight.Height + layout.RightHeightOffset);
-            canvas.DrawBitmap(bg.RightCenter.ToSKBitmap(), new SKRect(left, top, right, bottom));
+            canvas.DrawBitmap(bg.RightCenter, new SKRect(left, top, right, bottom));
          }
 
-         // Innenfläche
-         var fillPaint = new SKPaint {
-            Color = bg.FillColor.ToSKColor(),
-            IsAntialias = true
-         };
+         _fillPaint.Color = bg.FillColor.ToSKColor();
 
          {
             float left   = bg.LeftCenter.Width - layout.FillPosOffset;
             float top    = bg.TopCenter.Height - layout.FillPosOffset;
             float right  = left + (width - bg.LeftCenter.Width * 2 + layout.FillWidthOffset);
             float bottom = top + (height - bg.TopCenter.Height - bg.BottomCenter.Height + layout.FillHeightOffset);
-            canvas.DrawRect(new SKRect(left, top, right, bottom), fillPaint);
+            canvas.DrawRect(new SKRect(left, top, right, bottom), _fillPaint);
          }
       }
 
+      // 🧹 Ressourcen-Freigabe
+      public void Dispose() {
+         if (_disposed)
+            return;
+
+         _renderTimer.Stop();
+         _renderTimer.Dispose();
+
+         _cachedSurface?.Dispose();
+         _cachedSkBitmap?.Dispose();
+         _cachedBmp?.Dispose();
+         _fillPaint.Dispose();
+
+         _cachedSurface = null;
+         _cachedSkBitmap = null;
+         _cachedBmp = null;
+         _disposed = true;
+      }
    }
 }

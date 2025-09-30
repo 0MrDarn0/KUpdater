@@ -1,4 +1,6 @@
-﻿namespace KUpdater.Scripting {
+﻿using SkiaSharp;
+
+namespace KUpdater.Scripting {
 
    public interface ITheme {
       ThemeBackground GetBackground();
@@ -6,14 +8,14 @@
    }
 
    public class ThemeBackground {
-      public Image TopLeft { get; set; } = new Bitmap(1, 1);
-      public Image TopCenter { get; set; } = new Bitmap(1, 1);
-      public Image TopRight { get; set; } = new Bitmap(1, 1);
-      public Image RightCenter { get; set; } = new Bitmap(1, 1);
-      public Image BottomRight { get; set; } = new Bitmap(1, 1);
-      public Image BottomCenter { get; set; } = new Bitmap(1, 1);
-      public Image BottomLeft { get; set; } = new Bitmap(1, 1);
-      public Image LeftCenter { get; set; } = new Bitmap(1, 1);
+      public SKBitmap? TopLeft { get; init; }
+      public SKBitmap? TopCenter { get; init; }
+      public SKBitmap? TopRight { get; init; }
+      public SKBitmap? RightCenter { get; init; }
+      public SKBitmap? BottomRight { get; init; }
+      public SKBitmap? BottomCenter { get; init; }
+      public SKBitmap? BottomLeft { get; init; }
+      public SKBitmap? LeftCenter { get; init; }
       public Color FillColor { get; set; } = Color.Black;
    }
 

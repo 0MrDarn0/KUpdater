@@ -1,7 +1,7 @@
 ﻿using SkiaSharp;
 
 namespace KUpdater.UI {
-   public interface IUIElement {
+   public interface IUIElement : IDisposable {
       string Id { get; }
       protected static string Resource(string fileName) => Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", fileName);
       public bool Visible { get; set; }
