@@ -10,7 +10,7 @@ namespace KUpdater.UI {
          foreach (var el in _elements)
             el.Dispose();
          _elements.Clear();
-         System.Diagnostics.Debug.WriteLine($"[UIElementManager] Disposed {count} elements (DisposeAndClearAll).");
+         //System.Diagnostics.Debug.WriteLine($"[UIElementManager] Disposed {count} elements (DisposeAndClearAll).");
       }
 
       public void DisposeAndClear<T>() where T : class, IUIElement {
@@ -18,7 +18,7 @@ namespace KUpdater.UI {
          foreach (var el in _elements.OfType<T>())
             el.Dispose();
          _elements.RemoveAll(e => e is T);
-         System.Diagnostics.Debug.WriteLine($"[UIElementManager] Disposed {count} {typeof(T).Name}(s).");
+         //System.Diagnostics.Debug.WriteLine($"[UIElementManager] Disposed {count} {typeof(T).Name}(s).");
       }
 
       public T? FindById<T>(string id) where T : class, IUIElement

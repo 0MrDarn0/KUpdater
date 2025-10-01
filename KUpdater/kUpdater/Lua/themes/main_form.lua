@@ -31,27 +31,40 @@ local function bounds(x, y, w, h)
   end
 end
 
+-- Hilfsfunktion für rechts-/unten-Anchor
+local function anchor(x, y, w, h)
+  return function()
+    local winW, winH = get_window_size()
+
+    local rx = (x < 0) and (winW + x) or x
+    local ry = (y < 0) and (winH + y) or y
+    local rw = (w < 0) and (winW + w - rx) or w
+    local rh = (h < 0) and (winH + h - ry) or h
+
+    return { x = rx, y = ry, width = rw, height = rh }
+  end
+end
+
 -- Rückgabe der gesamten Fensterdefinition
 return {
   background = background_config,
   layout     = layout_config,
 
   init = function()
-    local width, height = get_window_size()
 
     -- Title
     local titleLabel = UILabel("lb_title",
-      { x = 35, y = 0, width = 200, height = 40 },
-      "kUpdater",
-      Font("Chiller", 40, "Italic"),
-      Color.Orange)
+        bounds(35, 0, 200, 40),
+        "kUpdater",
+        Font("Chiller", 40, "Italic"),
+        Color.Orange)
     uiElement.Add(titleLabel)
 
     local subtitleLabel = UILabel("lb_subtitle",
-      { x = -115, y = 12, width = 200, height = 20 },
-      "칼온라인", 
-      Font("Malgun Gothic", 13, "Bold"),
-      Color.Gold)
+        bounds(-115, 12, 200, 27),
+        "칼온라인", 
+        Font("Malgun Gothic", 13, "Bold"),
+        Color.Gold)
     uiElement.Add(subtitleLabel)
 
     -- Buttons
@@ -91,19 +104,16 @@ return {
       function() open_website("https://google.com") end)
     uiElement.Add(btnWebsite)
 
-
     -- Status-Label
     local statusLabel = UILabel("lb_update_status",
-      { x = 27, y = height - 50, width = 200, height = 20 },
-      "Status: Waiting...",
-      Font("Segoe UI", 10, "Regular"),
-      Color.White)
+        anchor(27, -50, 200, 20),
+        "Status: Waiting...",
+        Font("Segoe UI", 10, "Regular"),
+        Color.White)
     uiElement.Add(statusLabel)
 
-
     -- Progressbar
-    local progressBar = UIProgressBar("pb_update_progress",
-      { x = 27, y = height - 30, width = -53, height = 5 })
+    local progressBar = UIProgressBar("pb_update_progress", anchor(27, -30, -27, 5))
     uiElement.Add(progressBar)
 
   end,

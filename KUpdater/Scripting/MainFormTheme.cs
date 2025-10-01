@@ -31,7 +31,6 @@ namespace KUpdater.Scripting {
          _setStatusText = UIBindings.BindLabelText(_uiElementManager, UIBindings.Ids.UpdateStatusLabel);
          _setProgress = UIBindings.BindProgress(_uiElementManager, UIBindings.Ids.UpdateProgressBar);
 
-         SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
          RegisterGlobals();
          LoadTheme("main_form");
 
@@ -49,68 +48,12 @@ namespace KUpdater.Scripting {
          ExposeToLua<Font>();
          ExposeToLua<Color>();
 
+         SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
          SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
             return DynValue.NewTuple(
                DynValue.NewNumber(_form?.Width ?? 0),
                DynValue.NewNumber(_form?.Height ?? 0));
          }));
-
-
-         SetGlobal(LuaKeys.UI.AddLabel,
-            (Action<string, string, double, double, DynValue, string, double, string>)
-            ((id, text, x, y, colorVal, fontName, fontSize, fontStyle) => {
-               Color color = ToColor(colorVal, Color.White);
-               if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                  style = FontStyle.Regular;
-               Font font = new(fontName, (float)fontSize, style);
-               _uiElementManager.Add(new UILabel(
-                  id,
-                  () => new Rectangle(
-                     (int)(x < 0 ? _form.Width + x : x),
-                     (int)(y < 0 ? _form.Height + y : y),
-                     TextRenderer.MeasureText(text, font).Width,
-                     TextRenderer.MeasureText(text, font).Height),
-                  text, font, color));
-            }));
-
-
-
-         SetGlobal(LuaKeys.UI.AddButton,
-             (Action<string, string, double, double, double, double, string, double, string, DynValue, string, DynValue>)
-             ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorVal, imageKey, callback) => {
-                Color color = ToColor(colorVal, Color.White);
-
-                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                   style = FontStyle.Regular;
-
-                Font font = new(fontName, (float)fontSize, style);
-
-                var button = new UIButton(
-                   id,
-                   () => new Rectangle(
-                      (int)(x < 0 ? _form.Width + x : x),
-                      (int)(y < 0 ? _form.Height + y : y),
-                      (int)width, (int)height),
-                   text, font, color, imageKey,
-                   () => CallDynFunction(callback));
-                _uiElementManager.Add(button);
-             }));
-
-
-
-
-         SetGlobal("add_progressbar",
-             (Action<string, double, double, double, double>)
-             ((id, x, y, width, height) => {
-                var bar = new UIProgressBar(
-                   id,
-                   () => new Rectangle(
-                      (int)(x < 0 ? _form.Width + x : x),
-                      (int)(y < 0 ? _form.Height + y : y),
-                      (int)(width < 0 ? _form.Width + width : width),
-                      (int)height));
-                _uiElementManager.Add(bar);
-             }));
 
 
          // 🔥 Lua-Callbacks direkt mit Bindings verbinden
@@ -121,17 +64,10 @@ namespace KUpdater.Scripting {
          SetGlobal("update_label", UIBindings.UpdateLabel(_uiElementManager));
          SetGlobal("update_progress", UIBindings.UpdateProgress(_uiElementManager));
 
-         SetGlobal("reinit_theme", (Action)(() => ReInitTheme()));
-
 
          SetGlobal("open_website", (Action<string>)((url) => {
             try {
-               var psi = new ProcessStartInfo
-            {
-                  FileName = url,
-                  UseShellExecute = true
-               };
-               Process.Start(psi);
+               Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
             }
             catch (Exception ex) {
                Console.WriteLine($"Failed to open website: {ex.Message}");
@@ -225,24 +161,6 @@ namespace KUpdater.Scripting {
          };
       }
 
-      //private Image LoadImage(Table table, string key) {
-      //   string file = table.Get(key).CastToString();
-      //   if (string.IsNullOrWhiteSpace(file))
-      //      return new Bitmap(1, 1);
-
-      //   if (_imageCache.TryGetValue(file, out var cached))
-      //      return cached;
-
-      //   string path = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", file);
-      //   if (!File.Exists(path))
-      //      return new Bitmap(1, 1);
-
-      //   using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-      //   var img = Image.FromStream(fs);
-      //   _imageCache[file] = img;
-      //   return img;
-      //}
-
       private SKBitmap LoadSkiaBitmap(Table table, string key) {
          string file = table.Get(key).CastToString();
          if (string.IsNullOrWhiteSpace(file))
@@ -280,19 +198,10 @@ namespace KUpdater.Scripting {
          return fallback;
       }
 
-
-
       public override void Dispose() {
-         // eigene Ressourcen freigeben
-         foreach (var bmp in _imageCache.Values) {
-            bmp?.Dispose();
-         }
-         _imageCache.Clear();
-
+         ClearImageCache();
          _cachedBackground = null;
          _cachedLayout = null;
-
-         // Basisklasse aufräumen (Lua-Script + Globals)
          base.Dispose();
       }
 

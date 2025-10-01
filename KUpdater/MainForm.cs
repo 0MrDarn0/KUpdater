@@ -35,7 +35,6 @@ namespace KUpdater {
 
       }
 
-
       protected override CreateParams CreateParams {
          get {
             var cp = base.CreateParams;
