@@ -25,14 +25,16 @@ namespace KUpdater.Scripting {
 
       }
 
+      private void UpdateLabel(string id, string text)
+         => _uiElementManager.Update<UILabel>(id, l => l.Text = text);
+
+      private void UpdateProgressBar(string id, double value)
+         => _uiElementManager.Update<UIProgressBar>(id, b => b.Progress = (float)value);
+
       public void ApplyLastState() {
-         _uiElementManager.UpdateLabel("lb_update_status", _lastStatus);
-         _uiElementManager.UpdateProgressBar("pb_update_progress", _lastProgress);
+         UpdateLabel("lb_update_status", _lastStatus);
+         UpdateProgressBar("pb_update_progress", _lastProgress);
       }
-
-      private void UpdateLabel(string id, string text) => _uiElementManager.UpdateLabel(id, text);
-      private void UpdateProgressBar(string id, double value) => _uiElementManager.UpdateProgressBar(id, value);
-
 
       protected override void RegisterGlobals() {
          base.RegisterGlobals();
@@ -158,7 +160,7 @@ namespace KUpdater.Scripting {
 
       public void ReInitTheme() {
          if (!string.IsNullOrEmpty(_currentTheme)) {
-            _uiElementManager.ClearAll();
+            _uiElementManager.DisposeAndClearAll();
             LoadTheme(_currentTheme);
             ApplyLastState();
          }

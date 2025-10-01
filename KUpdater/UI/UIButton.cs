@@ -13,19 +13,23 @@ public class UIButton : IUIElement {
    public bool Visible { get; set; } = true;
    public bool IsHovered { get; private set; }
    public bool IsPressed { get; private set; }
+   private readonly bool _ownsFont;
 
    // 🧩 Cache für Bilder
-   private readonly Dictionary<string, SKBitmap> _stateBitmaps = new();
-   private readonly Dictionary<string, Image> _stateImages = new();
+   private readonly Dictionary<string, SKBitmap> _stateBitmaps = [];
+   private readonly Dictionary<string, Image> _stateImages = [];
 
-   // 🧩 Typeface cachen
+   // 🧩 paint,font and Typeface cachen
    private SKTypeface? _typeface;
+   private SKFont? _skFont;
+   private SKPaint? _skPaint;
 
-   public UIButton(string id, Func<Rectangle> boundsFunc, string text, Font font, Color color, string themeKey, Action? onClick) {
+   public UIButton(string id, Func<Rectangle> boundsFunc, string text, Font font, Color color, string themeKey, Action? onClick, bool ownsFont = true) {
       Id = id;
       _boundsFunc = boundsFunc;
       Text = text;
       Font = font;
+      _ownsFont = ownsFont;
       Color = color;
       ThemeKey = themeKey;
       OnClick = onClick;
@@ -35,7 +39,7 @@ public class UIButton : IUIElement {
 
    private void LoadResources() {
       foreach (var state in new[] { "normal", "hover", "click" }) {
-         string path = IUIElement.Resource($"{ThemeKey}_{state}.png");
+         string path = UIResources.PathFor($"{ThemeKey}_{state}.png");
          if (File.Exists(path)) {
             _stateImages[state] = Image.FromFile(path);
             _stateBitmaps[state] = SKBitmap.Decode(path);
@@ -45,6 +49,8 @@ public class UIButton : IUIElement {
       SKFontStyleWeight weight = Font.Style.HasFlag(FontStyle.Bold) ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal;
       SKFontStyleSlant slant = Font.Style.HasFlag(FontStyle.Italic) ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
       _typeface = SKTypeface.FromFamilyName(Font.Name, new SKFontStyle(weight, SKFontStyleWidth.Normal, slant));
+      _skFont = new SKFont(_typeface, Font.Size * 1.33f);
+      _skPaint = new SKPaint { Color = Color.ToSKColor(), IsAntialias = true };
    }
 
    public void Draw(Graphics g) {
@@ -71,17 +77,11 @@ public class UIButton : IUIElement {
          canvas.DrawBitmap(img, destRect);
       }
 
-      using var font = new SKFont(_typeface, Font.Size * 1.33f);
-      using var paint = new SKPaint {
-         Color = Color.ToSKColor(),
-         IsAntialias = true
-      };
-
-      var metrics = font.Metrics;
+      var metrics = _skFont!.Metrics;
       var x = Bounds.X + Bounds.Width / 2;
       var y = Bounds.Y + Bounds.Height / 2 - (metrics.Ascent + metrics.Descent) / 2 - metrics.Descent * 0.3f;
 
-      canvas.DrawText(Text, x, y, SKTextAlign.Center, font, paint);
+      canvas.DrawText(Text, x, y, SKTextAlign.Center, _skFont, _skPaint!);
    }
 
    public bool OnMouseMove(Point p) {
@@ -109,7 +109,13 @@ public class UIButton : IUIElement {
          img.Dispose();
       foreach (var bmp in _stateBitmaps.Values)
          bmp.Dispose();
+
       _typeface?.Dispose();
-      Font.Dispose();
+
+      if (_ownsFont)
+         Font.Dispose();
+
+      _skPaint?.Dispose();
+      _skFont?.Dispose();
    }
 }

@@ -47,6 +47,7 @@ namespace KUpdater {
       protected override void OnFormClosed(FormClosedEventArgs e) {
          _uiRenderer.Dispose();
          _mainFormTheme.Dispose();
+         _uiElementManager.DisposeAndClearAll();
          Instance = null;
          base.OnFormClosed(e);
       }
