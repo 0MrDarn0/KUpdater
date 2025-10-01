@@ -81,11 +81,11 @@ return {
 
   -- Update-Callbacks
   on_update_status = function(message)
-    update_label("lb_update_status", message)
+    update_status(message)
   end,
 
   on_update_progress = function(value)
-    update_progress("pb_update_progress", value)
+    update_download_progress(value)
   end
 
 }

@@ -14,12 +14,22 @@ namespace KUpdater.Scripting {
       private ThemeBackground? _cachedBackground;
       private ThemeLayout? _cachedLayout;
 
+      // State
       public string _lastStatus = "Status: Waiting...";
       public double _lastProgress = 0.0;
+
+      // 🔗 Bindings
+      private readonly Action<string> _setStatusText;
+      private readonly Action<double> _setProgress;
 
       public MainFormTheme(Form form, UIElementManager uiElementManager) : base("theme_loader.lua") {
          _form = form;
          _uiElementManager = uiElementManager;
+
+         // Init bindings
+         _setStatusText = UIBindings.BindLabelText(_uiElementManager, UIBindings.Ids.UpdateStatusLabel);
+         _setProgress = UIBindings.BindProgress(_uiElementManager, UIBindings.Ids.UpdateProgressBar);
+
          SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
          LoadTheme("main_form");
 
@@ -32,8 +42,8 @@ namespace KUpdater.Scripting {
          => _uiElementManager.Update<UIProgressBar>(id, b => b.Progress = (float)value);
 
       public void ApplyLastState() {
-         UpdateLabel("lb_update_status", _lastStatus);
-         UpdateProgressBar("pb_update_progress", _lastProgress);
+         _setStatusText(_lastStatus);
+         _setProgress(_lastProgress);
       }
 
       protected override void RegisterGlobals() {
@@ -99,9 +109,14 @@ namespace KUpdater.Scripting {
              }));
 
 
+         // 🔥 Lua-Callbacks direkt mit Bindings verbinden
+         SetGlobal("update_status", (Action<string>)(_setStatusText));
+         SetGlobal("update_download_progress", (Action<double>)(_setProgress));
 
-         SetGlobal("update_progress", (Action<string, double>)UpdateProgressBar);
-         SetGlobal("update_label", (Action<string, string>)UpdateLabel);
+         // 🔗 Generische Updates für dynamische Elemente
+         SetGlobal("update_label", UIBindings.UpdateLabel(_uiElementManager));
+         SetGlobal("update_progress", UIBindings.UpdateProgress(_uiElementManager));
+
          SetGlobal("reinit_theme", (Action)(() => ReInitTheme()));
 
 
