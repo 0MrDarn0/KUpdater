@@ -1,4 +1,5 @@
 ﻿using KUpdater.Core;
+using KUpdater.Interop;
 using KUpdater.Scripting;
 using KUpdater.UI;
 
@@ -38,7 +39,7 @@ namespace KUpdater {
       protected override CreateParams CreateParams {
          get {
             var cp = base.CreateParams;
-            cp.ExStyle |= 0x80000; // WS_EX_LAYERED
+            cp.ExStyle |= (int)WindowStylesEx.WS_EX_LAYERED;
             return cp;
          }
       }
