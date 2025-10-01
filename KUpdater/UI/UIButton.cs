@@ -1,7 +1,7 @@
 ﻿using KUpdater.UI;
 using SkiaSharp;
 
-public class UIButton : IUIElement, IDisposable {
+public class UIButton : IUIElement {
    public string Id { get; }
    private readonly Func<Rectangle> _boundsFunc;
    public Rectangle Bounds => _boundsFunc();
