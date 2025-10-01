@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using MoonSharp.Interpreter;
+using SkiaSharp;
 
 namespace KUpdater.UI {
    public class UILabel : IUIElement {
@@ -28,6 +29,17 @@ namespace KUpdater.UI {
 
          InitSkiaResources();
       }
+
+      public UILabel(string id, Table bounds, string text, Font font, Color color,
+                     bool ownsFont = true, TextFormatFlags flags = TextFormatFlags.Default)
+          : this(id, () => new Rectangle(
+              (int)(bounds.Get("x").CastToNumber() ?? 0),
+              (int)(bounds.Get("y").CastToNumber() ?? 0),
+              (int)(bounds.Get("width").CastToNumber() ?? 0),
+              (int)(bounds.Get("height").CastToNumber() ?? 0)
+          ), text, font, color, ownsFont, flags) {
+      }
+
 
       private void InitSkiaResources() {
          SKFontStyleWeight weight = Font.Style.HasFlag(FontStyle.Bold) ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal;

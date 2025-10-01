@@ -1,4 +1,5 @@
 ﻿using KUpdater.UI;
+using MoonSharp.Interpreter;
 using SkiaSharp;
 
 public class UIButton : IUIElement {
@@ -36,6 +37,17 @@ public class UIButton : IUIElement {
 
       LoadResources();
    }
+
+   public UIButton(string id, Table bounds, string text, Font font, Color color,
+                   string themeKey, Action? onClick, bool ownsFont = true)
+       : this(id, () => new Rectangle(
+           (int)(bounds.Get("x").CastToNumber() ?? 0),
+           (int)(bounds.Get("y").CastToNumber() ?? 0),
+           (int)(bounds.Get("width").CastToNumber() ?? 0),
+           (int)(bounds.Get("height").CastToNumber() ?? 0)
+       ), text, font, color, themeKey, onClick, ownsFont) {
+   }
+
 
    private void LoadResources() {
       foreach (var state in new[] { "normal", "hover", "click" }) {

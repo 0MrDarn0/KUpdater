@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using MoonSharp.Interpreter;
+using SkiaSharp;
 
 namespace KUpdater.Scripting {
 
@@ -14,8 +16,10 @@ namespace KUpdater.Scripting {
          _script = new Script();
          _script.Options.DebugPrint = s => Debug.WriteLine($"[{DateTime.Now:HH:mm:ss}] [Lua] >>> [{s}]");
 
-         _script.DoString(File.ReadAllText(path));
          RegisterGlobals();
+
+         _script.DoString(File.ReadAllText(path));
+
       }
 
       protected virtual void RegisterGlobals() {
@@ -60,88 +64,233 @@ namespace KUpdater.Scripting {
 
          UserData.RegisterType<T>();
 
+         // 1) Enums: expose static and individual values
          if (type.IsEnum) {
-            // Enum-Typ als statisches UserData
             _script.Globals[globalName] = UserData.CreateStatic<T>();
-
-            // Alle Enum-Werte als einzelne Globals
             foreach (var name in Enum.GetNames(type)) {
                var value = Enum.Parse(type, name);
                _script.Globals[name] = UserData.Create(value);
             }
-         } else if (instance is not null) {
-            // Instanz als UserData
+            return;
+         }
+
+         // 2) Instance: expose the instance only (userdata)
+         if (instance is not null) {
             _script.Globals[globalName] = UserData.Create(instance);
-         } else {
-            // Statische Member verfügbar machen
-            _script.Globals[globalName] = UserData.CreateStatic<T>();
+            return;
+         }
 
-            // Konstruktor als callable Funktion in Lua
-            _script.Globals[globalName] = DynValue.NewCallback((ctx, args) => {
+         // 3) Always expose statics
+         _script.Globals[globalName] = UserData.CreateStatic<T>();
+
+         // Do not expose a constructor for types like Color/SKColor (we want Color.White, etc.)
+         bool exposeConstructor =
+        type != typeof(Color) &&
+        type != typeof(SKColor) &&
+        !type.IsAbstract &&
+        type.GetConstructors().Length > 0;
+
+         if (!exposeConstructor)
+            return;
+
+         // 4) Constructor dispatcher without noisy exceptions
+         _script.Globals[globalName] = DynValue.NewCallback((ctx, args) => {
+            // Map MoonSharp DynValues to raw objects, but keep closures/tables intact for per-parameter matching.
+            var rawArgs = args.GetArray()
+            .Select(a =>
+            {
+               if (a.Type == DataType.Table)
+                  return (object)a.Table;
+               if (a.Type == DataType.Function)
+                  return (object)a.Function; // keep Closure for targeted mapping
+               if (a.Type == DataType.UserData)
+                  return a.UserData.Object;  // unwrap .NET object
+               return a.ToObject();
+            })
+            .ToArray();
+
+            ConstructorInfo? chosen = null;
+            object[]? finalArgs = null;
+
+            foreach (var ctor in type.GetConstructors()) {
+               var parms = ctor.GetParameters();
+               int requiredCount = parms.Count(p => !p.HasDefaultValue);
+
+               if (rawArgs.Length < requiredCount || rawArgs.Length > parms.Length)
+                  continue;
+
+               var tmp = new object?[parms.Length];
+               bool ok = true;
+
+               for (int i = 0; i < parms.Length; i++) {
+                  var targetType = parms[i].ParameterType;
+
+                  if (i < rawArgs.Length) {
+                     var argVal = rawArgs[i];
+
+                     if (!TryCoerce(argVal, targetType, out var coerced)) {
+                        ok = false;
+                        break;
+                     }
+
+                     tmp[i] = coerced;
+                  } else {
+                     if (parms[i].HasDefaultValue)
+                        tmp[i] = parms[i].DefaultValue;
+                     else {
+                        ok = false;
+                        break;
+                     }
+                  }
+               }
+
+               if (ok) {
+                  chosen = ctor;
+                  finalArgs = tmp!;
+                  break;
+               }
+            }
+
+            if (chosen == null)
+               throw new ScriptRuntimeException($"No matching constructor found for {type.Name} with {rawArgs.Length} arguments.");
+
+            var obj = chosen.Invoke(finalArgs!);
+            return UserData.Create(obj);
+         });
+
+         // Local helper: targeted coercion without throwing exceptions
+         bool TryCoerce(object? argVal, Type targetType, out object? result) {
+            result = null;
+
+            // Null handling
+            if (argVal is null) {
+               if (targetType.IsValueType && Nullable.GetUnderlyingType(targetType) == null)
+                  return false;
+               result = null;
+               return true;
+            }
+
+            var srcType = argVal.GetType();
+
+            // Direct assignable
+            if (targetType.IsAssignableFrom(srcType)) {
+               result = argVal;
+               return true;
+            }
+
+            // Lua Closure → Action
+            if (targetType == typeof(Action) && argVal is Closure cb) {
+               result = new Action(() => cb.Call());
+               return true;
+            }
+
+            // Lua Closure → Func<Rectangle>
+            if (targetType == typeof(Func<Rectangle>) && argVal is Closure boundsClosure) {
+               result = new Func<Rectangle>(() => {
+                  var ret = boundsClosure.Call();
+                  if (ret.Type != DataType.Table)
+                     throw new ScriptRuntimeException("bounds closure must return a table with x,y,width,height");
+
+                  var t = ret.Table;
+                  int x = (int)(t.Get("x").CastToNumber() ?? 0);
+                  int y = (int)(t.Get("y").CastToNumber() ?? 0);
+                  int w = (int)(t.Get("width").CastToNumber() ?? 0);
+                  int h = (int)(t.Get("height").CastToNumber() ?? 0);
+
+                  // Optional anchoring for negatives (keeps Lua simple)
+                  var form = MainForm.Instance;
+                  if (form != null) {
+                     if (x < 0)
+                        x = form.Width + x;
+                     if (y < 0)
+                        y = form.Height + y;
+                     if (w < 0)
+                        w = form.Width + w;
+                     // h negative rarely used; add if needed
+                  }
+
+                  return new Rectangle(x, y, w, h);
+               });
+               return true;
+            }
+
+            // Enum: string name
+            if (targetType.IsEnum && argVal is string s &&
+                Enum.TryParse(targetType, s, true, out var enumVal)) {
+               result = enumVal;
+               return true;
+            }
+
+            // Enum: numeric
+            if (targetType.IsEnum && argVal is double dnum) {
+               result = Enum.ToObject(targetType, (int)dnum);
+               return true;
+            }
+
+            // Numeric coercions from MoonSharp's double
+            if (argVal is double d) {
+               if (targetType == typeof(int)) { result = (int)d; return true; }
+               if (targetType == typeof(float)) { result = (float)d; return true; }
+               if (targetType == typeof(long)) { result = (long)d; return true; }
+               if (targetType == typeof(short)) { result = (short)d; return true; }
+               if (targetType == typeof(byte)) { result = (byte)d; return true; }
+               if (targetType == typeof(decimal)) { result = (decimal)d; return true; }
+               if (targetType == typeof(double)) { result = d; return true; }
+            }
+
+            // String → numeric (rare, but safe)
+            if (argVal is string str) {
+               if (targetType == typeof(int) && int.TryParse(str, out var i)) { result = i; return true; }
+               if (targetType == typeof(double) && double.TryParse(str, out var dd)) { result = dd; return true; }
+               if (targetType == typeof(float) && float.TryParse(str, out var ff)) { result = ff; return true; }
+               if (targetType == typeof(long) && long.TryParse(str, out var ll)) { result = ll; return true; }
+               if (targetType == typeof(decimal) && decimal.TryParse(str, out var mm)) { result = mm; return true; }
+            }
+
+            // Table → Rectangle (if constructor directly expects Rectangle)
+            if (targetType == typeof(Rectangle) && argVal is Table tbl) {
+               int x = (int)(tbl.Get("x").CastToNumber() ?? 0);
+               int y = (int)(tbl.Get("y").CastToNumber() ?? 0);
+               int w = (int)(tbl.Get("width").CastToNumber() ?? 0);
+               int h = (int)(tbl.Get("height").CastToNumber() ?? 0);
+
+               var form = MainForm.Instance;
+               if (form != null) {
+                  if (x < 0)
+                     x = form.Width + x;
+                  if (y < 0)
+                     y = form.Height + y;
+                  if (w < 0)
+                     w = form.Width + w;
+               }
+
+               result = new Rectangle(x, y, w, h);
+               return true;
+            }
+
+            // Last resort: try Convert.ChangeType only for simple primitives (avoid spamming exceptions)
+            if (IsConvertiblePrimitive(srcType) && IsConvertiblePrimitive(targetType)) {
                try {
-                  var ctorArgs = args.GetArray()
-                                   .Select(a => a.ToObject())
-                                   .ToArray();
-
-                  // Passenden Konstruktor suchen
-                  var ctor = type.GetConstructors()
-                               .FirstOrDefault(c =>
-                               {
-                                  var parms = c.GetParameters();
-                                  if (parms.Length != ctorArgs.Length)
-                                     return false;
-
-                                  for (int i = 0; i < parms.Length; i++)
-                                   {
-                                     var targetType = parms[i].ParameterType;
-                                     var argVal = ctorArgs[i];
-
-                                     if (argVal == null)
-                                       {
-                                        if (targetType.IsValueType && Nullable.GetUnderlyingType(targetType) == null)
-                                           return false;
-                                     }
-                                       else if (!targetType.IsAssignableFrom(argVal.GetType()))
-                                       {
-                                        try
-                                           {
-                                           // Versuch, den Wert zu konvertieren
-                                           ctorArgs[i] = Convert.ChangeType(argVal, targetType);
-                                        }
-                                        catch
-                                           {
-                                           // Enum-Konvertierung versuchen
-                                           if (targetType.IsEnum && argVal is string s &&
-                                                   Enum.TryParse(targetType, s, true, out var enumVal))
-                                               {
-                                              ctorArgs[i] = enumVal;
-                                           }
-                                               else if (targetType.IsEnum && argVal is double d)
-                                               {
-                                              ctorArgs[i] = Enum.ToObject(targetType, (int)d);
-                                           }
-                                               else
-                                               {
-                                              return false;
-                                           }
-                                        }
-                                     }
-                                  }
-                                  return true;
-                               });
-
-                  if (ctor == null)
-                     throw new ScriptRuntimeException($"No matching constructor found for {type.Name} with {ctorArgs.Length} arguments.");
-
-                  var obj = ctor.Invoke(ctorArgs);
-                  return UserData.Create(obj);
+                  result = Convert.ChangeType(argVal, targetType);
+                  return true;
                }
-               catch (Exception ex) {
-                  throw new ScriptRuntimeException($"Error creating {type.Name}: {ex.Message}");
+               catch {
+                  // swallow; we'll return false
                }
-            });
+            }
+
+            return false;
+         }
+
+         static bool IsConvertiblePrimitive(Type t) {
+            // Treat common primitives (including decimal, double) as convertible
+            return t == typeof(bool) || t == typeof(byte) || t == typeof(short) ||
+                   t == typeof(int) || t == typeof(long) || t == typeof(float) ||
+                   t == typeof(double) || t == typeof(decimal) || t == typeof(char) ||
+                   t == typeof(string);
          }
       }
+
 
 
       public virtual void Dispose() {

@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using MoonSharp.Interpreter;
+using SkiaSharp;
 
 namespace KUpdater.UI {
    public class UIProgressBar : IUIElement {
@@ -43,6 +44,15 @@ namespace KUpdater.UI {
          _fillPaint = new SKPaint { Color = _fillColor, IsAntialias = true };
          _borderPaint = new SKPaint { Color = _borderColor, Style = SKPaintStyle.Stroke, StrokeWidth = 2, IsAntialias = true };
          _bgPaint = new SKPaint { Color = _backgroundColor, IsAntialias = true };
+      }
+
+      public UIProgressBar(string id, Table bounds)
+          : this(id, () => new Rectangle(
+              (int)(bounds.Get("x").CastToNumber() ?? 0),
+              (int)(bounds.Get("y").CastToNumber() ?? 0),
+              (int)(bounds.Get("width").CastToNumber() ?? 0),
+              (int)(bounds.Get("height").CastToNumber() ?? 0)
+          )) {
       }
 
       public void Draw(Graphics g) {

@@ -4,6 +4,7 @@ using KUpdater.UI;
 using MoonSharp.Interpreter;
 using SkiaSharp;
 
+
 namespace KUpdater.Scripting {
 
    public class MainFormTheme : Lua, ITheme, IDisposable {
@@ -31,15 +32,10 @@ namespace KUpdater.Scripting {
          _setProgress = UIBindings.BindProgress(_uiElementManager, UIBindings.Ids.UpdateProgressBar);
 
          SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
+         RegisterGlobals();
          LoadTheme("main_form");
 
       }
-
-      private void UpdateLabel(string id, string text)
-         => _uiElementManager.Update<UILabel>(id, l => l.Text = text);
-
-      private void UpdateProgressBar(string id, double value)
-         => _uiElementManager.Update<UIProgressBar>(id, b => b.Progress = (float)value);
 
       public void ApplyLastState() {
          _setStatusText(_lastStatus);
@@ -49,6 +45,10 @@ namespace KUpdater.Scripting {
       protected override void RegisterGlobals() {
          base.RegisterGlobals();
 
+         ExposeToLua("uiElement", _uiElementManager);
+         ExposeToLua<Font>();
+         ExposeToLua<Color>();
+
          SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
             return DynValue.NewTuple(
                DynValue.NewNumber(_form?.Width ?? 0),
@@ -57,9 +57,9 @@ namespace KUpdater.Scripting {
 
 
          SetGlobal(LuaKeys.UI.AddLabel,
-            (Action<string, string, double, double, string, string, double, string>)
-            ((id, text, x, y, colorHex, fontName, fontSize, fontStyle) => {
-               Color color = ColorTranslator.FromHtml(colorHex);
+            (Action<string, string, double, double, DynValue, string, double, string>)
+            ((id, text, x, y, colorVal, fontName, fontSize, fontStyle) => {
+               Color color = ToColor(colorVal, Color.White);
                if (!Enum.TryParse(fontStyle, true, out FontStyle style))
                   style = FontStyle.Regular;
                Font font = new(fontName, (float)fontSize, style);
@@ -76,11 +76,13 @@ namespace KUpdater.Scripting {
 
 
          SetGlobal(LuaKeys.UI.AddButton,
-             (Action<string, string, double, double, double, double, string, double, string, string, string, DynValue>)
-             ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, imageKey, callback) => {
-                Color color = ColorTranslator.FromHtml(colorHex);
+             (Action<string, string, double, double, double, double, string, double, string, DynValue, string, DynValue>)
+             ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorVal, imageKey, callback) => {
+                Color color = ToColor(colorVal, Color.White);
+
                 if (!Enum.TryParse(fontStyle, true, out FontStyle style))
                    style = FontStyle.Regular;
+
                 Font font = new(fontName, (float)fontSize, style);
 
                 var button = new UIButton(
@@ -89,9 +91,11 @@ namespace KUpdater.Scripting {
                       (int)(x < 0 ? _form.Width + x : x),
                       (int)(y < 0 ? _form.Height + y : y),
                       (int)width, (int)height),
-                   text, font, color, imageKey, () => CallDynFunction(callback));
+                   text, font, color, imageKey,
+                   () => CallDynFunction(callback));
                 _uiElementManager.Add(button);
              }));
+
 
 
 
@@ -138,11 +142,11 @@ namespace KUpdater.Scripting {
          SetGlobal(LuaKeys.Actions.OpenSettings, (Action)(() => GameLauncher.OpenSettings()));
          SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
 
+
          // 🔥 Automatische Registrierung aller IUIElement-Klassen
          foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
-             .Where(t => typeof(IUIElement).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
-            var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!
-            .MakeGenericMethod(type);
+            .Where(t => typeof(IUIElement).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
+            var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!.MakeGenericMethod(type);
             method.Invoke(this, [null, null]);
          }
       }
@@ -259,8 +263,24 @@ namespace KUpdater.Scripting {
       }
 
 
-      private Color ToColor(DynValue val, Color fallback) =>
-         val.Type == DataType.String ? ColorTranslator.FromHtml(val.String) : fallback;
+      private Color ToColor(DynValue val, Color fallback) {
+         try {
+            if (val.Type == DataType.String) {
+               return ColorTranslator.FromHtml(val.String);
+            }
+
+            if (val.UserData?.Object is Color c) {
+               return c;
+            }
+         }
+         catch {
+            // Ignorieren und auf Fallback zurückfallen
+         }
+
+         return fallback;
+      }
+
+
 
       public override void Dispose() {
          // eigene Ressourcen freigeben

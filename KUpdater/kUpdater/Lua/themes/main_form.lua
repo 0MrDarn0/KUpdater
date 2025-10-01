@@ -21,68 +21,98 @@ local layout_config = {
   fill_height_offset  = 10
 }
 
--- Hilfsfunktion für Farben
-local function get_color(name)
-  local color_table = {
-    orange = "#ffa500",
-    gold   = "#ffd700",
-    white  = "#ffffff"
-  }
-  return color_table[string.lower(name)] or "#ffffff"
+
+local function bounds(x, y, w, h)
+  return function()
+    local width, height = get_window_size()
+    local rx = (x < 0) and (width + x) or x
+    local ry = (y < 0) and (height + y) or y
+    return { x = rx, y = ry, width = w, height = h }
+  end
 end
-
-    local titel_color = get_color("orange")
-    local subtitle_color = get_color("gold")
-    local btn_color = get_color("orange")
-
 
 -- Rückgabe der gesamten Fensterdefinition
 return {
   background = background_config,
   layout     = layout_config,
 
-  -- Init-Funktion direkt inline
   init = function()
     local width, height = get_window_size()
 
     -- Title
-    add_label("lb_title", "kUpdater", 35, 0, titel_color, "Chiller", 40, "Italic")
-    add_label("lb_subtitle", "칼온라인",  -115, 12, subtitle_color, "Malgun Gothic", 13, "Bold")
+    local titleLabel = UILabel("lb_title",
+      { x = 35, y = 0, width = 200, height = 40 },
+      "kUpdater",
+      Font("Chiller", 40, "Italic"),
+      Color.Orange)
+    uiElement.Add(titleLabel)
+
+    local subtitleLabel = UILabel("lb_subtitle",
+      { x = -115, y = 12, width = 200, height = 20 },
+      "칼온라인", 
+      Font("Malgun Gothic", 13, "Bold"),
+      Color.Gold)
+    uiElement.Add(subtitleLabel)
 
     -- Buttons
-    add_button("btn_close", "X", -35, 16, 18, 18,
-      "Segoe UI", 10, "Regular", btn_color, "btn_exit",
-      function() application_exit() 
-    end)
+    local btnClose = UIButton("btn_close",
+      bounds(-35, 16, 18, 18),
+      "X",
+      Font("Segoe UI", 10, "Regular"),
+      Color.Orange,
+      "btn_exit",
+      function() application_exit() end)
+    uiElement.Add(btnClose)
 
-    add_button("btn_start", "Start", -150, -70, 97, 22,
-      "Segoe UI", 11, "Regular", btn_color, "btn_default",
-      function() start_game() 
-    end)
+    local btnStart = UIButton("btn_start",
+      bounds(-150, -70, 97, 22),
+      "Start",
+      Font("Segoe UI", 11, "Regular"),
+      Color.Orange,
+      "btn_default",
+      function() start_game() end)
+    uiElement.Add(btnStart)
 
-    add_button("btn_settings", "Settings", -255, -70, 97, 22,
-      "Segoe UI", 11, "Regular", btn_color, "btn_default",
-      function() open_settings() 
-    end)
+    local btnSettings = UIButton("btn_settings",
+      bounds(-255, -70, 97, 22),
+      "Settings",
+      Font("Segoe UI", 11, "Regular"),
+      Color.Orange,
+      "btn_default",
+      function() open_settings() end)
+    uiElement.Add(btnSettings)
 
-    add_button("btn_website", "Website", -360, -70, 97, 22,
-      "Segoe UI", 11, "Regular", btn_color, "btn_default",
-      function() open_website("https://google.com") 
-    end)
+    local btnWebsite = UIButton("btn_website",
+      bounds(-360, -70, 97, 22),
+      "Website",
+      Font("Segoe UI", 11, "Regular"),
+      Color.Orange,
+      "btn_default",
+      function() open_website("https://google.com") end)
+    uiElement.Add(btnWebsite)
 
 
     -- Status-Label
-    add_label("lb_update_status", "Status: Waiting...", 27, height - 50, "#FFFFFF", "Segoe UI", 10, "Regular")
+    local statusLabel = UILabel("lb_update_status",
+      { x = 27, y = height - 50, width = 200, height = 20 },
+      "Status: Waiting...",
+      Font("Segoe UI", 10, "Regular"),
+      Color.White)
+    uiElement.Add(statusLabel)
+
 
     -- Progressbar
-    add_progressbar("pb_update_progress", 27, height- 30, -53, 5)
+    local progressBar = UIProgressBar("pb_update_progress",
+      { x = 27, y = height - 30, width = -53, height = 5 })
+    uiElement.Add(progressBar)
 
   end,
 
-  -- Update-Callbacks
+
   on_update_status = function(message)
     update_status(message)
   end,
+
 
   on_update_progress = function(value)
     update_download_progress(value)
