@@ -24,38 +24,76 @@ namespace KUpdater.Scripting {
 
       protected virtual void RegisterGlobals() {
          SetGlobal("__debug_globals", (Action)(() => {
-            Debug.WriteLine("=== Lua Globals Debug ===");
-            foreach (var pair in _script.Globals.Pairs) {
-               var key = pair.Key.ToPrintString();
-               var val = pair.Value;
-               Debug.WriteLine($"{key} : {val.Type}");
-            }
-            Debug.WriteLine("=========================");
+            Debug.WriteLine("=== Lua Globals ===");
+            foreach (var pair in _script.Globals.Pairs)
+               Debug.WriteLine($"{pair.Key.ToPrintString()} : {pair.Value.Type}");
          }));
-
-         SetGlobal(LuaKeys.ExeDirectory, AppContext.BaseDirectory);
+         SetGlobal("exe_directory", AppContext.BaseDirectory);
       }
 
-      protected DynValue CallDynFunction(DynValue func, params object[] args)
-         => func.Type == DataType.Function ? _script.Call(func, args) : DynValue.Nil;
 
-      protected DynValue CallFunction(string functionName, params object[] args) {
+      protected void SetGlobal(string name, object value)
+          => _script.Globals[name] = DynValue.FromObject(_script, value);
+
+
+      protected DynValue InvokeClosure(DynValue func, params object[] args)
+          => func.Type == DataType.Function ? _script.Call(func, args) : DynValue.Nil;
+
+
+      public DynValue Invoke(string functionName, params object[] args) {
          var func = _script.Globals.Get(functionName);
-         return CallDynFunction(func, args);
+         return InvokeClosure(func, args);
       }
 
-      public DynValue InvokeFunction(DynValue func, params object[] args) => CallDynFunction(func, args);
 
-      public DynValue InvokeFunction(string functionName, params object[] args) {
-         var func = _script.Globals.Get(functionName);
-         return CallDynFunction(func, args);
+      public DynValue Invoke(DynValue func, params object[] args)
+         => InvokeClosure(func, args);
+
+
+      public LuaValue<T> Invoke<T>(string functionName, params object[] args)
+         => new(Invoke(functionName, args));
+
+
+      public LuaValue<T> Invoke<T>(DynValue func, params object[] args)
+         => new(Invoke(func, args));
+
+
+      public Table GetTableOrEmpty(string name) {
+         var val = _script.Globals.Get(name);
+         return val.Type == DataType.Table ? val.Table : new Table(_script);
       }
 
-      protected Table GetGlobalTable(string name) =>
-         _script.Globals.Get(name).Type == DataType.Table ? _script.Globals.Get(name).Table : new Table(_script);
 
-      protected void SetGlobal(string name, object value) =>
-         _script.Globals[name] = DynValue.FromObject(_script, value);
+      public DynValue GetValue(string path) {
+         var parts = path.Split('.');
+         DynValue node = _script.Globals.Get(parts[0]);
+         for (int i = 1; i < parts.Length; i++) {
+            if (node.Type != DataType.Table)
+               return DynValue.Nil;
+            node = node.Table.Get(parts[i]);
+         }
+         return node;
+      }
+
+
+      public string? GetString(string path) {
+         var val = GetValue(path);
+         return val.Type == DataType.String ? val.String : null;
+      }
+
+
+      public void DumpTable(string path) {
+         var val = GetValue(path);
+         if (val.Type != DataType.Table) {
+            Debug.WriteLine($"[Lua] {path} is not a table.");
+            return;
+         }
+
+         Debug.WriteLine($"[Lua] Dumping table: {path}");
+         foreach (var pair in val.Table.Pairs)
+            Debug.WriteLine($"  {pair.Key.ToPrintString()} = {pair.Value}");
+      }
+
 
       public void ExposeToLua<T>(string? globalName = null, T? instance = default) {
          var type = typeof(T);
@@ -290,13 +328,9 @@ namespace KUpdater.Scripting {
          }
       }
 
-
-
       public virtual void Dispose() {
-         if (_script != null) {
-            _script.Globals.Clear();
-            _script = null!;
-         }
+         _script?.Globals.Clear();
+         _script = null!;
       }
 
    }

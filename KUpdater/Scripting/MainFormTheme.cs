@@ -103,13 +103,13 @@ namespace KUpdater.Scripting {
          _cachedLayout = null;
 
          // Lua-Funktion "load_theme" aufrufen
-         CallFunction(LuaKeys.Theme.LoadTheme, themeName);
+         Invoke(LuaKeys.Theme.LoadTheme, themeName);
 
          // Init-Funktion nur aufrufen, wenn vorhanden
          var theme = GetTheme();
          var initFunc = theme.Get("init");
          if (initFunc.Type == DataType.Function)
-            CallDynFunction(initFunc);
+            Invoke(initFunc);
       }
 
 
@@ -121,7 +121,7 @@ namespace KUpdater.Scripting {
          }
       }
 
-      public Table GetTheme() => CallFunction(LuaKeys.Theme.GetTheme).Table;
+      public Table GetTheme() => Invoke(LuaKeys.Theme.GetTheme).Table;
       public Table GetThemeTable(string key) {
          var value = GetTheme().Get(key);
          if (value.Type != DataType.Table) {

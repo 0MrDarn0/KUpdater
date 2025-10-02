@@ -27,7 +27,7 @@ namespace KUpdater.Scripting {
       }
 
       public T Load() {
-         var table = GetGlobalTable(_tableName);
+         var table = GetTableOrEmpty(_tableName);
          return (T)MapTableToObject(typeof(T), table)!;
       }
 
