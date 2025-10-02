@@ -51,7 +51,7 @@ return {
   layout     = layout_config,
 
   init = function()
-
+  
     -- Title
     local titleLabel = UILabel("lb_title",
         bounds(35, 0, 200, 40),

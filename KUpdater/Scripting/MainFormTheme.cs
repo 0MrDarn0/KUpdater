@@ -82,9 +82,10 @@ namespace KUpdater.Scripting {
 
          // 🔥 Automatische Registrierung aller IUIElement-Klassen
          foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
-            .Where(t => typeof(IUIElement).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
-            var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!.MakeGenericMethod(type);
-            method.Invoke(this, [null, null]);
+             .Where(t => typeof(IUIElement).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
+            var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!;
+            var generic = method.MakeGenericMethod(type);
+            generic.Invoke(this, new object?[] { null, null });
          }
       }
 

@@ -74,13 +74,7 @@ namespace KUpdater {
 
       protected override void OnResize(EventArgs e) {
          base.OnResize(e);
-         _mainFormTheme?.ReInitTheme();
          _uiRenderer.RequestRender();
-      }
-
-      protected override void OnResizeEnd(EventArgs e) {
-         base.OnResizeEnd(e);
-         GC.Collect(); // Nach Resize mal aufräumen
       }
 
       protected override void OnMouseMove(MouseEventArgs e) {

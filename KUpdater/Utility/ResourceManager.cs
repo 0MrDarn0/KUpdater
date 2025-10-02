@@ -9,6 +9,7 @@ namespace KUpdater.Utility {
       private readonly Dictionary<string, string> _textCache = [];
       private readonly Dictionary<string, byte[]> _binaryCache = [];
       private readonly Dictionary<string, SKBitmap> _skiaCache = [];
+      private readonly Dictionary<(string Family, float Size, FontStyle Style), Font> _fontCache = [];
 
       public ResourceManager(string? basePath = null) {
          _basePath = basePath ?? Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources");
@@ -101,12 +102,39 @@ namespace KUpdater.Utility {
          return skBmp;
       }
 
+
+      public Font GetFont(string family, float size, string style) {
+         var fontStyle = style switch
+         {
+            "Bold" => FontStyle.Bold,
+            "Italic" => FontStyle.Italic,
+            "Regular" => FontStyle.Regular,
+            "Underline" => FontStyle.Underline,
+            _ => FontStyle.Regular
+         };
+
+         var key = (family, size, fontStyle);
+         if (_fontCache.TryGetValue(key, out var cached))
+            return cached;
+
+         try {
+            var font = new Font(family, size, fontStyle);
+            _fontCache[key] = font;
+            return font;
+         }
+         catch (Exception ex) {
+            return LogError<Font>("Font", $"{family}, {size}, {style}", ex)!;
+         }
+      }
+
+
       // 🔹 Verpflichtendes Laden
       public Image RequireImage(string fileName) => GetImage(fileName) ?? Throw<Image>("Image", fileName);
       public Icon RequireIcon(string fileName) => GetIcon(fileName) ?? Throw<Icon>("Icon", fileName);
       public string RequireText(string fileName) => GetText(fileName) ?? Throw<string>("Text", fileName);
       public byte[] RequireBinary(string fileName) => GetBinary(fileName) ?? Throw<byte[]>("Binary", fileName);
       public SKBitmap RequireSkiaBitmap(string fileName) => GetSkiaBitmap(fileName) ?? new SKBitmap(1, 1);
+      public Font RequireFont(string family, float size, string style) => GetFont(family, size, style) ?? throw new InvalidOperationException($"Font not available: {family}, {size}, {style}");
 
       // 🔹 Cleanup
       public void Dispose() {
@@ -116,12 +144,15 @@ namespace KUpdater.Utility {
             icon.Dispose();
          foreach (var bmp in _skiaCache.Values)
             bmp.Dispose();
+         foreach (var font in _fontCache.Values)
+            font.Dispose();
 
          _imageCache.Clear();
          _iconCache.Clear();
          _skiaCache.Clear();
          _textCache.Clear();
          _binaryCache.Clear();
+         _fontCache.Clear();
       }
 
       // 🔹 Internes Logging & Fehlerhandling
