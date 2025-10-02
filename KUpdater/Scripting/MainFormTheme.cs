@@ -1,177 +1,225 @@
-﻿using KUpdater.UI;
-using MoonSharp.Interpreter;
+// Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
+
 using System.Diagnostics;
+using System.Reflection;
+using KUpdater.Core;
+using KUpdater.UI;
+using KUpdater.Utility;
+using MoonSharp.Interpreter;
+
 
 namespace KUpdater.Scripting {
 
-   public class MainFormTheme : Lua, ITheme {
-      private readonly Form _form;
-      private readonly UIElementManager _uiElementManager;
-      private readonly Dictionary<string, Image> _imageCache = new();
-      private string? _currentTheme;
+    public class MainFormTheme : Lua, ITheme, IDisposable {
+        private readonly Form _form;
+        private readonly UIElementManager _uiElementManager;
+        private readonly Updater _updater;
+        private string? _currentTheme;
+        private ThemeBackground? _cachedBackground;
+        private ThemeLayout? _cachedLayout;
+        private readonly ResourceManager _resources;
 
-      public MainFormTheme(Form form, UIElementManager uiElementManager) : base("theme_loader.lua") {
-         _form = form;
-         _uiElementManager = uiElementManager;
-         SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
-         LoadTheme("main_form");
-      }
+        // State
+        public string _lastStatus = "Status: Waiting...";
+        public double _lastProgress = 0.0;
+        public string _lastChangeLog = "Changelog ....";
 
-      protected override void RegisterGlobals() {
-         base.RegisterGlobals();
+        // 🔗 Bindings
+        private readonly Action<string> _setStatusText;
+        private readonly Action<double> _setProgress;
+        private readonly Action<string> _setChangeLogText;
 
-         ExposeToLua("UIElementManager", _uiElementManager);
-         //ExposeToLua<Updater>();
+        public MainFormTheme(Form form, UIElementManager uiElementManager, Updater updater, string language) : base("theme_loader.lua") {
+            _form = form;
+            _uiElementManager = uiElementManager;
+            _updater = updater;
+            _resources = new ResourceManager();
 
-         SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
-            return DynValue.NewTuple(
-               DynValue.NewNumber(_form?.Width ?? 0),
-               DynValue.NewNumber(_form?.Height ?? 0));
-         }));
+            // Init bindings
+            _setStatusText = UIBindings.BindLabelText(_uiElementManager, UIBindings.Ids.UpdateStatusLabel);
+            _setProgress = UIBindings.BindProgress(_uiElementManager, UIBindings.Ids.UpdateProgressBar);
+            _setChangeLogText = UIBindings.BindTextBoxText(_uiElementManager, UIBindings.Ids.ChangeLogTextBox);
 
+            LoadLanguage(language);
+            RegisterGlobals();
+            LoadTheme("main_form");
+        }
 
-         SetGlobal(LuaKeys.UI.AddLabel, (Action<string, string, double, double, string, string, double, string>)
-            ((id, text, x, y, colorHex, fontName, fontSize, fontStyle) => {
-               Color color = ColorTranslator.FromHtml(colorHex);
+        public void ApplyLastState() {
+            _setStatusText(_lastStatus);
+            _setProgress(_lastProgress);
+            _setChangeLogText(_lastChangeLog);
+        }
 
-               if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                  style = FontStyle.Regular;
+        protected override void RegisterGlobals() {
+            base.RegisterGlobals();
 
-               Font font = new(fontName, (float)fontSize, style);
+            ExposeToLua("uiElement", _uiElementManager);
+            ExposeToLua<Font>();
+            ExposeToLua<Color>();
 
-               _uiElementManager.Add(new UILabel(id,
-                  () => new Rectangle((int)x, (int)y,
-                  TextRenderer.MeasureText(text, font).Width,
-                  TextRenderer.MeasureText(text, font).Height),
-                  text, font, color));
-            }));
-
-         SetGlobal(LuaKeys.UI.AddButton, (Action<string, string, double, double, double, double, string, double, string, string, string, DynValue>)
-            ((id, text, x, y, width, height, fontName, fontSize, fontStyle, colorHex, imageKey, callback) => {
-               Color color = ColorTranslator.FromHtml(colorHex);
-
-               if (!Enum.TryParse(fontStyle, true, out FontStyle style))
-                  style = FontStyle.Regular;
-
-               Font font = new(fontName, (float)fontSize, style);
-
-               var button = new UIButton(id,
-                  () => new Rectangle((int)x, (int)y, (int)width, (int)height), text, font, color, imageKey,
-                  () => CallDynFunction(callback));
-
-               _uiElementManager.Add(button);
-            }));
+            ExposeToLua("MakeColor", new {
+                FromHex = (Func<string, Color>)MakeColor.FromHex,
+                ToHex = (Func<Color, string>)MakeColor.ToHex,
+                FromRgb = (Func<int, int, int, Color>)MakeColor.FromRgb,
+                FromRgba = (Func<int, int, int, int, Color>)MakeColor.FromRgba
+            });
 
 
-         SetGlobal("add_progressbar", (Action<string, double, double, double, double>)
-            ((id, x, y, width, height) => {
-               var bar = new UIProgressBar(id,
-                  () => new Rectangle((int)x, (int)y, (int)width, (int)height));
-               _uiElementManager.Add(bar);
+            SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
+            SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
+                return DynValue.NewTuple(
+                   DynValue.NewNumber(_form?.Width ?? 0),
+                   DynValue.NewNumber(_form?.Height ?? 0));
             }));
 
 
-         SetGlobal("update_progress", (Action<string, double>) ((id, value) => { _uiElementManager.UpdateProgressBar(id, value); }));
-         SetGlobal("update_label", (Action<string, string>)((id, text) => { _uiElementManager.UpdateLabel(id, text); }));
-         SetGlobal("reinit_theme", (Action)(() => ReInitTheme()));
+            // 🔥 Lua-Callbacks direkt mit Bindings verbinden
+            SetGlobal("update_status", (Action<string>)(_setStatusText));
+            SetGlobal("update_download_progress", (Action<double>)(_setProgress));
+
+            // 🔗 Generische Updates für dynamische Elemente
+            SetGlobal("update_label", UIBindings.UpdateLabel(_uiElementManager));
+            SetGlobal("update_progress", UIBindings.UpdateProgress(_uiElementManager));
 
 
-         SetGlobal("open_website", (Action<string>)((url) => {
-            try {
-               var psi = new ProcessStartInfo
-            {
-                  FileName = url,
-                  UseShellExecute = true
-               };
-               Process.Start(psi);
+            SetGlobal("open_website", (Action<string>)((url) => {
+                try {
+                    Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+                }
+                catch (Exception ex) {
+                    Console.WriteLine($"Failed to open website: {ex.Message}");
+                }
+            }));
+
+            SetGlobal(LuaKeys.Actions.StartGame, (Action)(() => GameLauncher.StartGame()));
+            SetGlobal(LuaKeys.Actions.OpenSettings, (Action)(() => GameLauncher.OpenSettings()));
+            SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
+
+
+            // 🔥 Automatische Registrierung aller IUIElement-Klassen
+            foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => typeof(IUIElement).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
+                var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!;
+                var generic = method.MakeGenericMethod(type);
+                generic.Invoke(this, [null, null]);
             }
-            catch (Exception ex) {
-               Console.WriteLine($"Failed to open website: {ex.Message}");
+        }
+
+        public void LoadTheme(string themeName) {
+
+            if (_script == null)
+                throw new ObjectDisposedException(nameof(MainFormTheme));
+
+            _currentTheme = themeName;
+            // Lua-Funktion "load_theme" aufrufen
+            Invoke(LuaKeys.Theme.LoadTheme, themeName);
+
+            // Init-Funktion nur aufrufen, wenn vorhanden
+            var initFunc = new LuaValue<Closure>(GetTheme().Get("init"));
+            if (initFunc.IsValid)
+                Invoke(initFunc.Raw);
+
+        }
+
+
+        public void ReInitTheme() {
+            if (!string.IsNullOrEmpty(_currentTheme)) {
+                _uiElementManager.DisposeAndClearAll();
+                LoadTheme(_currentTheme);
+                ApplyLastState();
             }
-         }));
+        }
 
-         SetGlobal(LuaKeys.Actions.StartGame, (Action)(() => GameLauncher.StartGame()));
-         SetGlobal(LuaKeys.Actions.OpenSettings, (Action)(() => GameLauncher.OpenSettings()));
-         SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
-      }
+        public Table GetTheme() => Invoke(LuaKeys.Theme.GetTheme).Table;
 
-      public void ClearImageCache() {
-         foreach (var img in _imageCache.Values)
-            img?.Dispose();
-         _imageCache.Clear();
-      }
+        public Table GetThemeTable(string key) {
+            var table = new LuaValue<Table>(GetTheme().Get(key));
+            if (!table.IsValid)
+                Debug.WriteLine($"[Lua] Theme key '{key}' is not a table.");
+            return table.Value ?? new Table(_script);
+        }
 
-      public void LoadTheme(string themeName) {
-         _currentTheme = themeName;
-         ClearImageCache();
-         CallFunction(LuaKeys.Theme.LoadTheme, themeName);
-         CallDynFunction(GetTheme().Get("init"));
-      }
+        public ThemeBackground GetBackground() => _cachedBackground ??= BuildBackground();
+        public ThemeLayout GetLayout() => _cachedLayout ??= BuildLayout();
 
-      public void ReInitTheme() {
-         if (!string.IsNullOrEmpty(_currentTheme)) {
-            _uiElementManager.ClearAll();
-            LoadTheme(_currentTheme);
-         }
-      }
+        public ThemeBackground BuildBackground() {
+            var bg = new ThemeTable(GetThemeTable("background"), _script);
+            return new ThemeBackground {
+                TopLeft = _resources.GetSkiaBitmap(bg.GetString("top_left")),
+                TopCenter = _resources.GetSkiaBitmap(bg.GetString("top_center")),
+                TopRight = _resources.GetSkiaBitmap(bg.GetString("top_right")),
+                RightCenter = _resources.GetSkiaBitmap(bg.GetString("right_center")),
+                BottomRight = _resources.GetSkiaBitmap(bg.GetString("bottom_right")),
+                BottomCenter = _resources.GetSkiaBitmap(bg.GetString("bottom_center")),
+                BottomLeft = _resources.GetSkiaBitmap(bg.GetString("bottom_left")),
+                LeftCenter = _resources.GetSkiaBitmap(bg.GetString("left_center")),
+                FillColor = bg.GetColor("fill_color", Color.Black)
+            };
+        }
 
-      public Table GetTheme() => CallFunction(LuaKeys.Theme.GetTheme).Table;
-      public Table GetThemeTable(string key) {
-         var value = GetTheme().Get(key);
-         if (value.Type != DataType.Table) {
-            Debug.WriteLine($"[Lua] Theme key '{key}' is not a table.");
-            return new Table(_script);
-         }
-         return value.Table;
-      }
 
-      public ThemeBackground GetBackground() {
-         var bg = GetThemeTable("background");
-         return new ThemeBackground {
-            TopLeft = LoadImage(bg, "top_left"),
-            TopCenter = LoadImage(bg, "top_center"),
-            TopRight = LoadImage(bg, "top_right"),
-            RightCenter = LoadImage(bg, "right_center"),
-            BottomRight = LoadImage(bg, "bottom_right"),
-            BottomCenter = LoadImage(bg, "bottom_center"),
-            BottomLeft = LoadImage(bg, "bottom_left"),
-            LeftCenter = LoadImage(bg, "left_center"),
-            FillColor = ToColor(bg.Get("fill_color"), Color.Black)
-         };
-      }
+        public ThemeLayout BuildLayout() {
+            var layout = new ThemeTable(GetThemeTable("layout"), _script);
+            return new ThemeLayout {
+                TopWidthOffset = layout.GetInt("top_width_offset"),
+                BottomWidthOffset = layout.GetInt("bottom_width_offset"),
+                LeftHeightOffset = layout.GetInt("left_height_offset"),
+                RightHeightOffset = layout.GetInt("right_height_offset"),
+                FillPosOffset = layout.GetInt("fill_pos_offset"),
+                FillWidthOffset = layout.GetInt("fill_width_offset"),
+                FillHeightOffset = layout.GetInt("fill_height_offset")
+            };
+        }
 
-      public ThemeLayout GetLayout() {
-         var layout = GetThemeTable("layout");
-         return new ThemeLayout {
-            TopWidthOffset = (int)(layout.Get("top_width_offset").CastToNumber() ?? 0),
-            BottomWidthOffset = (int)(layout.Get("bottom_width_offset").CastToNumber() ?? 0),
-            LeftHeightOffset = (int)(layout.Get("left_height_offset").CastToNumber() ?? 0),
-            RightHeightOffset = (int)(layout.Get("right_height_offset").CastToNumber() ?? 0),
-            FillPosOffset = (int)(layout.Get("fill_pos_offset").CastToNumber() ?? 0),
-            FillWidthOffset = (int)(layout.Get("fill_width_offset").CastToNumber() ?? 0),
-            FillHeightOffset = (int)(layout.Get("fill_height_offset").CastToNumber() ?? 0)
-         };
-      }
+        public void LoadLanguage(string langCode) {
+            var langPath = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "languages", $"lang_{langCode}.lua");
+            var defaultPath = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "languages", "lang_en.lua");
 
-      private Image LoadImage(Table table, string key) {
-         string file = table.Get(key).CastToString();
-         if (string.IsNullOrWhiteSpace(file))
-            return new Bitmap(1, 1);
+            if (!File.Exists(langPath))
+                throw new FileNotFoundException($"Language file not found: {langPath}");
 
-         if (_imageCache.TryGetValue(file, out var cached))
-            return cached;
+            // Lade aktuelle Sprache
+            var langTable = _script.DoString(File.ReadAllText(langPath)).Table;
 
-         string path = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources", file);
-         if (!File.Exists(path))
-            return new Bitmap(1, 1);
+            // Lade Fallback (Englisch)
+            var fallbackTable = _script.DoString(File.ReadAllText(defaultPath)).Table;
 
-         using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-         var img = Image.FromStream(fs);
-         _imageCache[file] = img;
-         return img;
-      }
+            _script.Globals["L"] = langTable;
+            _script.Globals["L_Fallback"] = fallbackTable;
 
-      private Color ToColor(DynValue val, Color fallback) =>
-         val.Type == DataType.String ? ColorTranslator.FromHtml(val.String) : fallback;
-   }
+            // Registriere Lookup-Funktion mit Fallback
+            _script.Globals["T"] = (Func<string, string>)(key => {
+                string[] parts = key.Split('.');
+                string? lookup(DynValue table) {
+                    var node = table;
+                    foreach (var part in parts) {
+                        if (node.Type != DataType.Table)
+                            return null;
+                        node = node.Table.Get(part);
+                    }
+                    return node.ToObject() as string;
+                }
+
+                // Erst in aktueller Sprache suchen
+                var val = lookup(_script.Globals.Get("L"));
+                if (!string.IsNullOrEmpty(val))
+                    return val;
+
+                // Fallback: Englisch
+                val = lookup(_script.Globals.Get("L_Fallback"));
+                return val ?? $"[MISSING:{key}]"; // Wenn auch dort nicht vorhanden → Key zurückgeben
+            });
+
+            Localization.Initialize(_script);
+        }
+
+        public override void Dispose() {
+            _cachedBackground = null;
+            _cachedLayout = null;
+            _resources.Dispose();
+            base.Dispose();
+        }
+
+    }
 }

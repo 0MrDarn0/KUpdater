@@ -1,84 +1,107 @@
-﻿using SkiaSharp;
+// Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
+
+using SkiaSharp;
 
 namespace KUpdater.UI {
-   public class UICopyrightLabel : IUIElement {
-      public string Id { get; }
-      private readonly Func<Rectangle> _boundsFunc;
-      public Rectangle Bounds => _boundsFunc();
-      public bool Visible { get; set; } = true;
-      public string Text { get; set; }
-      public Font Font { get; set; }
-      public Color BaseColor { get; set; }
+    public class UICopyrightLabel : IUIElement {
+        public string Id { get; }
+        private readonly Func<Rectangle> _boundsFunc;
+        public Rectangle Bounds => _boundsFunc();
+        public bool Visible { get; set; } = true;
+        public string Text { get; set; }
+        public Font Font { get; private set; }
+        public Color BaseColor { get; set; }
 
-      public UICopyrightLabel(string id, Func<Rectangle> boundsFunc, string text, Font font, Color baseColor) {
-         Id = id;
-         _boundsFunc = boundsFunc;
-         Text = text;
-         Font = font;
-         BaseColor = baseColor;
-      }
+        // 🧩 Skia-Caches
+        private SKTypeface? _typeface;
+        private SKFont? _skFont;
+        private SKPaint? _glowPaint;
+        private SKPaint? _gradientPaint;
+        private SKShader? _gradientShader;
 
-      public void Draw(Graphics g) {
-         if (!Visible)
-            return;
-         TextRenderer.DrawText(g, Text, Font, Bounds.Location, BaseColor);
-      }
+        private readonly bool _ownsFont;
 
-      public void Draw(SKCanvas canvas) {
-         if (!Visible)
-            return;
+        public UICopyrightLabel(
+            string id,
+            Func<Rectangle> boundsFunc,
+            string text,
+            Font font,
+            Color baseColor,
+            bool ownsFont = true) {
+            Id = id;
+            _boundsFunc = boundsFunc;
+            Text = text;
+            Font = font;
+            BaseColor = baseColor;
+            _ownsFont = ownsFont;
 
-         var bounds = Bounds;
-         float fontSize = Font.Size * 1.33f;
+            InitSkiaResources();
+        }
 
-         SKFontStyleWeight weight = Font.Style.HasFlag(FontStyle.Bold) ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal;
-         SKFontStyleSlant slant = Font.Style.HasFlag(FontStyle.Italic) ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
+        private void InitSkiaResources() {
+            SKFontStyleWeight weight = Font.Style.HasFlag(FontStyle.Bold) ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal;
+            SKFontStyleSlant slant = Font.Style.HasFlag(FontStyle.Italic) ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
 
-         var typeface = SKTypeface.FromFamilyName(Font.Name, new SKFontStyle(weight, SKFontStyleWidth.Normal, slant));
+            _typeface = SKTypeface.FromFamilyName(Font.Name, new SKFontStyle(weight, SKFontStyleWidth.Normal, slant));
+            _skFont = new SKFont(_typeface, Font.Size * 1.33f);
 
-         using var font = new SKFont {
-            Typeface = typeface,
-            Size = fontSize
-         };
+            _glowPaint = new SKPaint {
+                Color = BaseColor.ToSKColor().WithAlpha(200),
+                IsAntialias = true,
+                ImageFilter = SKImageFilter.CreateBlur(8, 8)
+            };
 
-         var metrics = font.Metrics;
-         var x = bounds.X;
-         var y = bounds.Y + bounds.Height / 2 - (metrics.Ascent + metrics.Descent) / 2;
+            // Shader wird dynamisch im Draw() neu gesetzt, weil Bounds gebraucht werden
+            _gradientPaint = new SKPaint { IsAntialias = true };
+        }
 
-         //// Schatten
-         //using var shadowPaint = new SKPaint {
-         //   Color = SKColors.White.WithAlpha(100),
-         //   IsAntialias = true
-         //};
-         //canvas.DrawText(Text, x + 1, y + 1, font, shadowPaint);
+        public void Draw(Graphics g) {
+            if (!Visible)
+                return;
+            TextRenderer.DrawText(g, Text, Font, Bounds.Location, BaseColor);
+        }
 
-         // Glow
-         using var glowPaint = new SKPaint {
-            Color = BaseColor.ToSKColor().WithAlpha(200),
-            IsAntialias = true,
-            ImageFilter = SKImageFilter.CreateBlur(8, 8)
-         };
-         canvas.DrawText(Text, x, y, font, glowPaint);
+        public void Draw(SKCanvas canvas) {
+            if (!Visible || _skFont == null || _glowPaint == null || _gradientPaint == null)
+                return;
 
-         // Farbverlauf
-         var gradientShader = SKShader.CreateLinearGradient(
-            new SKPoint(bounds.Left, bounds.Top),
-            new SKPoint(bounds.Right, bounds.Bottom),
-            new[] { SKColors.Orange, SKColors.Gold },
-            null,
-            SKShaderTileMode.Clamp
-         );
+            var bounds = Bounds;
+            var metrics = _skFont.Metrics;
 
-         using var paint = new SKPaint {
-            Shader = gradientShader,
-            IsAntialias = true
-         };
+            var x = bounds.X;
+            var y = bounds.Y + bounds.Height / 2 - (metrics.Ascent + metrics.Descent) / 2;
 
-         canvas.DrawText(Text, x, y, font, paint);
-      }
+            // Glow
+            canvas.DrawText(Text, x, y, _skFont, _glowPaint);
 
-      public bool OnMouseMove(Point p) => false;
-      public bool OnMouseDown(Point p) => false;
-      public bool OnMouseUp(Point p) => false;
-   }
+            // Farbverlauf (Shader muss Bounds kennen → hier erzeugen)
+            _gradientShader?.Dispose();
+            _gradientShader = SKShader.CreateLinearGradient(
+                new SKPoint(bounds.Left, bounds.Top),
+                new SKPoint(bounds.Right, bounds.Bottom),
+                new[] { SKColors.Orange, SKColors.Gold },
+                null,
+                SKShaderTileMode.Clamp
+            );
+            _gradientPaint.Shader = _gradientShader;
+
+            canvas.DrawText(Text, x, y, _skFont, _gradientPaint);
+        }
+
+        public bool OnMouseMove(Point p) => false;
+        public bool OnMouseDown(Point p) => false;
+        public bool OnMouseUp(Point p) => false;
+        public bool OnMouseWheel(int delta, Point p) => false;
+
+        public void Dispose() {
+            if (_ownsFont)
+                Font.Dispose();
+
+            _skFont?.Dispose();
+            _typeface?.Dispose();
+            _glowPaint?.Dispose();
+            _gradientPaint?.Dispose();
+            _gradientShader?.Dispose();
+        }
+    }
 }
