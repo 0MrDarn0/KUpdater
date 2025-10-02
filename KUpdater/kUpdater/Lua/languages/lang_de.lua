@@ -1,4 +1,4 @@
-﻿return {
+return {
   app = {
     title = "kUpdater",
     subtitle = "칼온라인"

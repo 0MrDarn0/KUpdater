@@ -1,4 +1,4 @@
-﻿-- Hintergrund-Konfiguration
+-- Hintergrund-Konfiguration
 local background_config = {
   top_left      = "main_tl_default.png",
   top_center    = "main_tc_default.png",
@@ -116,8 +116,6 @@ return {
     local progressBar = UIProgressBar("pb_update_progress", anchor(27, -30, -27, 5))
     uiElement.Add(progressBar)
 
-
-
     local changelogBox = UITextBox("tb_changelog", 
         anchor(36, 240, -380, -60),
         "Changelog ...",
@@ -126,7 +124,6 @@ return {
         true, true)
 
     uiElement.Add(changelogBox)
-
 
   end,
 
