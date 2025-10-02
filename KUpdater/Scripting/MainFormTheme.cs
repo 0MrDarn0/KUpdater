@@ -31,6 +31,7 @@ namespace KUpdater.Scripting {
          _setStatusText = UIBindings.BindLabelText(_uiElementManager, UIBindings.Ids.UpdateStatusLabel);
          _setProgress = UIBindings.BindProgress(_uiElementManager, UIBindings.Ids.UpdateProgressBar);
 
+         LoadLanguage("en");
          RegisterGlobals();
          LoadTheme("main_form");
 
@@ -197,6 +198,47 @@ namespace KUpdater.Scripting {
 
          return fallback;
       }
+
+      public void LoadLanguage(string langCode) {
+         var langPath = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "languages", $"lang_{langCode}.lua");
+         var defaultPath = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "languages", "lang_en.lua");
+
+         if (!File.Exists(langPath))
+            throw new FileNotFoundException($"Language file not found: {langPath}");
+
+         // Lade aktuelle Sprache
+         var langTable = _script.DoString(File.ReadAllText(langPath)).Table;
+
+         // Lade Fallback (Englisch)
+         var fallbackTable = _script.DoString(File.ReadAllText(defaultPath)).Table;
+
+         _script.Globals["L"] = langTable;
+         _script.Globals["L_Fallback"] = fallbackTable;
+
+         // Registriere Lookup-Funktion mit Fallback
+         _script.Globals["T"] = (Func<string, string>)(key => {
+            string[] parts = key.Split('.');
+            string? lookup(DynValue table) {
+               var node = table;
+               foreach (var part in parts) {
+                  if (node.Type != DataType.Table)
+                     return null;
+                  node = node.Table.Get(part);
+               }
+               return node.CastToString();
+            }
+
+            // Erst in aktueller Sprache suchen
+            var val = lookup(_script.Globals.Get("L"));
+            if (!string.IsNullOrEmpty(val))
+               return val;
+
+            // Fallback: Englisch
+            val = lookup(_script.Globals.Get("L_Fallback"));
+            return val ?? key; // Wenn auch dort nicht vorhanden → Key zurückgeben
+         });
+      }
+
 
       public override void Dispose() {
          ClearImageCache();

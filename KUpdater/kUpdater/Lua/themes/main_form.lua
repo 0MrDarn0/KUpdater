@@ -55,14 +55,14 @@ return {
     -- Title
     local titleLabel = UILabel("lb_title",
         bounds(35, 0, 200, 40),
-        "kUpdater",
+        T("app.title"),
         Font("Chiller", 40, "Italic"),
         Color.Orange)
     uiElement.Add(titleLabel)
 
     local subtitleLabel = UILabel("lb_subtitle",
         bounds(-115, 12, 200, 27),
-        "칼온라인", 
+        T("app.subtitle"), 
         Font("Malgun Gothic", 13, "Bold"),
         Color.Gold)
     uiElement.Add(subtitleLabel)
@@ -70,7 +70,7 @@ return {
     -- Buttons
     local btnClose = UIButton("btn_close",
       bounds(-35, 16, 18, 18),
-      "X",
+      T("button.exit"),
       Font("Segoe UI", 10, "Regular"),
       Color.Orange,
       "btn_exit",
@@ -79,7 +79,7 @@ return {
 
     local btnStart = UIButton("btn_start",
       bounds(-150, -70, 97, 22),
-      "Start",
+      T("button.start"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "btn_default",
@@ -88,7 +88,7 @@ return {
 
     local btnSettings = UIButton("btn_settings",
       bounds(-255, -70, 97, 22),
-      "Settings",
+      T("button.settings"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "btn_default",
@@ -97,7 +97,7 @@ return {
 
     local btnWebsite = UIButton("btn_website",
       bounds(-360, -70, 97, 22),
-      "Website",
+      T("button.website"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "btn_default",
@@ -107,7 +107,7 @@ return {
     -- Status-Label
     local statusLabel = UILabel("lb_update_status",
         anchor(27, -50, 200, 20),
-        "Status: Waiting...",
+        T("status.waiting"),
         Font("Segoe UI", 10, "Regular"),
         Color.White)
     uiElement.Add(statusLabel)
