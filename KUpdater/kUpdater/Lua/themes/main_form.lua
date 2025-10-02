@@ -120,7 +120,7 @@ return {
 
     local changelogBox = UITextBox("tb_changelog", 
         anchor(36, 240, -380, -60),
-        ChangelogText,
+        "Changelog ...",
         Font("Segoe UI", 10, "Regular"),
         Color.White, MakeColor.FromHex("#282828"),
         true, true)

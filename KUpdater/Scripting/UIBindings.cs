@@ -17,9 +17,11 @@ namespace KUpdater.Scripting {
          public const string StartButton = "btn_start";
          public const string SettingsButton = "btn_settings";
          public const string WebsiteButton = "btn_website";
+
+         public const string ChangeLogTextBox = "tb_changelog";
       }
 
-      // 🔗 Binding helpers
+      // 🔗 Binding helpers   
       public static Action<string> BindLabelText(UIElementManager mgr, string id)
           => text => mgr.Update<UILabel>(id, l => l.Text = text);
 
@@ -37,5 +39,8 @@ namespace KUpdater.Scripting {
 
       public static Action<string, double> UpdateProgress(UIElementManager mgr)
           => (id, value) => mgr.Update<UIProgressBar>(id, b => b.Progress = (float)Math.Clamp(value, 0.0, 1.0));
+
+      public static Action<string> BindTextBoxText(UIElementManager mgr, string id)
+         => text => mgr.Update<UITextBox>(id, tb => tb.Text = text);
    }
 }

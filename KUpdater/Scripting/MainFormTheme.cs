@@ -20,10 +20,12 @@ namespace KUpdater.Scripting {
       // State
       public string _lastStatus = "Status: Waiting...";
       public double _lastProgress = 0.0;
+      public string _lastChangeLog = "Changelog ....";
 
       // 🔗 Bindings
       private readonly Action<string> _setStatusText;
       private readonly Action<double> _setProgress;
+      private readonly Action<string> _setChangeLogText;
 
       public MainFormTheme(Form form, UIElementManager uiElementManager, Updater updater, string language) : base("theme_loader.lua") {
          _form = form;
@@ -34,6 +36,7 @@ namespace KUpdater.Scripting {
          // Init bindings
          _setStatusText = UIBindings.BindLabelText(_uiElementManager, UIBindings.Ids.UpdateStatusLabel);
          _setProgress = UIBindings.BindProgress(_uiElementManager, UIBindings.Ids.UpdateProgressBar);
+         _setChangeLogText = UIBindings.BindTextBoxText(_uiElementManager, UIBindings.Ids.ChangeLogTextBox);
 
          LoadLanguage(language);
          RegisterGlobals();
@@ -43,6 +46,7 @@ namespace KUpdater.Scripting {
       public void ApplyLastState() {
          _setStatusText(_lastStatus);
          _setProgress(_lastProgress);
+         _setChangeLogText(_lastChangeLog);
       }
 
       protected override void RegisterGlobals() {
@@ -51,9 +55,6 @@ namespace KUpdater.Scripting {
          ExposeToLua("uiElement", _uiElementManager);
          ExposeToLua<Font>();
          ExposeToLua<Color>();
-
-         string changelogText = File.ReadAllText("changelog.txt");
-         ExposeToLua("ChangelogText", changelogText);
 
          ExposeToLua("MakeColor", new {
             FromHex = (Func<string, Color>)MakeColor.FromHex,

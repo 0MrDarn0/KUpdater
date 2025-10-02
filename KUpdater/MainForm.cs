@@ -58,6 +58,11 @@ namespace KUpdater {
          base.OnShown(e);
          _uiRenderer.RequestRender();
 
+         _updater.ChangelogChanged += msg => {
+            _mainFormTheme._lastChangeLog = msg;
+            _uiRenderer.RequestRender();
+         };
+
          _updater.StatusChanged += msg => {
             _mainFormTheme._lastStatus = msg;
             _uiRenderer.RequestRender();

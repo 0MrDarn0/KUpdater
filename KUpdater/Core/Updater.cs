@@ -11,6 +11,7 @@ namespace KUpdater.Core {
 
       public event Action<string>? StatusChanged;
       public event Action<int>? ProgressChanged;
+      public event Action<string>? ChangelogChanged;
 
       public Updater(IUpdateSource source, string baseUrl, string rootDirectory) {
          _source = source ?? throw new ArgumentNullException(nameof(source));
@@ -30,7 +31,7 @@ namespace KUpdater.Core {
             var currentVersion = GetLocalVersion();
             var changelogData = await GetChangelogAsync();
 
-            File.WriteAllText(Path.Combine(_rootDirectory, "changelog.txt"), changelogData);
+            ChangelogChanged?.Invoke(changelogData);
 
             bool needsUpdate = currentVersion != metadata.Version;
 
