@@ -14,24 +14,26 @@ public static class SkiaSharpExtensions {
          return temp.ToSKBitmap();
       }
 
-      // Skia-Bitmap in passendem Format anlegen
+      if (bmp.PixelFormat != PixelFormat.Format32bppPArgb)
+         bmp = bmp.Clone(new Rectangle(0, 0, bmp.Width, bmp.Height), PixelFormat.Format32bppPArgb);
+
+
       SKBitmap skBmp = new(bmp.Width, bmp.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
 
-      // GDI+ Bitmap sperren
+
       var data = bmp.LockBits(
             new Rectangle(0, 0, bmp.Width, bmp.Height),
             ImageLockMode.ReadOnly,
             PixelFormat.Format32bppPArgb);
 
       try {
-         // Bytes direkt kopieren
          unsafe {
+            int bytesToCopy = Math.Min(bmp.Height * data.Stride, skBmp.ByteCount);
             Buffer.MemoryCopy(
                 source: (void*)data.Scan0,
                 destination: (void*)skBmp.GetPixels(),
                 destinationSizeInBytes: skBmp.ByteCount,
-                sourceBytesToCopy: bmp.Height * data.Stride
-            );
+                sourceBytesToCopy: bytesToCopy);
          }
       }
       finally {

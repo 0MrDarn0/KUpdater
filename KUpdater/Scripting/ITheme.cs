@@ -28,4 +28,15 @@ namespace KUpdater.Scripting {
       public int FillWidthOffset { get; set; }
       public int FillHeightOffset { get; set; }
    }
+
+   /* als record, villeicht in der zukunft
+   public readonly record struct ThemeLayout(
+   int TopWidthOffset,
+   int BottomWidthOffset,
+   int LeftHeightOffset,
+   int RightHeightOffset,
+   int FillPosOffset,
+   int FillWidthOffset,
+   int FillHeightOffset);
+    */
 }

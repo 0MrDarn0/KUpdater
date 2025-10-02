@@ -16,6 +16,7 @@ namespace KUpdater.UI {
       private Bitmap? _cachedBmp;
       private bool _disposed;
       private readonly SKPaint _fillPaint = new() { IsAntialias = true };
+      public bool IsRendering { get; private set; }
 
       public UIRenderer(Form form, UIElementManager uiElementManager, ITheme theme) {
          _form = form;
@@ -23,18 +24,26 @@ namespace KUpdater.UI {
          _theme = theme;
 
          _renderTimer = new System.Windows.Forms.Timer { Interval = 33 };
-         _renderTimer.Tick += (s, e) => {
-            if (!_needsRender || _disposed || _form.IsDisposed)
-               return;
-
-            _needsRender = false;
-            (_theme as MainFormTheme)?.ApplyLastState();
-            Redraw();
-         };
+         _renderTimer.Tick += (s, e) => RenderTick();
          _renderTimer.Start();
       }
 
       public void RequestRender() => _needsRender = true;
+
+      private void RenderTick() {
+         if (!_needsRender || _disposed || _form.IsDisposed)
+            return;
+
+         IsRendering = true;
+         try {
+            _needsRender = false;
+            (_theme as MainFormTheme)?.ApplyLastState();
+            Redraw();
+         }
+         finally {
+            IsRendering = false;
+         }
+      }
 
       public void EnsureBuffers(int width, int height) {
          if (_cachedSkBitmap == null || _cachedSkBitmap.Width != width || _cachedSkBitmap.Height != height) {

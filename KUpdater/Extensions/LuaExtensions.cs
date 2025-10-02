@@ -15,6 +15,17 @@ namespace KUpdater.Extensions {
          }
       }
 
+      // 🔹 Typensicheres Casten eines DynValue zu T mit fallback value
+      public static T As<T>(this DynValue val, T fallback) {
+         try {
+            var result = val.ToObject<T>();
+            return result is not null ? result : fallback;
+         }
+         catch {
+            return fallback;
+         }
+      }
+
       // 🔹 Ist der Wert "truthy" (Lua-Logik)
       public static bool IsTruthy(this DynValue val) {
          return val.Type != DataType.Nil && val.Type != DataType.Void &&
@@ -50,5 +61,29 @@ namespace KUpdater.Extensions {
       public static object? AsUserData(this DynValue val) {
          return val.Type == DataType.UserData ? val.UserData.Object : null;
       }
+
+      public static Color AsColor(this DynValue val, Color fallback) {
+         try {
+            if (val.Type == DataType.String)
+               return ColorTranslator.FromHtml(val.String);
+
+            if (val.Type == DataType.UserData && val.UserData.Object is Color c)
+               return c;
+
+            if (val.Type == DataType.Table) {
+               var t = val.Table;
+               int r = Clamp((int)(t.Get("r").CastToNumber() ?? 0));
+               int g = Clamp((int)(t.Get("g").CastToNumber() ?? 0));
+               int b = Clamp((int)(t.Get("b").CastToNumber() ?? 0));
+               return Color.FromArgb(r, g, b);
+            }
+         }
+         catch { }
+
+         return fallback;
+      }
+
+      private static int Clamp(int value) => Math.Max(0, Math.Min(255, value));
+
    }
 }

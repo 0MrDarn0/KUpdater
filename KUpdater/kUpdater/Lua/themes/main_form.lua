@@ -13,7 +13,7 @@ local background_config = {
 
 local layout_config = {
   top_width_offset    = 7,
-  bottom_width_offset = 21,
+  bottom_width_offset = 15,
   left_height_offset  = 5,
   right_height_offset = 5,
   fill_pos_offset     = 5,
