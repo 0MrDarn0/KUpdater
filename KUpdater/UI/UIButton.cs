@@ -116,6 +116,8 @@ public class UIButton : IUIElement {
       return prevPressed != IsPressed;
    }
 
+   public bool OnMouseWheel(int delta, Point p) => false;
+
    public void Dispose() {
       foreach (var img in _stateImages.Values)
          img.Dispose();

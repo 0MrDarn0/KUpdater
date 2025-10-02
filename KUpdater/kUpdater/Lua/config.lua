@@ -1,5 +1,5 @@
 ﻿UpdaterConfig = {
-    Url = "http://darn.bplaced.net/KUpdater/update.json",
+    Url = "http://darn.bplaced.net/KUpdater/",
     Language = "en", -- "en", "de", ...
     Network = {
         Proxy = {

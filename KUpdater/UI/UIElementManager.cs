@@ -65,5 +65,14 @@ namespace KUpdater.UI {
                needsRedraw = true;
          return needsRedraw;
       }
+
+      public bool MouseWheel(int delta, Point p) {
+         bool needsRedraw = false;
+         foreach (var el in _elements.ToList())
+            if (el.Visible && el.Bounds.Contains(p) && el.OnMouseWheel(delta, p))
+               needsRedraw = true;
+         return needsRedraw;
+      }
+
    }
 }

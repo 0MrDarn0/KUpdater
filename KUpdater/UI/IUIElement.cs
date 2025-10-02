@@ -10,5 +10,8 @@ namespace KUpdater.UI {
       bool OnMouseMove(Point p);
       bool OnMouseDown(Point p);
       bool OnMouseUp(Point p);
+
+      // 🆕 Scroll-Event
+      bool OnMouseWheel(int delta, Point p);
    }
 }

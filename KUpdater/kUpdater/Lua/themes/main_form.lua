@@ -116,6 +116,18 @@ return {
     local progressBar = UIProgressBar("pb_update_progress", anchor(27, -30, -27, 5))
     uiElement.Add(progressBar)
 
+
+
+    local changelogBox = UITextBox("tb_changelog", 
+        anchor(36, 240, -380, -60),
+        ChangelogText,
+        Font("Segoe UI", 10, "Regular"),
+        Color.White, MakeColor.FromHex("#282828"),
+        true, true)
+
+    uiElement.Add(changelogBox)
+
+
   end,
 
 

@@ -23,7 +23,9 @@
             return resp.Content.Headers.ContentLength.Value;
          return null;
       }
+
+      public async Task<string> GetChangelogAsync(string changelogUrl) {
+         return await _http.GetStringAsync(changelogUrl);
+      }
    }
-
-
 }

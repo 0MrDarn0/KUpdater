@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
+using KUpdater.Core;
 using KUpdater.UI;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;
@@ -10,6 +11,7 @@ namespace KUpdater.Scripting {
    public class MainFormTheme : Lua, ITheme, IDisposable {
       private readonly Form _form;
       private readonly UIElementManager _uiElementManager;
+      private readonly Updater _updater;
       private string? _currentTheme;
       private ThemeBackground? _cachedBackground;
       private ThemeLayout? _cachedLayout;
@@ -23,11 +25,12 @@ namespace KUpdater.Scripting {
       private readonly Action<string> _setStatusText;
       private readonly Action<double> _setProgress;
 
-      public MainFormTheme(Form form, UIElementManager uiElementManager, string language) : base("theme_loader.lua") {
+      public MainFormTheme(Form form, UIElementManager uiElementManager, Updater updater, string language) : base("theme_loader.lua") {
          _form = form;
          _uiElementManager = uiElementManager;
-         string resDir = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources");
-         _resources = new ResourceManager(resDir);
+         _updater = updater;
+         _resources = new ResourceManager();
+
          // Init bindings
          _setStatusText = UIBindings.BindLabelText(_uiElementManager, UIBindings.Ids.UpdateStatusLabel);
          _setProgress = UIBindings.BindProgress(_uiElementManager, UIBindings.Ids.UpdateProgressBar);
@@ -48,6 +51,17 @@ namespace KUpdater.Scripting {
          ExposeToLua("uiElement", _uiElementManager);
          ExposeToLua<Font>();
          ExposeToLua<Color>();
+
+         string changelogText = File.ReadAllText("changelog.txt");
+         ExposeToLua("ChangelogText", changelogText);
+
+         ExposeToLua("MakeColor", new {
+            FromHex = (Func<string, Color>)MakeColor.FromHex,
+            ToHex = (Func<Color, string>)MakeColor.ToHex,
+            FromRgb = (Func<int, int, int, Color>)MakeColor.FromRgb,
+            FromRgba = (Func<int, int, int, int, Color>)MakeColor.FromRgba
+         });
+
 
          SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
          SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
@@ -85,7 +99,7 @@ namespace KUpdater.Scripting {
              .Where(t => typeof(IUIElement).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
             var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!;
             var generic = method.MakeGenericMethod(type);
-            generic.Invoke(this, new object?[] { null, null });
+            generic.Invoke(this, [null, null]);
          }
       }
 
@@ -95,9 +109,6 @@ namespace KUpdater.Scripting {
             throw new ObjectDisposedException(nameof(MainFormTheme));
 
          _currentTheme = themeName;
-         _cachedBackground = null;
-         _cachedLayout = null;
-
          // Lua-Funktion "load_theme" aufrufen
          Invoke(LuaKeys.Theme.LoadTheme, themeName);
 

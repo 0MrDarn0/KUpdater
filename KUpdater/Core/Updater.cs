@@ -1,24 +1,26 @@
 ﻿using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
-using KUpdater.Scripting;
 
 namespace KUpdater.Core {
    public class Updater {
       private readonly IUpdateSource _source;
-      private readonly string _metadataUrl;
+      private readonly string _baseUrl;
       private readonly string _rootDirectory;
       private readonly string _localVersionFile;
 
       public event Action<string>? StatusChanged;
       public event Action<int>? ProgressChanged;
 
-      public Updater(IUpdateSource source, string metadataUrl, string rootDirectory) {
+      public Updater(IUpdateSource source, string baseUrl, string rootDirectory) {
          _source = source ?? throw new ArgumentNullException(nameof(source));
-         _metadataUrl = metadataUrl ?? throw new ArgumentNullException(nameof(metadataUrl));
+         _baseUrl = baseUrl.EndsWith("/") ? baseUrl : baseUrl + "/";
          _rootDirectory = rootDirectory ?? throw new ArgumentNullException(nameof(rootDirectory));
          _localVersionFile = Path.Combine(_rootDirectory, "version.txt");
       }
+
+      private string MetadataUrl => _baseUrl + "update.json";
+      private string ChangelogUrl => _baseUrl + "changelog.txt";
 
       public async Task RunUpdateAsync() {
          try {
@@ -26,6 +28,9 @@ namespace KUpdater.Core {
 
             var metadata = await GetMetadataAsync();
             var currentVersion = GetLocalVersion();
+            var changelogData = await GetChangelogAsync();
+
+            File.WriteAllText(Path.Combine(_rootDirectory, "changelog.txt"), changelogData);
 
             bool needsUpdate = currentVersion != metadata.Version;
 
@@ -56,8 +61,12 @@ namespace KUpdater.Core {
       }
 
       private async Task<UpdateMetadata> GetMetadataAsync() {
-         var json = await _source.GetMetadataJsonAsync(_metadataUrl);
+         var json = await _source.GetMetadataJsonAsync(MetadataUrl);
          return JsonSerializer.Deserialize<UpdateMetadata>(json)!;
+      }
+
+      public async Task<string> GetChangelogAsync() {
+         return await _source.GetChangelogAsync(ChangelogUrl);
       }
 
       private string GetLocalVersion() {

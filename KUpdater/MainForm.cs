@@ -19,13 +19,16 @@ namespace KUpdater {
       private readonly MainFormTheme _mainFormTheme;
       private readonly UIRenderer _uiRenderer;
       private readonly UpdaterConfig _config;
+      private readonly Updater _updater;
 
       public MainForm() {
          Instance = this;
 
          _config = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig").Load();
+         _updater = new Updater(new HttpUpdateSource(), _config.Url, AppDomain.CurrentDomain.BaseDirectory);
+
          _uiElementManager = new();
-         _mainFormTheme = new(this, _uiElementManager, _config.Language);
+         _mainFormTheme = new(this, _uiElementManager, _updater, _config.Language);
          _uiRenderer = new(this, _uiElementManager, _mainFormTheme);
 
          InitializeComponent();
@@ -55,20 +58,17 @@ namespace KUpdater {
          base.OnShown(e);
          _uiRenderer.RequestRender();
 
-         var updater = new Updater(new HttpUpdateSource(), _config.Url, AppDomain.CurrentDomain.BaseDirectory);
-
-
-         updater.StatusChanged += msg => {
+         _updater.StatusChanged += msg => {
             _mainFormTheme._lastStatus = msg;
             _uiRenderer.RequestRender();
          };
 
-         updater.ProgressChanged += val => {
+         _updater.ProgressChanged += val => {
             _mainFormTheme._lastProgress = val / 100.0;
             _uiRenderer.RequestRender();
          };
 
-         await updater.RunUpdateAsync();
+         await _updater.RunUpdateAsync();
       }
 
 
@@ -154,5 +154,12 @@ namespace KUpdater {
          if (_uiElementManager.MouseUp(e.Location))
             _uiRenderer.RequestRender();
       }
+
+      protected override void OnMouseWheel(MouseEventArgs e) {
+         bool handled = _uiElementManager.MouseWheel(e.Delta, e.Location);
+         if (handled)
+            _uiRenderer.RequestRender();
+      }
+
    }
 }

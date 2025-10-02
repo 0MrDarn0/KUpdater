@@ -89,6 +89,7 @@ namespace KUpdater.UI {
       public bool OnMouseMove(Point p) => false;
       public bool OnMouseDown(Point p) => false;
       public bool OnMouseUp(Point p) => false;
+      public bool OnMouseWheel(int delta, Point p) => false;
 
       public void Dispose() {
          if (_ownsFont)
