@@ -31,19 +31,52 @@ local function bounds(x, y, w, h)
   end
 end
 
--- Hilfsfunktion für rechts-/unten-Anchor
-local function anchor(x, y, w, h)
+-- Generische Anchor-Funktion
+-- mode: "top_left", "top_right", "bottom_left", "bottom_right"
+local function anchor(x, y, w, h, mode)
+  mode = mode or "top_left"
+
   return function()
     local winW, winH = get_window_size()
 
-    local rx = (x < 0) and (winW + x) or x
-    local ry = (y < 0) and (winH + y) or y
-    local rw = (w < 0) and (winW + w - rx) or w
-    local rh = (h < 0) and (winH + h - ry) or h
+    local rx, ry, rw, rh
+
+    -- Breite
+    if w < 0 then
+      rw = winW + w - ((x < 0) and (winW + x) or x)
+    else
+      rw = w
+    end
+
+    -- Höhe
+    if h < 0 then
+      rh = winH + h - ((y < 0) and (winH + y) or y)
+    else
+      rh = h
+    end
+
+    if mode == "top_left" then
+      rx = (x < 0) and (winW + x) or x
+      ry = (y < 0) and (winH + y) or y
+
+    elseif mode == "top_right" then
+      rx = winW - ((x < 0) and -x or x) - rw
+      ry = (y < 0) and (winH + y) or y
+
+    elseif mode == "bottom_left" then
+      rx = (x < 0) and (winW + x) or x
+      ry = winH - ((y < 0) and -y or y) - rh
+
+    elseif mode == "bottom_right" then
+      rx = winW - ((x < 0) and -x or x) - rw
+      ry = winH - ((y < 0) and -y or y) - rh
+    end
 
     return { x = rx, y = ry, width = rw, height = rh }
   end
 end
+
+
 
 -- Rückgabe der gesamten Fensterdefinition
 return {
@@ -104,26 +137,37 @@ return {
       function() open_website("https://google.com") end)
     uiElement.Add(btnWebsite)
 
-    -- Status-Label
-    local statusLabel = UILabel("lb_update_status",
-        anchor(27, -50, 200, 20),
-        T("status.waiting"),
-        Font("Segoe UI", 10, "Regular"),
-        Color.White)
-    uiElement.Add(statusLabel)
 
-    -- Progressbar
-    local progressBar = UIProgressBar("pb_update_progress", anchor(27, -30, -27, 5))
-    uiElement.Add(progressBar)
+-- Progressbar (27px vom linken Rand, 30px vom unteren Rand,
+-- rechts -27px Abstand, Höhe 5px)
+    local progressBar = UIProgressBar("pb_update_progress",
+      anchor(27, 30, -27, 5, "bottom_left"))
+      uiElement.Add(progressBar)
 
     local changelogBox = UITextBox("tb_changelog", 
-        anchor(36, 240, -380, -60),
+        anchor(36, 55, -400, 200, "bottom_left"),
         "Changelog ...",
         Font("Segoe UI", 10, "Regular"),
-        Color.White, MakeColor.FromHex("#282828"),
-        true, true)
+        Color.White, MakeColor.FromHex("#101010"),
+        true, true, MakeColor.FromHex("#7C6E4B"))
+
+        -- Rahmen + Glow konfigurieren
+        changelogBox.BorderColor = MakeColor.FromHex("#7C6E4B")
+        changelogBox.BorderThickness = 3
+        changelogBox.GlowEnabled = true
+        changelogBox.GlowColor = Color.White
+        changelogBox.GlowRadius = 6
 
     uiElement.Add(changelogBox)
+
+
+    -- Status-Label (27px vom linken Rand, 50px vom unteren Rand)
+    local statusLabel = UILabel("lb_update_status",
+      anchor(27, 20, 200, 20, "bottom_left"),
+      T("status.waiting"),
+      Font("Segoe UI", 8, "Italic"),
+      Color.White)
+      uiElement.Add(statusLabel)
 
   end,
 

@@ -16,9 +16,9 @@ namespace KUpdater.UI {
         public bool Visible { get; set; } = true;
         public bool ReadOnly { get; set; }
         public bool Multiline { get; set; }
+        public Color ScrollBarColor { get; set; } = Color.FromArgb(80, 80, 80);
 
         private readonly bool _ownsFont;
-
         // Skia Ressourcen
         private SKTypeface? _typeface;
         private SKFont? _skFont;
@@ -28,10 +28,21 @@ namespace KUpdater.UI {
         private int _scrollOffset = 0;   // in Pixeln
         private int _lineHeight;
 
+        private bool _isDraggingMarker;
+        private int _dragStartY;
+        private int _scrollStartOffset;
+        private SKRect _markerRect;
+
+        public Color BorderColor { get; set; } = Color.Gold;
+        public int BorderThickness { get; set; } = 2;
+        public bool GlowEnabled { get; set; } = true;
+        public Color GlowColor { get; set; } = Color.Gold;
+        public float GlowRadius { get; set; } = 8f;
+
 
         public UITextBox(string id, Func<Rectangle> boundsFunc, string text, Font font,
                          Color foreColor, Color backColor,
-                         bool multiline = true, bool readOnly = false, bool ownsFont = true) {
+                         bool multiline = true, bool readOnly = false, Color? scrollBarColor = null, bool ownsFont = true) {
             Id = id;
             _boundsFunc = boundsFunc;
             Text = text;
@@ -40,18 +51,21 @@ namespace KUpdater.UI {
             BackColor = backColor;
             Multiline = multiline;
             ReadOnly = readOnly;
+            if (scrollBarColor.HasValue)
+                ScrollBarColor = scrollBarColor.Value;
             _ownsFont = ownsFont;
             InitSkiaResources();
         }
 
         public UITextBox(string id, Table bounds, string text, Font font, Color foreColor, Color backColor,
-                         bool multiline = true, bool readOnly = false, bool ownsFont = true)
+                         bool multiline = true, bool readOnly = false, Color? scrollBarColor = null, bool ownsFont = true)
             : this(id, () => new Rectangle(
                 (int)(bounds.Get("x").CastToNumber() ?? 0),
                 (int)(bounds.Get("y").CastToNumber() ?? 0),
                 (int)(bounds.Get("width").CastToNumber() ?? 0),
                 (int)(bounds.Get("height").CastToNumber() ?? 0)
-            ), text, font, foreColor, backColor, multiline, readOnly, ownsFont) { }
+            ), text, font, foreColor, backColor, multiline, readOnly, scrollBarColor, ownsFont) { }
+
 
         private void InitSkiaResources() {
             SKFontStyleWeight weight = Font.Style.HasFlag(FontStyle.Bold) ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal;
@@ -82,25 +96,51 @@ namespace KUpdater.UI {
             // Hintergrund
             canvas.DrawRect(rect.X, rect.Y, rect.Width, rect.Height, _bgPaint);
 
+            // --- Rahmen & Glow ---
+            if (BorderThickness > 0) {
+                using var borderPaint = new SKPaint {
+                    Color = BorderColor.ToSKColor(),
+                    IsAntialias = true,
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = BorderThickness
+                };
+
+                // Glow zuerst (unter dem Rahmen)
+                if (GlowEnabled) {
+                    using var glowPaint = new SKPaint {
+                        Color = GlowColor.ToSKColor().WithAlpha(180),
+                        IsAntialias = true,
+                        Style = SKPaintStyle.Stroke,
+                        StrokeWidth = BorderThickness,
+                        ImageFilter = SKImageFilter.CreateBlur(GlowRadius, GlowRadius)
+                    };
+                    canvas.DrawRect(rect.X, rect.Y, rect.Width, rect.Height, glowPaint);
+                }
+
+                // Rahmen
+                canvas.DrawRect(rect.X, rect.Y, rect.Width, rect.Height, borderPaint);
+            }
+
             // Clipping aktivieren
             canvas.Save();
             canvas.ClipRect(new SKRect(rect.X, rect.Y, rect.Right, rect.Bottom));
 
-            // Text zeichnen mit ScrollOffset
-            _lineHeight = (int)(_skFont.Metrics.CapHeight * 1.4f);
+            var metrics = _skFont.Metrics;
+            _lineHeight = (int)((metrics.Descent - metrics.Ascent) * 1.2f); // Zeilenhöhe
+
             float x = rect.X + 4;
-            float y = rect.Y + _lineHeight - _scrollOffset; // 👈 Offset anwenden
+
+            // Start-Y: obere Kante + Abstand bis zur Baseline
+            float y = rect.Y - metrics.Ascent - _scrollOffset;
 
             if (Multiline) {
                 foreach (var line in Text.Split(["\r\n", "\n"], StringSplitOptions.None)) {
-                    // Nur zeichnen, wenn Zeile im sichtbaren Bereich liegt
-                    if (y + _lineHeight >= rect.Top && y <= rect.Bottom) {
+                    if (y + metrics.Descent >= rect.Top && y - metrics.Ascent <= rect.Bottom) {
                         canvas.DrawText(line, x, y, SKTextAlign.Left, _skFont, _textPaint);
                     }
-
                     y += _lineHeight;
                     if (y > rect.Bottom)
-                        break; // Nicht über den unteren Rand hinaus zeichnen
+                        break;
                 }
             } else {
                 canvas.DrawText(Text, x, y, SKTextAlign.Left, _skFont, _textPaint);
@@ -108,11 +148,60 @@ namespace KUpdater.UI {
 
             // Clipping wiederherstellen
             canvas.Restore();
+
+            // --- Scrollbar / Marker ---
+            float totalHeight = GetTotalTextHeight();
+            if (totalHeight > Bounds.Height) {
+                float visibleHeight = Bounds.Height;
+                float ratio = visibleHeight / totalHeight;
+                float markerHeight = Math.Max(20, visibleHeight * ratio);
+                float maxScroll = totalHeight - visibleHeight;
+
+                ClampScrollOffset(maxScroll);
+
+                float markerY = Bounds.Y + (_scrollOffset / maxScroll) * (visibleHeight - markerHeight);
+
+                _markerRect = new SKRect(Bounds.Right - 6, markerY, Bounds.Right - 2, markerY + markerHeight);
+
+                using var markerPaint = new SKPaint {
+                    Color = ScrollBarColor.ToSKColor().WithAlpha(160),
+                    IsAntialias = true
+                };
+                canvas.DrawRect(_markerRect, markerPaint);
+            }
         }
 
-        public bool OnMouseMove(Point p) => false;
-        public bool OnMouseDown(Point p) => false;
-        public bool OnMouseUp(Point p) => false;
+        public bool OnMouseDown(Point p) {
+            if (_markerRect.Contains(p.X, p.Y)) {
+                _isDraggingMarker = true;
+                _dragStartY = p.Y;
+                _scrollStartOffset = _scrollOffset;
+                return true;
+            }
+            return false;
+        }
+
+        public bool OnMouseMove(Point p) {
+            if (_isDraggingMarker) {
+                float totalHeight = GetTotalTextHeight();
+                float visibleHeight = Bounds.Height;
+                float markerHeight = Math.Max(20, visibleHeight * (visibleHeight / totalHeight));
+                float maxScroll = totalHeight - visibleHeight;
+
+                float delta = p.Y - _dragStartY;
+                float scrollRatio = delta / (visibleHeight - markerHeight);
+
+                _scrollOffset = (int)(_scrollStartOffset + scrollRatio * maxScroll);
+                ClampScrollOffset(maxScroll);
+                return true;
+            }
+            return false;
+        }
+
+        public bool OnMouseUp(Point p) {
+            _isDraggingMarker = false;
+            return false;
+        }
 
         public bool OnMouseWheel(int delta, Point p) {
             if (!Bounds.Contains(p))
@@ -121,15 +210,18 @@ namespace KUpdater.UI {
             int scrollStep = _lineHeight * 3;
             _scrollOffset -= Math.Sign(delta) * scrollStep;
 
-            int maxScroll = Math.Max(0, (int)(GetTotalTextHeight() - Bounds.Height));
+            float maxScroll = Math.Max(0, GetTotalTextHeight() - Bounds.Height);
+            ClampScrollOffset(maxScroll);
+
+            return true;
+        }
+
+        private void ClampScrollOffset(float maxScroll) {
             if (_scrollOffset < 0)
                 _scrollOffset = 0;
             if (_scrollOffset > maxScroll)
-                _scrollOffset = maxScroll;
-
-            return true; // handled
+                _scrollOffset = (int)maxScroll;
         }
-
 
         private float GetTotalTextHeight() {
             int lines = Text.Split(["\r\n", "\n"], StringSplitOptions.None).Length;

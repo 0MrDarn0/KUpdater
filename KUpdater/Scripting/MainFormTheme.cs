@@ -107,9 +107,7 @@ namespace KUpdater.Scripting {
         }
 
         public void LoadTheme(string themeName) {
-
-            if (_script == null)
-                throw new ObjectDisposedException(nameof(MainFormTheme));
+            ObjectDisposedException.ThrowIf(_script == null, this);
 
             _currentTheme = themeName;
             // Lua-Funktion "load_theme" aufrufen
