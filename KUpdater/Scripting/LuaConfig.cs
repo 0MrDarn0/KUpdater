@@ -5,6 +5,7 @@ namespace KUpdater.Scripting {
 
    public class UpdaterConfig {
       public string Url { get; set; } = string.Empty;
+      public string Language { get; set; } = "en";
       public NetworkConfig Network { get; set; } = new();
    }
 

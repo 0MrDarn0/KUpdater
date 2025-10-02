@@ -23,7 +23,7 @@ namespace KUpdater.Scripting {
       private readonly Action<string> _setStatusText;
       private readonly Action<double> _setProgress;
 
-      public MainFormTheme(Form form, UIElementManager uiElementManager) : base("theme_loader.lua") {
+      public MainFormTheme(Form form, UIElementManager uiElementManager, string language) : base("theme_loader.lua") {
          _form = form;
          _uiElementManager = uiElementManager;
 
@@ -31,7 +31,7 @@ namespace KUpdater.Scripting {
          _setStatusText = UIBindings.BindLabelText(_uiElementManager, UIBindings.Ids.UpdateStatusLabel);
          _setProgress = UIBindings.BindProgress(_uiElementManager, UIBindings.Ids.UpdateProgressBar);
 
-         LoadLanguage("en");
+         LoadLanguage(language);
          RegisterGlobals();
          LoadTheme("main_form");
 

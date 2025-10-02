@@ -18,13 +18,14 @@ namespace KUpdater {
       private readonly UIElementManager _uiElementManager;
       private readonly MainFormTheme _mainFormTheme;
       private readonly UIRenderer _uiRenderer;
-
+      private readonly UpdaterConfig _config;
 
       public MainForm() {
          Instance = this;
+         _config = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig").Load();
 
          _uiElementManager = new();
-         _mainFormTheme = new(this, _uiElementManager);
+         _mainFormTheme = new(this, _uiElementManager, _config.Language);
          _uiRenderer = new(this, _uiElementManager, _mainFormTheme);
 
          InitializeComponent();
@@ -55,10 +56,7 @@ namespace KUpdater {
          base.OnShown(e);
          _uiRenderer.RequestRender();
 
-         var configLoader = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig");
-         UpdaterConfig config = configLoader.Load();
-
-         var updater = new Updater(new HttpUpdateSource(), config.Url, AppDomain.CurrentDomain.BaseDirectory);
+         var updater = new Updater(new HttpUpdateSource(), _config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
 
          updater.StatusChanged += msg => {
