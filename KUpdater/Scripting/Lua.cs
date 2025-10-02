@@ -24,13 +24,13 @@ namespace KUpdater.Scripting {
 
       protected virtual void RegisterGlobals() {
          SetGlobal("__debug_globals", (Action)(() => {
-            Console.WriteLine("=== Lua Globals Debug ===");
+            Debug.WriteLine("=== Lua Globals Debug ===");
             foreach (var pair in _script.Globals.Pairs) {
                var key = pair.Key.ToPrintString();
                var val = pair.Value;
-               Console.WriteLine($"{key} : {val.Type}");
+               Debug.WriteLine($"{key} : {val.Type}");
             }
-            Console.WriteLine("=========================");
+            Debug.WriteLine("=========================");
          }));
 
          SetGlobal(LuaKeys.ExeDirectory, AppContext.BaseDirectory);
@@ -50,7 +50,6 @@ namespace KUpdater.Scripting {
          var func = _script.Globals.Get(functionName);
          return CallDynFunction(func, args);
       }
-
 
       protected Table GetGlobalTable(string name) =>
          _script.Globals.Get(name).Type == DataType.Table ? _script.Globals.Get(name).Table : new Table(_script);

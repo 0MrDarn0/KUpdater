@@ -1,6 +1,7 @@
 ﻿using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
+using KUpdater.Scripting;
 
 namespace KUpdater.Core {
    public class Updater {
@@ -21,7 +22,7 @@ namespace KUpdater.Core {
 
       public async Task RunUpdateAsync() {
          try {
-            StatusChanged?.Invoke("Prüfe Version...");
+            StatusChanged?.Invoke(Localization.Translate("status.waiting"));
 
             var metadata = await GetMetadataAsync();
             var currentVersion = GetLocalVersion();
@@ -39,18 +40,18 @@ namespace KUpdater.Core {
             }
 
             if (!needsUpdate) {
-               StatusChanged?.Invoke($"Bereits aktuell (v{currentVersion}).");
+               StatusChanged?.Invoke(Localization.Translate("status.up_to_date", currentVersion));
                return;
             }
 
-            StatusChanged?.Invoke($"Update erforderlich: {currentVersion} → {metadata.Version}");
+            StatusChanged?.Invoke(Localization.Translate("status.update_required", currentVersion, metadata.Version));
             await DownloadAndExtractAsync(metadata);
 
             SaveLocalVersion(metadata.Version);
-            StatusChanged?.Invoke("Update erfolgreich angewendet.");
+            StatusChanged?.Invoke(Localization.Translate("status.update_applied"));
          }
          catch (Exception ex) {
-            StatusChanged?.Invoke($"Update fehlgeschlagen: {ex.Message}");
+            StatusChanged?.Invoke(Localization.Translate("status.update_failed", ex.Message));
          }
       }
 
@@ -72,7 +73,7 @@ namespace KUpdater.Core {
       private async Task DownloadAndExtractAsync(UpdateMetadata metadata) {
          string tempZip = Path.Combine(Path.GetTempPath(), "update.zip");
 
-         StatusChanged?.Invoke("Lade Updatepaket...");
+         StatusChanged?.Invoke(Localization.Translate("status.downloading_pkg"));
 
          await using (var stream = await _source.GetPackageStreamAsync(metadata.PackageUrl))
          await using (var fs = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None)) {
@@ -93,7 +94,7 @@ namespace KUpdater.Core {
             }
          }
 
-         StatusChanged?.Invoke("Entpacke Dateien...");
+         StatusChanged?.Invoke(Localization.Translate("status.extracting_files"));
 
          using (var archive = ZipFile.OpenRead(tempZip)) {
             int count = archive.Entries.Count;
@@ -106,12 +107,12 @@ namespace KUpdater.Core {
 
                // Hash prüfen
                var metaFile = Array.Find(metadata.Files, f =>
-                string.Equals(f.Path.Replace("\\", "/"), entry.FullName.Replace("\\", "/"), StringComparison.OrdinalIgnoreCase));
+                  string.Equals(f.Path.Replace("\\", "/"), entry.FullName.Replace("\\", "/"), StringComparison.OrdinalIgnoreCase));
 
                if (metaFile != null) {
                   string actualHash = ComputeSha256(destinationPath);
                   if (!string.Equals(actualHash, metaFile.Sha256, StringComparison.OrdinalIgnoreCase)) {
-                     throw new InvalidDataException($"Hash mismatch für {entry.FullName}");
+                     throw new InvalidDataException(Localization.Translate("error.hash_mismatch", entry.FullName));
                   }
                }
 
@@ -122,9 +123,8 @@ namespace KUpdater.Core {
          }
 
          File.Delete(tempZip);
-         StatusChanged?.Invoke("Update abgeschlossen.");
+         StatusChanged?.Invoke(Localization.Translate("status.update_complete"));
       }
-
 
       private static string ComputeSha256(string filePath) {
          using var sha = SHA256.Create();

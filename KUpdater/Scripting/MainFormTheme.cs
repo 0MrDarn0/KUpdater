@@ -34,7 +34,6 @@ namespace KUpdater.Scripting {
          LoadLanguage(language);
          RegisterGlobals();
          LoadTheme("main_form");
-
       }
 
       public void ApplyLastState() {
@@ -225,7 +224,7 @@ namespace KUpdater.Scripting {
                      return null;
                   node = node.Table.Get(part);
                }
-               return node.CastToString();
+               return node.ToObject() as string;
             }
 
             // Erst in aktueller Sprache suchen
@@ -235,10 +234,11 @@ namespace KUpdater.Scripting {
 
             // Fallback: Englisch
             val = lookup(_script.Globals.Get("L_Fallback"));
-            return val ?? key; // Wenn auch dort nicht vorhanden → Key zurückgeben
+            return val ?? $"[MISSING:{key}]"; // Wenn auch dort nicht vorhanden → Key zurückgeben
          });
-      }
 
+         Localization.Initialize(_script);
+      }
 
       public override void Dispose() {
          ClearImageCache();

@@ -22,14 +22,13 @@ namespace KUpdater {
 
       public MainForm() {
          Instance = this;
-         _config = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig").Load();
 
+         _config = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig").Load();
          _uiElementManager = new();
          _mainFormTheme = new(this, _uiElementManager, _config.Language);
          _uiRenderer = new(this, _uiElementManager, _mainFormTheme);
 
          InitializeComponent();
-
          FormBorderStyle = FormBorderStyle.None;
          StartPosition = FormStartPosition.CenterScreen;
          DoubleBuffered = true;
