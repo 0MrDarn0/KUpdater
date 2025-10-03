@@ -44,5 +44,9 @@ namespace KUpdater.Scripting {
 
         public Color AsColor(Color fallback) => Raw.AsColor(fallback);
         public Table AsTableOrNew(Script script) => Raw.AsTable() ?? new Table(script);
+
+        public static implicit operator DynValue(LuaValue<T> luaVal) => luaVal.Raw;  // Implizite Konvertierung zu DynValue
+        public static implicit operator LuaValue<T>(DynValue raw) => new(raw);    // Implizite Konvertierung von DynValue zu LuaValue<T>
+
     }
 }

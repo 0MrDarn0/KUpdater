@@ -3,6 +3,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using KUpdater.Core;
+using KUpdater.Extensions;
 using KUpdater.UI;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;
@@ -172,7 +173,7 @@ namespace KUpdater.Scripting {
         }
 
         public void LoadLanguage(string langCode) {
-            var langPath   = Paths.LuaLanguage("de");
+            var langPath   = Paths.LuaLanguage(langCode);
             var defaultLangPath= Paths.LuaDefaultLanguage;
 
             if (!File.Exists(langPath))
@@ -184,31 +185,25 @@ namespace KUpdater.Scripting {
             // Lade Fallback (Englisch)
             var fallbackTable = _script.DoString(File.ReadAllText(defaultLangPath)).Table;
 
-            _script.Globals["L"] = langTable;
-            _script.Globals["L_Fallback"] = fallbackTable;
+            SetGlobal("L", langTable);
+            SetGlobal("L_Fallback", fallbackTable);
 
             // Registriere Lookup-Funktion mit Fallback
-            _script.Globals["T"] = (Func<string, string>)(key => {
-                string[] parts = key.Split('.');
-                string? lookup(DynValue table) {
-                    var node = table;
-                    foreach (var part in parts) {
-                        if (node.Type != DataType.Table)
+            SetGlobal("T", (Func<string, string>)(key => {
+                string? Lookup(LuaValue<DynValue> table) {
+                    var node = table.Raw;
+                    foreach (var part in key.Split('.')) {
+                        if (!node.IsTable())
                             return null;
                         node = node.Table.Get(part);
                     }
-                    return node.ToObject() as string;
+                    return node.AsString();
                 }
 
-                // Erst in aktueller Sprache suchen
-                var val = lookup(_script.Globals.Get("L"));
-                if (!string.IsNullOrEmpty(val))
-                    return val;
-
-                // Fallback: Englisch
-                val = lookup(_script.Globals.Get("L_Fallback"));
-                return val ?? $"[MISSING:{key}]"; // Wenn auch dort nicht vorhanden → Key zurückgeben
-            });
+                return Lookup(GetGlobal<DynValue>("L"))
+                    ?? Lookup(GetGlobal<DynValue>("L_Fallback"))
+                    ?? $"[MISSING:{key}]";
+            }));
 
             Localization.Initialize(_script);
         }

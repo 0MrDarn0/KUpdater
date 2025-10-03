@@ -96,9 +96,9 @@ namespace KUpdater.Scripting {
 
         public DynValue GetValue(string path) {
             var parts = path.Split('.');
-            var node = GetGlobal<DynValue>(parts[0]).Raw;
+            DynValue node = GetGlobal<DynValue>(parts[0]);
             for (int i = 1; i < parts.Length; i++) {
-                if (node.Type != DataType.Table)
+                if (!node.IsTable())
                     return DynValue.Nil;
                 node = node.Table.Get(parts[i]);
             }
@@ -164,16 +164,7 @@ namespace KUpdater.Scripting {
             SetGlobal(globalName, DynValue.NewCallback((ctx, args) => {
                 // Map MoonSharp DynValues to raw objects, but keep closures/tables intact for per-parameter matching.
                 var rawArgs = args.GetArray()
-            .Select(a =>
-            {
-                if (a.IsTable())
-                    return (object)a.AsTable()!;
-                if (a.IsFunction())
-                    return (object)a.AsFunction()!;
-                if (a.IsUserData())
-                    return a.AsUserData()!;
-                return a.ToObject();
-            })
+            .Select(a => a.MapDynValue())
             .ToArray();
 
                 ConstructorInfo? chosen = null;

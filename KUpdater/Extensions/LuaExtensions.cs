@@ -4,11 +4,11 @@ using MoonSharp.Interpreter;
 
 namespace KUpdater.Extensions {
     public static class LuaExtensions {
+
         // 🔹 Typensicheres Casten eines DynValue zu T
         public static T? As<T>(this DynValue val) {
-            if (val.Type == DataType.UserData && val.UserData.Object is T typed)
+            if (val.AsUserData() is T typed)
                 return typed;
-
             try {
                 return val.ToObject<T>();
             }
@@ -18,27 +18,12 @@ namespace KUpdater.Extensions {
         }
 
         // 🔹 Typensicheres Casten eines DynValue zu T mit fallback value
-        public static T As<T>(this DynValue val, T fallback) {
-            try {
-                var result = val.ToObject<T>();
-                return result is not null ? result : fallback;
-            }
-            catch {
-                return fallback;
-            }
-        }
+        public static T As<T>(this DynValue val, T fallback) => val.As<T>() ?? fallback;
 
-        // 🔹 Ist der Wert "truthy" (Lua-Logik)
-        public static bool IsTruthy(this DynValue val) {
-            return val.Type != DataType.Nil && val.Type != DataType.Void &&
-                   !(val.Type == DataType.Boolean && val.Boolean == false);
-        }
+        public static bool IsTruthy(this DynValue val) => !val.IsNil() && !(val.Type == DataType.Boolean && val.Boolean == false);
+        public static bool IsFalsy(this DynValue val) => !val.IsTruthy();
 
-        // 🔹 Ist der Wert "falsy"
-        public static bool IsFalsy(this DynValue val) {
-            return !val.IsTruthy();
-        }
-
+        public static bool IsNil(this DynValue val) => val.Type == DataType.Nil || val.Type == DataType.Void;
         public static bool IsTable(this DynValue val) => val.Type == DataType.Table;
         public static bool IsString(this DynValue val) => val.Type == DataType.String;
         public static bool IsNumber(this DynValue val) => val.Type == DataType.Number;
@@ -62,10 +47,13 @@ namespace KUpdater.Extensions {
 
         public static Color AsColor(this DynValue val, Color fallback) {
             try {
-                if (val.IsString())
-                    return ColorTranslator.FromHtml(val.AsString()!);
+                if (val.IsString()) {
+                    var s = val.AsString()!;
+                    if (s.StartsWith('#'))
+                        return ColorTranslator.FromHtml(s); // unterstützt #RRGGBB und #RRGGBBAA
+                }
 
-                if (val.IsUserData() && val.AsUserData() is Color c)
+                if (val.AsUserData() is Color c)
                     return c;
 
                 if (val.IsTable()) {
@@ -73,15 +61,24 @@ namespace KUpdater.Extensions {
                     int r = Clamp((int)(t.Get("r").AsNumber() ?? 0));
                     int g = Clamp((int)(t.Get("g").AsNumber() ?? 0));
                     int b = Clamp((int)(t.Get("b").AsNumber() ?? 0));
-                    return Color.FromArgb(r, g, b);
+                    int a = Clamp((int)(t.Get("a").AsNumber() ?? 255));
+                    return Color.FromArgb(a, r, g, b);
                 }
             }
             catch { }
 
             return fallback;
         }
-
         private static int Clamp(int value) => Math.Max(0, Math.Min(255, value));
 
+        public static object? MapDynValue(this DynValue val) {
+            if (val.IsTable())
+                return val.AsTable();
+            if (val.IsFunction())
+                return val.AsFunction();
+            if (val.IsUserData())
+                return val.AsUserData();
+            return val.ToObject();
+        }
     }
 }
