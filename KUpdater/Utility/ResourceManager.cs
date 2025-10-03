@@ -17,14 +17,20 @@ namespace KUpdater.Utility {
             _basePath = basePath ?? Paths.ResFolder;
         }
 
+        private string ResolvePath(string fileName) => Path.Combine(_basePath, fileName);
+
+        private bool TryResolvePath(string fileName, out string path) {
+            path = ResolvePath(fileName);
+            return File.Exists(path);
+        }
+
         // 🔹 Optionales Laden
         public Image? GetImage(string fileName) {
             if (_imageCache.TryGetValue(fileName, out var cached))
                 return cached;
 
-            string path = Path.Combine(_basePath, fileName);
-            if (!File.Exists(path))
-                return LogNull<Image>("Image", path);
+            if (!TryResolvePath(fileName, out var path))
+                return LogNull<Image>("Image", fileName);
 
             try {
                 var img = Image.FromFile(path);
@@ -40,8 +46,7 @@ namespace KUpdater.Utility {
             if (_iconCache.TryGetValue(fileName, out var cached))
                 return cached;
 
-            string path = Path.Combine(_basePath, fileName);
-            if (!File.Exists(path))
+            if (!TryResolvePath(fileName, out var path))
                 return LogNull<Icon>("Icon", path);
 
             try {
@@ -59,8 +64,7 @@ namespace KUpdater.Utility {
             if (_textCache.TryGetValue(fileName, out var cached))
                 return cached;
 
-            string path = Path.Combine(_basePath, fileName);
-            if (!File.Exists(path))
+            if (!TryResolvePath(fileName, out var path))
                 return LogNull<string>("Text", path);
 
             try {
@@ -77,8 +81,7 @@ namespace KUpdater.Utility {
             if (_binaryCache.TryGetValue(fileName, out var cached))
                 return cached;
 
-            string path = Path.Combine(_basePath, fileName);
-            if (!File.Exists(path))
+            if (!TryResolvePath(fileName, out var path))
                 return LogNull<byte[]>("Binary", path);
 
             try {
