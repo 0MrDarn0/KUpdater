@@ -266,22 +266,33 @@ namespace KUpdater.UI {
         }
 
         public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this); // verhindert unnötigen Finalizer
+        }
+
+        protected virtual void Dispose(bool disposing) {
             if (_disposed)
                 return;
 
-            if (_ownsFont)
-                Font.Dispose();
+            if (disposing) {
+                // Managed Ressourcen freigeben
+                if (_ownsFont)
+                    Font.Dispose();
 
-            _textPaint?.Dispose();
-            _bgPaint?.Dispose();
-            _skFont?.Dispose();
-            _typeface?.Dispose();
+                _textPaint?.Dispose();
+                _bgPaint?.Dispose();
+                _skFont?.Dispose();
+                _typeface?.Dispose();
 
-            _textPaint = null;
-            _bgPaint = null;
-            _skFont = null;
-            _typeface = null;
+                _textPaint = null;
+                _bgPaint = null;
+                _skFont = null;
+                _typeface = null;
+            }
+
+            // Unmanaged Ressourcen hier freigeben
             _disposed = true;
         }
+
     }
 }

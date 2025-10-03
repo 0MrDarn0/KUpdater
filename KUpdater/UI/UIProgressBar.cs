@@ -33,6 +33,7 @@ namespace KUpdater.UI {
             get => _backgroundColor;
             set { _backgroundColor = value; _bgPaint.Color = value; }
         }
+        private bool _disposed;
 
         // 🧩 Skia Paints cachen
         private readonly SKPaint _fillPaint;
@@ -89,10 +90,25 @@ namespace KUpdater.UI {
         public bool OnMouseUp(Point p) => false;
         public bool OnMouseWheel(int delta, Point p) => false;
 
+
         public void Dispose() {
-            _fillPaint.Dispose();
-            _borderPaint.Dispose();
-            _bgPaint.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this); // verhindert unnötigen Finalizer
+        }
+
+        protected virtual void Dispose(bool disposing) {
+            if (_disposed)
+                return;
+
+            if (disposing) {
+                // Managed Ressourcen freigeben
+                _fillPaint.Dispose();
+                _borderPaint.Dispose();
+                _bgPaint.Dispose();
+            }
+
+            // Unmanaged Ressourcen hier freigeben
+            _disposed = true;
         }
     }
 }

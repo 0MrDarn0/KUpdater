@@ -14,6 +14,7 @@ namespace KUpdater.UI {
         public TextFormatFlags Flags { get; set; }
         public bool Visible { get; set; } = true;
         private readonly bool _ownsFont;
+        private bool _disposed;
 
         // 🧩 Skia-Caches
         private SKTypeface? _typeface;
@@ -80,12 +81,26 @@ namespace KUpdater.UI {
         public bool OnMouseWheel(int delta, Point p) => false;
 
         public void Dispose() {
-            if (_ownsFont)
-                Font.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this); // verhindert unnötigen Finalizer
+        }
 
-            _skPaint?.Dispose();
-            _skFont?.Dispose();
-            _typeface?.Dispose();
+        protected virtual void Dispose(bool disposing) {
+            if (_disposed)
+                return;
+
+            if (disposing) {
+                // Managed Ressourcen freigeben
+                if (_ownsFont)
+                    Font.Dispose();
+
+                _skPaint?.Dispose();
+                _skFont?.Dispose();
+                _typeface?.Dispose();
+            }
+
+            // Unmanaged Ressourcen hier freigeben
+            _disposed = true;
         }
     }
 }

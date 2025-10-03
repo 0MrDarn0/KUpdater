@@ -17,6 +17,7 @@ public class UIButton : IUIElement {
     public bool IsHovered { get; private set; }
     public bool IsPressed { get; private set; }
     private readonly bool _ownsFont;
+    private bool _disposed;
 
     // 🧩 Cache für Bilder
     private readonly Dictionary<string, SKBitmap> _stateBitmaps = [];
@@ -120,18 +121,32 @@ public class UIButton : IUIElement {
 
     public bool OnMouseWheel(int delta, Point p) => false;
 
+
     public void Dispose() {
-        foreach (var img in _stateImages.Values)
-            img.Dispose();
-        foreach (var bmp in _stateBitmaps.Values)
-            bmp.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this); // verhindert unnötigen Finalizer
+    }
 
-        _typeface?.Dispose();
+    protected virtual void Dispose(bool disposing) {
+        if (_disposed)
+            return;
 
-        if (_ownsFont)
-            Font.Dispose();
+        if (disposing) {
+            // Managed Ressourcen freigeben
+            if (_ownsFont)
+                Font.Dispose();
 
-        _skPaint?.Dispose();
-        _skFont?.Dispose();
+            foreach (var img in _stateImages.Values)
+                img.Dispose();
+            foreach (var bmp in _stateBitmaps.Values)
+                bmp.Dispose();
+
+            _typeface?.Dispose();
+            _skPaint?.Dispose();
+            _skFont?.Dispose();
+        }
+
+        // Unmanaged Ressourcen hier freigeben
+        _disposed = true;
     }
 }
