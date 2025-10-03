@@ -10,7 +10,7 @@ using MoonSharp.Interpreter;
 
 namespace KUpdater.Scripting {
 
-    public class MainFormTheme : Lua, ITheme, IDisposable {
+    public class MainFormTheme : Lua, ITheme {
         private readonly Form _form;
         private readonly UIElementManager _uiElementManager;
         private readonly Updater _updater;
@@ -18,6 +18,7 @@ namespace KUpdater.Scripting {
         private ThemeBackground? _cachedBackground;
         private ThemeLayout? _cachedLayout;
         private readonly ResourceManager _resources;
+        private bool _disposed;
 
         // State
         public string _lastStatus = "Status: Waiting...";
@@ -212,12 +213,21 @@ namespace KUpdater.Scripting {
             Localization.Initialize(_script);
         }
 
-        public override void Dispose() {
-            _cachedBackground = null;
-            _cachedLayout = null;
-            _resources.Dispose();
-            base.Dispose();
-        }
+        protected override void Dispose(bool disposing) {
+            if (_disposed)
+                return;
 
+            if (disposing) {
+                // Theme-Ressourcen freigeben
+                _cachedBackground = null;
+                _cachedLayout = null;
+                _resources.Dispose();
+
+                // Lua-Basis freigeben
+                base.Dispose(disposing);
+            }
+
+            _disposed = true;
+        }
     }
 }

@@ -9,6 +9,7 @@ namespace KUpdater.Scripting {
 
     public abstract class Lua : IDisposable {
         protected Script _script;
+        private bool _disposed;
 
         public Lua(string scriptFile) {
             string path = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", scriptFile);
@@ -330,10 +331,24 @@ namespace KUpdater.Scripting {
             }
         }
 
-        public virtual void Dispose() {
-            _script?.Globals.Clear();
-            _script = null!;
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
+        protected virtual void Dispose(bool disposing) {
+            if (_disposed)
+                return;
+
+            if (disposing) {
+                // Managed Ressourcen freigeben
+
+                // lobals leeren
+                _script?.Globals.Clear();
+            }
+
+            // Unmanaged Ressourcen hier freigeben
+            _disposed = true;
+        }
     }
 }
