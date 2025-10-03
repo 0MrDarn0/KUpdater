@@ -1,5 +1,6 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
+using System.Text;
 using MoonSharp.Interpreter;
 using SkiaSharp;
 
@@ -32,6 +33,7 @@ namespace KUpdater.UI {
         private int _dragStartY;
         private int _scrollStartOffset;
         private SKRect _markerRect;
+        private bool _disposed;
 
         public Color BorderColor { get; set; } = Color.Gold;
         public int BorderThickness { get; set; } = 2;
@@ -72,6 +74,7 @@ namespace KUpdater.UI {
             SKFontStyleSlant slant = Font.Style.HasFlag(FontStyle.Italic) ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
 
             _typeface = SKTypeface.FromFamilyName(Font.Name, new SKFontStyle(weight, SKFontStyleWidth.Normal, slant));
+
             _skFont = new SKFont(_typeface, Font.Size * 1.33f);
             _textPaint = new SKPaint { Color = ForeColor.ToSKColor(), IsAntialias = true };
             _bgPaint = new SKPaint { Color = BackColor.ToSKColor(), IsAntialias = true, Style = SKPaintStyle.Fill };
@@ -121,6 +124,7 @@ namespace KUpdater.UI {
                 canvas.DrawRect(rect.X, rect.Y, rect.Width, rect.Height, borderPaint);
             }
 
+
             // Clipping aktivieren
             canvas.Save();
             canvas.ClipRect(new SKRect(rect.X, rect.Y, rect.Right, rect.Bottom));
@@ -134,22 +138,40 @@ namespace KUpdater.UI {
             float y = rect.Y - metrics.Ascent - _scrollOffset;
 
             if (Multiline) {
-                foreach (var line in Text.Split(["\r\n", "\n"], StringSplitOptions.None)) {
-                    if (y + metrics.Descent >= rect.Top && y - metrics.Ascent <= rect.Bottom) {
-                        canvas.DrawText(line, x, y, SKTextAlign.Left, _skFont, _textPaint);
+                foreach (var paragraph in Text.Split(["\r\n", "\n"], StringSplitOptions.None)) {
+                    var words = paragraph.Split(' ');
+                    var lineBuilder = new StringBuilder();
+
+                    foreach (var word in words) {
+                        string testLine = lineBuilder.Length == 0 ? word : lineBuilder.ToString() + " " + word;
+                        float width = _skFont.MeasureText(testLine, out _);
+
+                        if (x + width > rect.Right - 8) {
+                            canvas.DrawText(lineBuilder.ToString(), x, y, SKTextAlign.Left, _skFont, _textPaint);
+                            y += _lineHeight;
+                            lineBuilder.Clear();
+                            lineBuilder.Append(word);
+                        } else {
+                            lineBuilder.Clear();
+                            lineBuilder.Append(testLine);
+                        }
                     }
-                    y += _lineHeight;
-                    if (y > rect.Bottom)
-                        break;
+
+                    if (lineBuilder.Length > 0) {
+                        canvas.DrawText(lineBuilder.ToString(), x, y, SKTextAlign.Left, _skFont, _textPaint);
+                        y += _lineHeight;
+                    }
                 }
             } else {
                 canvas.DrawText(Text, x, y, SKTextAlign.Left, _skFont, _textPaint);
             }
 
+
             // Clipping wiederherstellen
             canvas.Restore();
 
             // --- Scrollbar / Marker ---
+            // Nur zeichnen, wenn der Text höher ist als der sichtbare Bereich
             float totalHeight = GetTotalTextHeight();
             if (totalHeight > Bounds.Height) {
                 float visibleHeight = Bounds.Height;
@@ -157,17 +179,19 @@ namespace KUpdater.UI {
                 float markerHeight = Math.Max(20, visibleHeight * ratio);
                 float maxScroll = totalHeight - visibleHeight;
 
+                // ScrollOffset begrenzen
                 ClampScrollOffset(maxScroll);
 
-                float markerY = Bounds.Y + (_scrollOffset / maxScroll) * (visibleHeight - markerHeight);
+                // maxScroll könnte 0 sein (kein Scrollen möglich) -> Marker nicht zeichnen in dem Fall (division by zero)
+                if (maxScroll > 0) {
+                    using var markerPaint = new SKPaint { Color = ScrollBarColor.ToSKColor().WithAlpha(160), IsAntialias = true };
 
-                _markerRect = new SKRect(Bounds.Right - 6, markerY, Bounds.Right - 2, markerY + markerHeight);
+                    // Position des Markers basierend auf dem Scroll-Offset
+                    float markerY = Bounds.Y + (_scrollOffset / maxScroll) * (visibleHeight - markerHeight);
 
-                using var markerPaint = new SKPaint {
-                    Color = ScrollBarColor.ToSKColor().WithAlpha(160),
-                    IsAntialias = true
-                };
-                canvas.DrawRect(_markerRect, markerPaint);
+                    _markerRect = new SKRect(Bounds.Right - 6, markerY, Bounds.Right - 2, markerY + markerHeight);
+                    canvas.DrawRect(_markerRect, markerPaint);
+                }
             }
         }
 
@@ -177,6 +201,19 @@ namespace KUpdater.UI {
                 _dragStartY = p.Y;
                 _scrollStartOffset = _scrollOffset;
                 return true;
+            }
+            // --- Jump to clicked scrollbar position ---
+            if (p.X >= Bounds.Right - 8 && p.X <= Bounds.Right) {
+                float totalHeight = GetTotalTextHeight();
+                float visibleHeight = Bounds.Height;
+                float maxScroll = totalHeight - visibleHeight;
+
+                if (maxScroll > 0) {
+                    float clickRatio = (float)(p.Y - Bounds.Y) / visibleHeight;
+                    _scrollOffset = (int)(clickRatio * maxScroll);
+                    ClampScrollOffset(maxScroll);
+                    return true;
+                }
             }
             return false;
         }
@@ -229,6 +266,9 @@ namespace KUpdater.UI {
         }
 
         public void Dispose() {
+            if (_disposed)
+                return;
+
             if (_ownsFont)
                 Font.Dispose();
 
@@ -236,6 +276,12 @@ namespace KUpdater.UI {
             _bgPaint?.Dispose();
             _skFont?.Dispose();
             _typeface?.Dispose();
+
+            _textPaint = null;
+            _bgPaint = null;
+            _skFont = null;
+            _typeface = null;
+            _disposed = true;
         }
     }
 }

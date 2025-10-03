@@ -144,6 +144,8 @@ return {
       anchor(27, 30, -27, 5, "bottom_left"))
       uiElement.Add(progressBar)
 
+
+
     local changelogBox = UITextBox("tb_changelog", 
         anchor(36, 55, -400, 200, "bottom_left"),
         "Changelog ...",
