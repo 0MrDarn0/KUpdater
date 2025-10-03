@@ -1,6 +1,10 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
+using KUpdater.Scripting;
+
 namespace KUpdater.Utility {
+
+    [ExposeToLua]
     public static class MakeColor {
         // 🔹 Hex → Color (#RRGGBB oder #AARRGGBB)
         public static Color FromHex(string hex) {

@@ -3,6 +3,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using KUpdater.Extensions;
+using KUpdater.UI;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Loaders;
@@ -345,6 +346,28 @@ namespace KUpdater.Scripting {
                        t == typeof(string);
             }
         }
+
+        public void ExposeMarkedTypes() {
+            foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => t.GetCustomAttribute<ExposeToLuaAttribute>() != null)) {
+                var attr = type.GetCustomAttribute<ExposeToLuaAttribute>()!;
+                var globalName = attr.GlobalName ?? type.Name;
+
+                var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!;
+                var generic = method.MakeGenericMethod(type);
+                generic.Invoke(this, [globalName, null]);
+            }
+        }
+
+        public void ExposeUIElements() {
+            foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => typeof(IUIElement).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
+                var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!;
+                var generic = method.MakeGenericMethod(type);
+                generic.Invoke(this, [null, null]);
+            }
+        }
+
 
         public void Dispose() {
             Dispose(true);

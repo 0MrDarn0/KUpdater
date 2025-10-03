@@ -1,10 +1,12 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
+using KUpdater.Scripting;
 using KUpdater.UI;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;
 using SkiaSharp;
 
+[ExposeToLua]
 public class UIButton : IUIElement {
     public string Id { get; }
     private readonly Func<Rectangle> _boundsFunc;

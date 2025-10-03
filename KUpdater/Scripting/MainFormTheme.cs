@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using System.Diagnostics;
-using System.Reflection;
 using KUpdater.Core;
 using KUpdater.Extensions;
 using KUpdater.UI;
@@ -59,14 +58,7 @@ namespace KUpdater.Scripting {
             ExposeToLua("uiElement", _uiElementManager);
             ExposeToLua<Font>();
             ExposeToLua<Color>();
-
-            ExposeToLua("MakeColor", new {
-                FromHex = (Func<string, Color>)MakeColor.FromHex,
-                ToHex = (Func<Color, string>)MakeColor.ToHex,
-                FromRgb = (Func<int, int, int, Color>)MakeColor.FromRgb,
-                FromRgba = (Func<int, int, int, int, Color>)MakeColor.FromRgba
-            });
-
+            ExposeMarkedTypes();
 
             SetGlobal(LuaKeys.Theme.ThemeDir, Paths.LuaThemes.Replace("\\", "/"));
             SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
@@ -97,15 +89,6 @@ namespace KUpdater.Scripting {
             SetGlobal(LuaKeys.Actions.StartGame, (Action)(() => GameLauncher.StartGame()));
             SetGlobal(LuaKeys.Actions.OpenSettings, (Action)(() => GameLauncher.OpenSettings()));
             SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
-
-
-            // 🔥 Automatische Registrierung aller IUIElement-Klassen
-            foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => typeof(IUIElement).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
-                var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!;
-                var generic = method.MakeGenericMethod(type);
-                generic.Invoke(this, [null, null]);
-            }
         }
 
         public void LoadTheme(string themeName) {

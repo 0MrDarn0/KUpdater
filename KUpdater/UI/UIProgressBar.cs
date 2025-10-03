@@ -1,9 +1,12 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
+using KUpdater.Scripting;
 using MoonSharp.Interpreter;
 using SkiaSharp;
 
 namespace KUpdater.UI {
+
+    [ExposeToLua]
     public class UIProgressBar : IUIElement {
         public string Id { get; }
         private readonly Func<Rectangle> _boundsFunc;
