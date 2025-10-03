@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using KUpdater.UI;
+using KUpdater.Utility;
 using MoonSharp.Interpreter;
 using SkiaSharp;
 
@@ -54,7 +55,7 @@ public class UIButton : IUIElement {
 
     private void LoadResources() {
         foreach (var state in new[] { "normal", "hover", "click" }) {
-            string path = UIResources.PathFor($"{ThemeKey}_{state}.png");
+            string path = Paths.Resource($"{ThemeKey}_{state}.png");
             if (File.Exists(path)) {
                 _stateImages[state] = Image.FromFile(path);
                 _stateBitmaps[state] = SKBitmap.Decode(path);

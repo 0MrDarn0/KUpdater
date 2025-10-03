@@ -2,26 +2,29 @@
 
 using System.Diagnostics;
 using System.Reflection;
+using KUpdater.Utility;
 using MoonSharp.Interpreter;
+using MoonSharp.Interpreter.Loaders;
 using SkiaSharp;
 
 namespace KUpdater.Scripting {
 
     public abstract class Lua : IDisposable {
-        protected Script _script;
+        protected readonly Script _script;
         private bool _disposed;
 
-        public Lua(string scriptFile) {
-            string path = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", scriptFile);
-            if (!File.Exists(path))
-                throw new FileNotFoundException($"Lua script not found: {path}");
+        public Lua(string path) {
+            string scriptPath = Paths.LuaScript(path);
+            if (!File.Exists(scriptPath))
+                throw new FileNotFoundException($"Lua script not found: {scriptPath}");
 
             _script = new Script();
             _script.Options.DebugPrint = s => Debug.WriteLine($"[{DateTime.Now:HH:mm:ss}] [Lua] >>> [{s}]");
 
+            ConfigureModulePaths(Paths.LuaFolder);
             RegisterGlobals();
 
-            _script.DoString(File.ReadAllText(path));
+            _script.DoString(File.ReadAllText(scriptPath));
 
         }
 
@@ -30,14 +33,37 @@ namespace KUpdater.Scripting {
                 Debug.WriteLine("=== Lua Globals ===");
                 foreach (var pair in _script.Globals.Pairs)
                     Debug.WriteLine($"{pair.Key.ToPrintString()} : {pair.Value.Type}");
+
             }));
-            SetGlobal("exe_directory", AppContext.BaseDirectory);
+            SetGlobal("exe_directory", Paths.Base);
         }
 
+        private void ConfigureModulePaths(string luaRoot) {
+            var loader = (ScriptLoaderBase)Script.DefaultOptions.ScriptLoader;
+
+            // Alle Unterordner rekursiv einsammeln
+            var dirs = Directory.GetDirectories(luaRoot, "*", SearchOption.AllDirectories);
+
+            // Für jeden Ordner ein Pattern hinzufügen
+            var paths = dirs.SelectMany(d => new[] {
+                Path.Combine(d, "?.lua"),
+                Path.Combine(d, "?", "?.lua"),
+                Path.Combine(d, "?", "init.lua")
+            }).ToList();
+
+            // Root selbst auch berücksichtigen
+            paths.Add(Path.Combine(luaRoot, "?.lua"));
+            paths.Add(Path.Combine(luaRoot, "?", "?.lua"));
+            paths.Add(Path.Combine(luaRoot, "?", "init.lua"));
+
+            loader.ModulePaths = [.. paths];
+        }
 
         protected void SetGlobal(string name, object value)
-            => _script.Globals[name] = DynValue.FromObject(_script, value);
+            => _script.Globals.Set(name, DynValue.FromObject(_script, value));
 
+        protected LuaValue<T> GetGlobal<T>(string name)
+             => new LuaValue<T>(_script.Globals.Get(name));
 
         protected DynValue InvokeClosure(DynValue func, params object[] args)
             => func.Type == DataType.Function ? _script.Call(func, args) : DynValue.Nil;
@@ -125,10 +151,10 @@ namespace KUpdater.Scripting {
 
             // Do not expose a constructor for types like Color/SKColor (we want Color.White, etc.)
             bool exposeConstructor =
-        type != typeof(Color) &&
-        type != typeof(SKColor) &&
-        !type.IsAbstract &&
-        type.GetConstructors().Length > 0;
+                type != typeof(Color) &&
+                type != typeof(SKColor) &&
+                !type.IsAbstract &&
+                type.GetConstructors().Length > 0;
 
             if (!exposeConstructor)
                 return;

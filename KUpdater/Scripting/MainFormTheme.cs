@@ -67,7 +67,7 @@ namespace KUpdater.Scripting {
             });
 
 
-            SetGlobal(LuaKeys.Theme.ThemeDir, Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "themes").Replace("\\", "/"));
+            SetGlobal(LuaKeys.Theme.ThemeDir, Paths.LuaThemes.Replace("\\", "/"));
             SetGlobal(LuaKeys.UI.GetWindowSize, (Func<DynValue>)(() => {
                 return DynValue.NewTuple(
                    DynValue.NewNumber(_form?.Width ?? 0),
@@ -172,8 +172,8 @@ namespace KUpdater.Scripting {
         }
 
         public void LoadLanguage(string langCode) {
-            var langPath = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "languages", $"lang_{langCode}.lua");
-            var defaultPath = Path.Combine(AppContext.BaseDirectory, "kUpdater", "Lua", "languages", "lang_en.lua");
+            var langPath   = Paths.LuaLanguage("de");
+            var defaultLang= Paths.LuaDefaultLanguage;
 
             if (!File.Exists(langPath))
                 throw new FileNotFoundException($"Language file not found: {langPath}");
