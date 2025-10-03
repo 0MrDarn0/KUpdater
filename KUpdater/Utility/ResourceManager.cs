@@ -14,7 +14,7 @@ namespace KUpdater.Utility {
         private readonly Dictionary<(string Family, float Size, FontStyle Style), Font> _fontCache = [];
 
         public ResourceManager(string? basePath = null) {
-            _basePath = basePath ?? Path.Combine(AppContext.BaseDirectory, "kUpdater", "Resources");
+            _basePath = basePath ?? Paths.ResFolder;
         }
 
         // 🔹 Optionales Laden
