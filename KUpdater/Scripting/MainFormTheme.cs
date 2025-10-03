@@ -173,7 +173,7 @@ namespace KUpdater.Scripting {
 
         public void LoadLanguage(string langCode) {
             var langPath   = Paths.LuaLanguage("de");
-            var defaultLang= Paths.LuaDefaultLanguage;
+            var defaultLangPath= Paths.LuaDefaultLanguage;
 
             if (!File.Exists(langPath))
                 throw new FileNotFoundException($"Language file not found: {langPath}");
@@ -182,7 +182,7 @@ namespace KUpdater.Scripting {
             var langTable = _script.DoString(File.ReadAllText(langPath)).Table;
 
             // Lade Fallback (Englisch)
-            var fallbackTable = _script.DoString(File.ReadAllText(defaultPath)).Table;
+            var fallbackTable = _script.DoString(File.ReadAllText(defaultLangPath)).Table;
 
             _script.Globals["L"] = langTable;
             _script.Globals["L_Fallback"] = fallbackTable;

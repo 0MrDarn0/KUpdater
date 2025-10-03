@@ -39,44 +39,40 @@ namespace KUpdater.Extensions {
             return !val.IsTruthy();
         }
 
-        // 🔹 Versuche, einen String zu extrahieren
-        public static string? AsString(this DynValue val) {
-            return val.Type == DataType.String ? val.String : null;
-        }
+        public static bool IsTable(this DynValue val) => val.Type == DataType.Table;
+        public static bool IsString(this DynValue val) => val.Type == DataType.String;
+        public static bool IsNumber(this DynValue val) => val.Type == DataType.Number;
+        public static bool IsFunction(this DynValue val) => val.Type == DataType.Function;
+        public static bool IsUserData(this DynValue val) => val.Type == DataType.UserData;
 
-        // 🔹 Versuche, eine Zahl zu extrahieren
-        public static double? AsNumber(this DynValue val) {
-            return val.Type == DataType.Number ? val.Number : null;
-        }
+        public static string? AsString(this DynValue val)
+            => val.IsString() ? val.String : null;
 
-        // 🔹 Versuche, eine Lua-Tabelle zu extrahieren
-        public static Table? AsTable(this DynValue val) {
-            return val.Type == DataType.Table ? val.Table : null;
-        }
+        public static double? AsNumber(this DynValue val)
+            => val.IsNumber() ? val.Number : null;
 
-        // 🔹 Versuche, eine Lua-Funktion zu extrahieren
-        public static Closure? AsFunction(this DynValue val) {
-            return val.Type == DataType.Function ? val.Function : null;
-        }
+        public static Table? AsTable(this DynValue val)
+            => val.IsTable() ? val.Table : null;
 
-        // 🔹 Versuche, ein UserData-Objekt zu extrahieren
-        public static object? AsUserData(this DynValue val) {
-            return val.Type == DataType.UserData ? val.UserData.Object : null;
-        }
+        public static Closure? AsFunction(this DynValue val)
+            => val.IsFunction() ? val.Function : null;
+
+        public static object? AsUserData(this DynValue val)
+            => val.IsUserData() ? val.UserData.Object : null;
 
         public static Color AsColor(this DynValue val, Color fallback) {
             try {
-                if (val.Type == DataType.String)
-                    return ColorTranslator.FromHtml(val.String);
+                if (val.IsString())
+                    return ColorTranslator.FromHtml(val.AsString()!);
 
-                if (val.Type == DataType.UserData && val.UserData.Object is Color c)
+                if (val.IsUserData() && val.AsUserData() is Color c)
                     return c;
 
-                if (val.Type == DataType.Table) {
-                    var t = val.Table;
-                    int r = Clamp((int)(t.Get("r").CastToNumber() ?? 0));
-                    int g = Clamp((int)(t.Get("g").CastToNumber() ?? 0));
-                    int b = Clamp((int)(t.Get("b").CastToNumber() ?? 0));
+                if (val.IsTable()) {
+                    var t = val.AsTable()!;
+                    int r = Clamp((int)(t.Get("r").AsNumber() ?? 0));
+                    int g = Clamp((int)(t.Get("g").AsNumber() ?? 0));
+                    int b = Clamp((int)(t.Get("b").AsNumber() ?? 0));
                     return Color.FromArgb(r, g, b);
                 }
             }

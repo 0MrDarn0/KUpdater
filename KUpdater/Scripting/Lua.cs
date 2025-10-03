@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using System.Reflection;
+using KUpdater.Extensions;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Loaders;
@@ -63,14 +64,14 @@ namespace KUpdater.Scripting {
             => _script.Globals.Set(name, DynValue.FromObject(_script, value));
 
         protected LuaValue<T> GetGlobal<T>(string name)
-             => new LuaValue<T>(_script.Globals.Get(name));
+             => new(_script.Globals.Get(name));
 
         protected DynValue InvokeClosure(DynValue func, params object[] args)
-            => func.Type == DataType.Function ? _script.Call(func, args) : DynValue.Nil;
+            => func.IsFunction() ? _script.Call(func, args) : DynValue.Nil;
 
 
         public DynValue Invoke(string functionName, params object[] args) {
-            var func = _script.Globals.Get(functionName);
+            var func = GetGlobal<DynValue>(functionName).Raw;
             return InvokeClosure(func, args);
         }
 
@@ -88,14 +89,14 @@ namespace KUpdater.Scripting {
 
 
         public Table GetTableOrEmpty(string name) {
-            var val = _script.Globals.Get(name);
-            return val.Type == DataType.Table ? val.Table : new Table(_script);
+            var val = GetGlobal<DynValue>(name);
+            return val.AsTableOrNew(_script);
         }
 
 
         public DynValue GetValue(string path) {
             var parts = path.Split('.');
-            DynValue node = _script.Globals.Get(parts[0]);
+            var node = GetGlobal<DynValue>(parts[0]).Raw;
             for (int i = 1; i < parts.Length; i++) {
                 if (node.Type != DataType.Table)
                     return DynValue.Nil;
@@ -106,20 +107,20 @@ namespace KUpdater.Scripting {
 
 
         public string? GetString(string path) {
-            var val = GetValue(path);
-            return val.Type == DataType.String ? val.String : null;
+            var val = new LuaValue<DynValue>(GetValue(path));
+            return val.AsString();
         }
 
 
         public void DumpTable(string path) {
-            var val = GetValue(path);
-            if (val.Type != DataType.Table) {
+            var val = new LuaValue<DynValue>(GetValue(path));
+            if (!val.IsTable()) {
                 Debug.WriteLine($"[Lua] {path} is not a table.");
                 return;
             }
 
             Debug.WriteLine($"[Lua] Dumping table: {path}");
-            foreach (var pair in val.Table.Pairs)
+            foreach (var pair in val.AsTable()!.Pairs)
                 Debug.WriteLine($"  {pair.Key.ToPrintString()} = {pair.Value}");
         }
 
@@ -132,22 +133,22 @@ namespace KUpdater.Scripting {
 
             // 1) Enums: expose static and individual values
             if (type.IsEnum) {
-                _script.Globals[globalName] = UserData.CreateStatic<T>();
+                SetGlobal(globalName, UserData.CreateStatic<T>());
                 foreach (var name in Enum.GetNames(type)) {
                     var value = Enum.Parse(type, name);
-                    _script.Globals[name] = UserData.Create(value);
+                    SetGlobal(name, UserData.Create(value));
                 }
                 return;
             }
 
             // 2) Instance: expose the instance only (userdata)
             if (instance is not null) {
-                _script.Globals[globalName] = UserData.Create(instance);
+                SetGlobal(globalName, UserData.Create(instance));
                 return;
             }
 
             // 3) Always expose statics
-            _script.Globals[globalName] = UserData.CreateStatic<T>();
+            SetGlobal(globalName, UserData.CreateStatic<T>());
 
             // Do not expose a constructor for types like Color/SKColor (we want Color.White, etc.)
             bool exposeConstructor =
@@ -160,17 +161,17 @@ namespace KUpdater.Scripting {
                 return;
 
             // 4) Constructor dispatcher without noisy exceptions
-            _script.Globals[globalName] = DynValue.NewCallback((ctx, args) => {
+            SetGlobal(globalName, DynValue.NewCallback((ctx, args) => {
                 // Map MoonSharp DynValues to raw objects, but keep closures/tables intact for per-parameter matching.
                 var rawArgs = args.GetArray()
             .Select(a =>
             {
-                if (a.Type == DataType.Table)
-                    return (object)a.Table;
-                if (a.Type == DataType.Function)
-                    return (object)a.Function; // keep Closure for targeted mapping
-                if (a.Type == DataType.UserData)
-                    return a.UserData.Object;  // unwrap .NET object
+                if (a.IsTable())
+                    return (object)a.AsTable()!;
+                if (a.IsFunction())
+                    return (object)a.AsFunction()!;
+                if (a.IsUserData())
+                    return a.AsUserData()!;
                 return a.ToObject();
             })
             .ToArray();
@@ -222,7 +223,7 @@ namespace KUpdater.Scripting {
 
                 var obj = chosen.Invoke(finalArgs!);
                 return UserData.Create(obj);
-            });
+            }));
 
             // Local helper: targeted coercion without throwing exceptions
             bool TryCoerce(object? argVal, Type targetType, out object? result) {
@@ -254,14 +255,14 @@ namespace KUpdater.Scripting {
                 if (targetType == typeof(Func<Rectangle>) && argVal is Closure boundsClosure) {
                     result = new Func<Rectangle>(() => {
                         var ret = boundsClosure.Call();
-                        if (ret.Type != DataType.Table)
+                        if (!ret.IsTable())
                             throw new ScriptRuntimeException("bounds closure must return a table with x,y,width,height");
 
-                        var t = ret.Table;
-                        int x = (int)(t.Get("x").CastToNumber() ?? 0);
-                        int y = (int)(t.Get("y").CastToNumber() ?? 0);
-                        int w = (int)(t.Get("width").CastToNumber() ?? 0);
-                        int h = (int)(t.Get("height").CastToNumber() ?? 0);
+                        var t = ret.AsTable()!;
+                        int x = (int)(t.Get("x").AsNumber() ?? 0);
+                        int y = (int)(t.Get("y").AsNumber() ?? 0);
+                        int w = (int)(t.Get("width").AsNumber() ?? 0);
+                        int h = (int)(t.Get("height").AsNumber() ?? 0);
 
                         // Optional anchoring for negatives (keeps Lua simple)
                         var form = MainForm.Instance;
@@ -274,7 +275,6 @@ namespace KUpdater.Scripting {
                                 w = form.Width + w;
                             // h negative rarely used; add if needed
                         }
-
                         return new Rectangle(x, y, w, h);
                     });
                     return true;
@@ -315,10 +315,10 @@ namespace KUpdater.Scripting {
 
                 // Table → Rectangle (if constructor directly expects Rectangle)
                 if (targetType == typeof(Rectangle) && argVal is Table tbl) {
-                    int x = (int)(tbl.Get("x").CastToNumber() ?? 0);
-                    int y = (int)(tbl.Get("y").CastToNumber() ?? 0);
-                    int w = (int)(tbl.Get("width").CastToNumber() ?? 0);
-                    int h = (int)(tbl.Get("height").CastToNumber() ?? 0);
+                    int x = (int)(tbl.Get("x").AsNumber() ?? 0);
+                    int y = (int)(tbl.Get("y").AsNumber() ?? 0);
+                    int w = (int)(tbl.Get("width").AsNumber() ?? 0);
+                    int h = (int)(tbl.Get("height").AsNumber() ?? 0);
 
                     var form = MainForm.Instance;
                     if (form != null) {
@@ -329,7 +329,6 @@ namespace KUpdater.Scripting {
                         if (w < 0)
                             w = form.Width + w;
                     }
-
                     result = new Rectangle(x, y, w, h);
                     return true;
                 }
@@ -344,7 +343,6 @@ namespace KUpdater.Scripting {
                         // swallow; we'll return false
                     }
                 }
-
                 return false;
             }
 
