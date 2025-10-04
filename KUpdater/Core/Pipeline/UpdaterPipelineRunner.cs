@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
+using System.Reflection;
+using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
-using KUpdater.Core.Pipeline.Steps;
 
 namespace KUpdater.Core.Pipeline {
     public class UpdaterPipelineRunner {
@@ -10,12 +11,34 @@ namespace KUpdater.Core.Pipeline {
 
         public UpdaterPipelineRunner(IEventDispatcher dispatcher, IUpdateSource source, string baseUrl, string rootDir) {
             _dispatcher = dispatcher;
+            _pipeline = new UpdatePipeline();
 
-            _pipeline = new UpdatePipeline()
-                .AddStep(new LoadMetadataStep(source, baseUrl))
-                .AddStep(new CheckVersionStep(rootDir))
-                .AddStep(new DownloadAndExtractStep(source))
-                .AddStep(new SaveVersionStep(rootDir));
+            var stepTypes = Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => typeof(IUpdateStep).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
+                .Select(t => new
+                {
+                    Type = t,
+                    Attr = t.GetCustomAttribute<PipelineStepAttribute>()
+                })
+                .Where(x => x.Attr != null)
+                .OrderBy(x => x.Attr!.Order);
+
+            foreach (var stepInfo in stepTypes) {
+                var ctor = stepInfo.Type.GetConstructors().First();
+                var args = ctor.GetParameters().Select(p =>
+                {
+                    if (p.ParameterType == typeof(IUpdateSource))
+                        return (object)source;
+                    if (p.ParameterType == typeof(string) && p.Name!.Contains("base", StringComparison.OrdinalIgnoreCase))
+                        return (object)baseUrl;
+                    if (p.ParameterType == typeof(string) && p.Name!.Contains("root", StringComparison.OrdinalIgnoreCase))
+                        return (object)rootDir;
+                    throw new InvalidOperationException($"Unbekanntes ctor-Argument {p.Name} in {stepInfo.Type.Name}");
+                }).ToArray();
+
+                var step = (IUpdateStep)Activator.CreateInstance(stepInfo.Type, args)!;
+                _pipeline.AddStep(step);
+            }
         }
 
         public async Task RunAsync(string rootDir) {

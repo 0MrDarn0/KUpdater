@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using System.Reflection;
+using KUpdater.Core.Attributes;
 using KUpdater.Extensions;
 using KUpdater.UI;
 using KUpdater.Utility;

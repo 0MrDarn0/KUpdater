@@ -1,9 +1,11 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using System.IO.Compression;
+using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
 
 namespace KUpdater.Core.Pipeline.Steps {
+    [PipelineStep(30)]
     public class DownloadAndExtractStep : IUpdateStep {
         private readonly IUpdateSource _source;
         public string Name => "DownloadAndExtract";

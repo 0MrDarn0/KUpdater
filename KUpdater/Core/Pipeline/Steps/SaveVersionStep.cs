@@ -1,8 +1,9 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
+using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
-
 namespace KUpdater.Core.Pipeline.Steps {
+    [PipelineStep(40)]
     public class SaveVersionStep : IUpdateStep {
         private readonly string _localVersionFile;
         public string Name => "SaveVersion";

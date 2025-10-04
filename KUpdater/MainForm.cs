@@ -3,6 +3,7 @@
 using KUpdater.Core;
 using KUpdater.Core.Event;
 using KUpdater.Core.Pipeline;
+using KUpdater.Core.UI;
 using KUpdater.Interop;
 using KUpdater.Scripting;
 using KUpdater.UI;
@@ -26,6 +27,8 @@ namespace KUpdater {
 
         private readonly IEventDispatcher _dispatcher;
         private readonly UpdaterPipelineRunner _runner;
+        private readonly UIState _uiState = new();
+
 
         public MainForm() {
             Instance = this;
@@ -37,7 +40,7 @@ namespace KUpdater {
             _runner = new UpdaterPipelineRunner(_dispatcher, source, _config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
             _uiElementManager = new();
-            _mainFormTheme = new(this, _uiElementManager, _config.Language);
+            _mainFormTheme = new(this, _uiElementManager, _uiState, _config.Language);
             _uiRenderer = new(this, _uiElementManager, _mainFormTheme);
 
             InitializeComponent();
@@ -69,17 +72,17 @@ namespace KUpdater {
 
             // Events abonnieren
             _dispatcher.Subscribe<StatusEvent>(ev => {
-                _mainFormTheme._lastStatus = ev.Text;
+                _uiState.SetStatus(ev.Text);
                 _uiRenderer.RequestRender();
             });
 
             _dispatcher.Subscribe<ProgressEvent>(ev => {
-                _mainFormTheme._lastProgress = ev.Percent / 100.0;
+                _uiState.SetProgress(ev.Percent);
                 _uiRenderer.RequestRender();
             });
 
             _dispatcher.Subscribe<ChangelogEvent>(ev => {
-                _mainFormTheme._lastChangeLog = ev.Text;
+                _uiState.SetChangelog(ev.Text);
                 _uiRenderer.RequestRender();
             });
 

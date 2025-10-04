@@ -1,9 +1,11 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using System.Text.Json;
+using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
 
 namespace KUpdater.Core.Pipeline.Steps {
+    [PipelineStep(10)]
     public class LoadMetadataStep : IUpdateStep {
         private readonly IUpdateSource _source;
         private readonly string _metadataUrl;
