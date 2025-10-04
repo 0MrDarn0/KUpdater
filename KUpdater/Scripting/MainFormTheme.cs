@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using System.Diagnostics;
-using KUpdater.Core;
 using KUpdater.Extensions;
 using KUpdater.UI;
 using KUpdater.Utility;
@@ -13,7 +12,6 @@ namespace KUpdater.Scripting {
     public class MainFormTheme : Lua, ITheme {
         private readonly Form _form;
         private readonly UIElementManager _uiElementManager;
-        private readonly Updater _updater;
         private string? _currentTheme;
         private ThemeBackground? _cachedBackground;
         private ThemeLayout? _cachedLayout;
@@ -30,10 +28,9 @@ namespace KUpdater.Scripting {
         private readonly Action<double> _setProgress;
         private readonly Action<string> _setChangeLogText;
 
-        public MainFormTheme(Form form, UIElementManager uiElementManager, Updater updater, string language) : base("theme_loader.lua") {
+        public MainFormTheme(Form form, UIElementManager uiElementManager, string language) : base("theme_loader.lua") {
             _form = form;
             _uiElementManager = uiElementManager;
-            _updater = updater;
             _resources = new ResourceManager();
 
             // Init bindings

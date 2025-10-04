@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using KUpdater.Core;
+using KUpdater.Core.Event;
+using KUpdater.Core.Pipeline;
 using KUpdater.Interop;
 using KUpdater.Scripting;
 using KUpdater.UI;
@@ -21,16 +23,21 @@ namespace KUpdater {
         private readonly MainFormTheme _mainFormTheme;
         private readonly UIRenderer _uiRenderer;
         private readonly UpdaterConfig _config;
-        private readonly Updater _updater;
+
+        private readonly IEventDispatcher _dispatcher;
+        private readonly UpdaterPipelineRunner _runner;
 
         public MainForm() {
             Instance = this;
 
             _config = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig").Load();
-            _updater = new Updater(new HttpUpdateSource(), _config.Url, AppDomain.CurrentDomain.BaseDirectory);
+
+            _dispatcher = new EventDispatcher();
+            var source = new HttpUpdateSource();
+            _runner = new UpdaterPipelineRunner(_dispatcher, source, _config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
             _uiElementManager = new();
-            _mainFormTheme = new(this, _uiElementManager, _updater, _config.Language);
+            _mainFormTheme = new(this, _uiElementManager, _config.Language);
             _uiRenderer = new(this, _uiElementManager, _mainFormTheme);
 
             InitializeComponent();
@@ -60,22 +67,24 @@ namespace KUpdater {
             base.OnShown(e);
             _uiRenderer.RequestRender();
 
-            _updater.ChangelogChanged += msg => {
-                _mainFormTheme._lastChangeLog = msg;
+            // Events abonnieren
+            _dispatcher.Subscribe<StatusEvent>(ev => {
+                _mainFormTheme._lastStatus = ev.Text;
                 _uiRenderer.RequestRender();
-            };
+            });
 
-            _updater.StatusChanged += msg => {
-                _mainFormTheme._lastStatus = msg;
+            _dispatcher.Subscribe<ProgressEvent>(ev => {
+                _mainFormTheme._lastProgress = ev.Percent / 100.0;
                 _uiRenderer.RequestRender();
-            };
+            });
 
-            _updater.ProgressChanged += val => {
-                _mainFormTheme._lastProgress = val / 100.0;
+            _dispatcher.Subscribe<ChangelogEvent>(ev => {
+                _mainFormTheme._lastChangeLog = ev.Text;
                 _uiRenderer.RequestRender();
-            };
+            });
 
-            await _updater.RunUpdateAsync();
+            // Pipeline starten
+            await _runner.RunAsync(AppDomain.CurrentDomain.BaseDirectory);
         }
 
 
