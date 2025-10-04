@@ -18,11 +18,6 @@ namespace KUpdater.Scripting {
         private readonly ResourceManager _resources;
         private bool _disposed;
 
-        // State
-        public string _lastStatus = "Status: Waiting...";
-        public double _lastProgress = 0.0;
-        public string _lastChangeLog = "Changelog ....";
-
         // 🔗 Bindings
         private readonly Action<string> _setStatusText;
         private readonly Action<double> _setProgress;
