@@ -14,6 +14,7 @@ namespace KUpdater.Scripting {
 
     public abstract class Lua : IDisposable {
         protected readonly Script _script;
+        public Script Script => _script;
         private bool _disposed;
 
         public Lua(string path) {
@@ -62,7 +63,7 @@ namespace KUpdater.Scripting {
             loader.ModulePaths = [.. paths];
         }
 
-        protected void SetGlobal(string name, object value)
+        protected internal void SetGlobal(string name, object value)
             => _script.Globals.Set(name, DynValue.FromObject(_script, value));
 
         protected LuaValue<T> GetGlobal<T>(string name)

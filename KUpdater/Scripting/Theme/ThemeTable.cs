@@ -4,7 +4,7 @@ using KUpdater.Extensions;
 using MoonSharp.Interpreter;
 using SkiaSharp;
 
-namespace KUpdater.Scripting {
+namespace KUpdater.Scripting.Theme {
     public readonly struct ThemeTable {
         private readonly Table _table;
         private readonly Script _script;

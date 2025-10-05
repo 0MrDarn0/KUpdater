@@ -2,7 +2,7 @@
 
 using SkiaSharp;
 
-namespace KUpdater.Scripting {
+namespace KUpdater.Scripting.Theme {
 
     public interface ITheme {
         ThemeBackground GetBackground();

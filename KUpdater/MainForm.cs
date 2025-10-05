@@ -6,6 +6,7 @@ using KUpdater.Core.Pipeline;
 using KUpdater.Core.UI;
 using KUpdater.Interop;
 using KUpdater.Scripting;
+using KUpdater.Scripting.Theme;
 using KUpdater.UI;
 
 namespace KUpdater {
@@ -21,7 +22,7 @@ namespace KUpdater {
         private readonly int _resizeHitSize = 40;
 
         private readonly UIElementManager _uiElementManager;
-        private readonly MainFormTheme _mainFormTheme;
+        private readonly MainTheme _theme;
         private readonly UIRenderer _uiRenderer;
         private readonly UpdaterConfig _config;
 
@@ -40,8 +41,8 @@ namespace KUpdater {
             _runner = new UpdaterPipelineRunner(_dispatcher, source, _config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
             _uiElementManager = new();
-            _mainFormTheme = new(this, _uiElementManager, _uiState, _config.Language);
-            _uiRenderer = new(this, _uiElementManager, _mainFormTheme);
+            _theme = new(this, _uiElementManager, _uiState, _config.Language);
+            _uiRenderer = new(this, _uiElementManager, _theme);
 
             InitializeComponent();
             FormBorderStyle = FormBorderStyle.None;
@@ -60,7 +61,7 @@ namespace KUpdater {
 
         protected override void OnFormClosed(FormClosedEventArgs e) {
             _uiRenderer.Dispose();
-            _mainFormTheme.Dispose();
+            _theme.Dispose();
             _uiElementManager.DisposeAndClearAll();
             Instance = null;
             base.OnFormClosed(e);

@@ -3,7 +3,7 @@
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
-using KUpdater.Scripting;
+using KUpdater.Scripting.Theme;
 using SkiaSharp;
 
 namespace KUpdater.UI {
@@ -39,7 +39,7 @@ namespace KUpdater.UI {
             IsRendering = true;
             try {
                 _needsRender = false;
-                (_theme as MainFormTheme)?.ApplyLastState();
+                (_theme as ThemeBase)?.ApplyLastState();
                 Redraw();
             }
             finally {
