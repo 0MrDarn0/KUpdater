@@ -76,7 +76,8 @@ local function anchor(x, y, w, h, mode)
   end
 end
 
-
+local engine = require("actions.engine")
+local http = require("actions.http")
 
 -- Rückgabe der gesamten Fensterdefinition
 return {
@@ -116,7 +117,7 @@ return {
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "btn_default",
-      function() GameLauncher:StartGame() end)
+      function() engine.start_game() end)
     uiElement.Add(btnStart)
 
     local btnSettings = UIButton("btn_settings",
@@ -125,7 +126,7 @@ return {
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "btn_default",
-      function() GameLauncher:OpenSettings() end)
+      function() engine.open_settings() end)
     uiElement.Add(btnSettings)
 
     local btnWebsite = UIButton("btn_website",
@@ -134,7 +135,7 @@ return {
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "btn_default",
-      function() open_website("https://google.com") end)
+      function() http.open("https://google.com") end)
     uiElement.Add(btnWebsite)
 
 
@@ -143,7 +144,6 @@ return {
     local progressBar = UIProgressBar("pb_update_progress",
       anchor(27, 30, -27, 5, "bottom_left"))
       uiElement.Add(progressBar)
-
 
 
     local changelogBox = UITextBox("tb_changelog", 

@@ -1,6 +1,5 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
-using System.Diagnostics;
 using KUpdater.Core.UI;
 using KUpdater.UI;
 using KUpdater.Utility;
@@ -20,11 +19,10 @@ namespace KUpdater.Scripting.Theme {
                 DynValue.NewNumber(_form.Width),
                 DynValue.NewNumber(_form.Height)
             ));
-            SetGlobal("open_website", (Action<string>)((url) => {
-                Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
-            }));
-            SetGlobal(LuaKeys.Actions.StartGame, (Action)(() => GameLauncher.StartGame()));
-            SetGlobal(LuaKeys.Actions.OpenSettings, (Action)(() => GameLauncher.OpenSettings()));
+            //SetGlobal("open_website", (Action<string>)((url) => {
+            //    Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+            //}));
+
             SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
             ExposeToLua("uiElement", _mgr);
             ExposeToLua<Font>();
