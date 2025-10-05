@@ -11,7 +11,6 @@ namespace KUpdater.Scripting.Theme {
         protected readonly Form _form;
         protected readonly UIElementManager _mgr;
         protected readonly UIState _state;
-        //protected readonly ThemeBindings _bindings;
         protected readonly ResourceManager _resources = new();
         private ThemeBackground? _cachedBackground;
         private ThemeLayout? _cachedLayout;
@@ -21,8 +20,6 @@ namespace KUpdater.Scripting.Theme {
             _form = form;
             _mgr = mgr;
             _state = state;
-            //_bindings = new ThemeBindings(mgr, state);
-
             RegisterGlobals();
             LoadLanguage(lang);
             LoadTheme(GetThemeName());
