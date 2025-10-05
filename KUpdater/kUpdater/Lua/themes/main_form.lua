@@ -116,7 +116,7 @@ return {
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "btn_default",
-      function() start_game() end)
+      function() GameLauncher:StartGame() end)
     uiElement.Add(btnStart)
 
     local btnSettings = UIButton("btn_settings",
@@ -125,7 +125,7 @@ return {
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "btn_default",
-      function() open_settings() end)
+      function() GameLauncher:OpenSettings() end)
     uiElement.Add(btnSettings)
 
     local btnWebsite = UIButton("btn_website",

@@ -1,8 +1,11 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using System.Diagnostics;
+using KUpdater.Core.Attributes;
 
-namespace KUpdater {
+namespace KUpdater.Utility {
+
+    [ExposeToLua]
     public static class GameLauncher {
         public static void StartGame() {
             try {
