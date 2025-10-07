@@ -74,8 +74,18 @@ namespace KUpdater.Scripting {
 
 
         public DynValue Invoke(string functionName, params object[] args) {
-            var func = GetGlobal<DynValue>(functionName).Raw;
-            return InvokeClosure(func, args);
+            try {
+                var func = GetGlobal<DynValue>(functionName).Raw;
+                return InvokeClosure(func, args);
+            }
+            catch (ScriptRuntimeException srx) {
+                Debug.WriteLine($"[Lua] Runtime error invoking {functionName}: {srx.Message}");
+                return DynValue.Nil;
+            }
+            catch (Exception ex) {
+                Debug.WriteLine($"[Lua] Error invoking {functionName}: {ex.Message}");
+                return DynValue.Nil;
+            }
         }
 
 
@@ -89,6 +99,16 @@ namespace KUpdater.Scripting {
 
         public LuaValue<T> Invoke<T>(DynValue func, params object[] args)
            => new(Invoke(func, args));
+
+        public static T SafeCall<T>(Func<T> action, T fallback = default!) {
+            try { return action(); }
+            catch (Exception ex) { Debug.WriteLine($"[SafeCall] {ex.Message}"); return fallback; }
+        }
+
+        public DynValue SafeInvokeDyn(DynValue func, params object[] args) {
+            try { return Invoke(func, args); }
+            catch (Exception ex) { Debug.WriteLine($"[Lua] SafeInvoke failed: {ex.Message}"); return DynValue.Nil; }
+        }
 
 
         public Table GetTableOrEmpty(string name) {
@@ -165,58 +185,66 @@ namespace KUpdater.Scripting {
 
             // 4) Constructor dispatcher without noisy exceptions
             SetGlobal(globalName, DynValue.NewCallback((ctx, args) => {
-                // Map MoonSharp DynValues to raw objects, but keep closures/tables intact for per-parameter matching.
-                var rawArgs = args.GetArray()
-            .Select(a => a.MapDynValue())
-            .ToArray();
+                try {
+                    // Map MoonSharp DynValues to raw objects, but keep closures/tables intact for per-parameter matching.
+                    var rawArgs = args.GetArray().Select(a => a.MapDynValue()).ToArray();
 
-                ConstructorInfo? chosen = null;
-                object[]? finalArgs = null;
+                    ConstructorInfo? chosen = null;
+                    object[]? finalArgs = null;
 
-                foreach (var ctor in type.GetConstructors()) {
-                    var parms = ctor.GetParameters();
-                    int requiredCount = parms.Count(p => !p.HasDefaultValue);
+                    foreach (var ctor in type.GetConstructors()) {
 
-                    if (rawArgs.Length < requiredCount || rawArgs.Length > parms.Length)
-                        continue;
+                        var parms = ctor.GetParameters();
+                        int requiredCount = parms.Count(p => !p.HasDefaultValue);
 
-                    var tmp = new object?[parms.Length];
-                    bool ok = true;
+                        if (rawArgs.Length < requiredCount || rawArgs.Length > parms.Length)
+                            continue;
 
-                    for (int i = 0; i < parms.Length; i++) {
-                        var targetType = parms[i].ParameterType;
+                        var tmp = new object?[parms.Length];
+                        bool ok = true;
 
-                        if (i < rawArgs.Length) {
-                            var argVal = rawArgs[i];
+                        for (int i = 0; i < parms.Length; i++) {
+                            var targetType = parms[i].ParameterType;
 
-                            if (!TryCoerce(argVal, targetType, out var coerced)) {
-                                ok = false;
-                                break;
+                            if (i < rawArgs.Length) {
+                                var argVal = rawArgs[i];
+
+                                if (!TryCoerce(argVal, targetType, out var coerced)) {
+                                    ok = false;
+                                    break;
+                                }
+
+                                tmp[i] = coerced;
+                            } else {
+                                if (parms[i].HasDefaultValue)
+                                    tmp[i] = parms[i].DefaultValue;
+                                else {
+                                    ok = false;
+                                    break;
+                                }
                             }
+                        }
 
-                            tmp[i] = coerced;
-                        } else {
-                            if (parms[i].HasDefaultValue)
-                                tmp[i] = parms[i].DefaultValue;
-                            else {
-                                ok = false;
-                                break;
-                            }
+                        if (ok) {
+                            chosen = ctor;
+                            finalArgs = tmp!;
+                            break;
                         }
                     }
 
-                    if (ok) {
-                        chosen = ctor;
-                        finalArgs = tmp!;
-                        break;
+                    if (chosen == null) {
+                        Debug.WriteLine($"[Lua] No matching constructor for {type.Name} with {rawArgs.Length} args");
+                        return DynValue.Nil;
                     }
+
+                    var obj = chosen.Invoke(finalArgs!);
+                    return UserData.Create(obj);
+
                 }
-
-                if (chosen == null)
-                    throw new ScriptRuntimeException($"No matching constructor found for {type.Name} with {rawArgs.Length} arguments.");
-
-                var obj = chosen.Invoke(finalArgs!);
-                return UserData.Create(obj);
+                catch (Exception ex) {
+                    Debug.WriteLine($"[Lua] Constructor dispatch error for {type.Name}: {ex.Message}");
+                    return DynValue.Nil;
+                }
             }));
 
             // Local helper: targeted coercion without throwing exceptions
@@ -248,28 +276,35 @@ namespace KUpdater.Scripting {
                 // Lua Closure → Func<Rectangle>
                 if (targetType == typeof(Func<Rectangle>) && argVal is Closure boundsClosure) {
                     result = new Func<Rectangle>(() => {
-                        var ret = boundsClosure.Call();
-                        if (!ret.IsTable())
-                            throw new ScriptRuntimeException("bounds closure must return a table with x,y,width,height");
+                        try {
 
-                        var t = ret.AsTable()!;
-                        int x = (int)(t.Get("x").AsNumber() ?? 0);
-                        int y = (int)(t.Get("y").AsNumber() ?? 0);
-                        int w = (int)(t.Get("width").AsNumber() ?? 0);
-                        int h = (int)(t.Get("height").AsNumber() ?? 0);
+                            var ret = boundsClosure.Call();
+                            if (!ret.IsTable())
+                                return Rectangle.Empty;
 
-                        // Optional anchoring for negatives (keeps Lua simple)
-                        var form = MainForm.Instance;
-                        if (form != null) {
-                            if (x < 0)
-                                x = form.Width + x;
-                            if (y < 0)
-                                y = form.Height + y;
-                            if (w < 0)
-                                w = form.Width + w;
-                            // h negative rarely used; add if needed
+                            var t = ret.AsTable()!;
+                            int x = (int)(t.Get("x").AsNumber() ?? 0);
+                            int y = (int)(t.Get("y").AsNumber() ?? 0);
+                            int w = (int)(t.Get("width").AsNumber() ?? 0);
+                            int h = (int)(t.Get("height").AsNumber() ?? 0);
+
+                            // Optional anchoring for negatives (keeps Lua simple)
+                            var form = MainForm.Instance;
+                            if (form != null) {
+                                if (x < 0)
+                                    x = form.Width + x;
+                                if (y < 0)
+                                    y = form.Height + y;
+                                if (w < 0)
+                                    w = form.Width + w;
+                                // h negative rarely used; add if needed
+                            }
+                            return new Rectangle(x, y, w, h);
                         }
-                        return new Rectangle(x, y, w, h);
+                        catch (Exception ex) {
+                            Debug.WriteLine($"[Lua] boundsClosure failed: {ex.Message}");
+                            return Rectangle.Empty;
+                        }
                     });
                     return true;
                 }

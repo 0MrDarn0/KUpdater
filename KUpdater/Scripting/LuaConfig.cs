@@ -1,5 +1,6 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
+using System.Diagnostics;
 using System.Reflection;
 using MoonSharp.Interpreter;
 
@@ -33,8 +34,8 @@ namespace KUpdater.Scripting {
             return (T)MapTableToObject(typeof(T), table)!;
         }
 
-        private object? MapTableToObject(Type targetType, Table table) {
-            var result = Activator.CreateInstance(targetType);
+        public object? MapTableToObject(Type targetType, Table table) {
+            var result = Activator.CreateInstance(targetType)!;
 
             foreach (var prop in targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
                 if (!prop.CanWrite)
@@ -46,29 +47,34 @@ namespace KUpdater.Scripting {
                 if (val.IsNil())
                     continue;
 
-                object? converted = null;
-
-                if (prop.PropertyType == typeof(string))
-                    converted = val.CastToString();
-                else if (prop.PropertyType == typeof(int))
-                    converted = (int)(val.CastToNumber() ?? 0);
-                else if (prop.PropertyType == typeof(double))
-                    converted = val.CastToNumber();
-                else if (prop.PropertyType == typeof(bool))
-                    converted = val.CastToBool();
-                else if (prop.PropertyType.IsEnum && val.Type == DataType.String)
-                    converted = Enum.Parse(prop.PropertyType, val.String, true);
-                else if (prop.PropertyType.IsEnum && val.Type == DataType.Number)
-                    converted = Enum.ToObject(prop.PropertyType, (int)val.Number);
-                else if (val.Type == DataType.Table) {
-                    // Rekursiv in Unterobjekt mappen
-                    converted = MapTableToObject(prop.PropertyType, val.Table);
+                bool set = false;
+                try {
+                    if (prop.PropertyType == typeof(string)) {
+                        prop.SetValue(result, val.CastToString() ?? string.Empty);
+                        set = true;
+                    } else if (prop.PropertyType == typeof(int)) {
+                        var n = val.CastToNumber();
+                        prop.SetValue(result, (int)(n ?? 0));
+                        set = true;
+                    } else if (prop.PropertyType == typeof(double)) {
+                        var n = val.CastToNumber();
+                        prop.SetValue(result, n ?? 0.0);
+                        set = true;
+                    } else if (prop.PropertyType == typeof(bool)) {
+                        prop.SetValue(result, val.CastToBool());
+                        set = true;
+                    } else if (prop.PropertyType.IsEnum) {
+                        if (val.Type == DataType.String && Enum.TryParse(prop.PropertyType, val.String, true, out var ev)) { prop.SetValue(result, ev); set = true; } else if (val.Type == DataType.Number) { prop.SetValue(result, Enum.ToObject(prop.PropertyType, (int)val.Number)); set = true; }
+                    } else if (val.Type == DataType.Table) {
+                        var sub = MapTableToObject(prop.PropertyType, val.Table);
+                        if (sub != null) { prop.SetValue(result, sub); set = true; }
+                    }
                 }
-
-                if (converted != null)
-                    prop.SetValue(result, converted);
+                catch (Exception ex) {
+                    Debug.WriteLine($"[LuaConfig] Failed to map {key} to {prop.Name}: {ex.Message}");
+                }
+                // leave default if set==false
             }
-
             return result;
         }
     }
