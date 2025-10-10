@@ -42,7 +42,7 @@ namespace KUpdater.Scripting {
             SetGlobal("exe_directory", Paths.Base);
         }
 
-        private void ConfigureModulePaths(string luaRoot) {
+        private static void ConfigureModulePaths(string luaRoot) {
             var loader = (ScriptLoaderBase)Script.DefaultOptions.ScriptLoader;
 
             // Alle Unterordner rekursiv einsammeln
