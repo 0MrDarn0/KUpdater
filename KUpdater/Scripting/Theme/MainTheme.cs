@@ -6,10 +6,8 @@ using KUpdater.Utility;
 using MoonSharp.Interpreter;
 
 namespace KUpdater.Scripting.Theme {
-    public class MainTheme : ThemeBase {
-        public MainTheme(Form form, UIElementManager mgr, UIState state, string lang)
-            : base("theme_loader.lua", form, mgr, state, lang) { }
-
+    public class MainTheme(Form form, UIElementManager mgr, UIState state, string lang)
+        : ThemeBase("theme_loader.lua", form, mgr, state, lang) {
         protected override string GetThemeName() => "main_form";
 
         protected override void RegisterGlobals() {

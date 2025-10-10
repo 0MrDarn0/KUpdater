@@ -5,14 +5,9 @@ using MoonSharp.Interpreter;
 using SkiaSharp;
 
 namespace KUpdater.Scripting.Theme {
-    public readonly struct ThemeTable {
-        private readonly Table _table;
-        private readonly Script _script;
-
-        public ThemeTable(Table table, Script script) {
-            _table = table;
-            _script = script;
-        }
+    public readonly struct ThemeTable(Table table, Script script) {
+        private readonly Table _table = table;
+        private readonly Script _script = script;
 
         public string GetString(string key, string fallback = "")
             => _table.Get(key).AsString() ?? fallback;

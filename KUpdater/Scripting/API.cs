@@ -12,15 +12,10 @@ namespace KUpdater.Scripting {
     }
 
     [ExposeToLua]
-    public class ProcessStart {
-        public ProcessStart(string fileName, string arguments = "", bool useshell = false) {
-            FileName = fileName;
-            Arguments = arguments;
-            UseShellExecute = useshell;
-        }
-        public string FileName { get; set; }
-        public string Arguments { get; set; } = "";
-        public bool UseShellExecute { get; set; } = false;
+    public class ProcessStart(string fileName, string arguments = "", bool useshell = false) {
+        public string FileName { get; set; } = fileName;
+        public string Arguments { get; set; } = arguments;
+        public bool UseShellExecute { get; set; } = useshell;
     }
 
     [ExposeToLua("Process")]
