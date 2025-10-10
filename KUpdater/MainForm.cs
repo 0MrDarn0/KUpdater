@@ -8,6 +8,8 @@ using KUpdater.Interop;
 using KUpdater.Scripting;
 using KUpdater.Scripting.Theme;
 using KUpdater.UI;
+using KUpdater.Utility;
+using SniffKit.UI;
 
 namespace KUpdater {
     public partial class MainForm : Form {
@@ -25,6 +27,7 @@ namespace KUpdater {
         private readonly MainTheme _theme;
         private readonly UIRenderer _uiRenderer;
         private readonly UpdaterConfig _config;
+        private readonly TrayIcon? _trayIcon;
 
         private readonly IEventDispatcher _dispatcher;
         private readonly UpdaterPipelineRunner _runner;
@@ -49,6 +52,16 @@ namespace KUpdater {
             StartPosition = FormStartPosition.CenterScreen;
             DoubleBuffered = true;
 
+            _trayIcon = new TrayIcon()
+                .Name("kUpdater")
+                .Icon(Paths.Resource("app.ico"))
+                .StatusIcons(status => status
+                    .Item("default", Paths.Resource("app.ico"))
+                )
+                .Menu(menu => menu
+                    .Item("Settings", (s, e) => { })
+                    .Separator()
+                    .Exit((s, e) => Application.Exit()));
         }
 
         protected override CreateParams CreateParams {
@@ -60,6 +73,7 @@ namespace KUpdater {
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e) {
+            _trayIcon?.Dispose();
             _uiRenderer.Dispose();
             _theme.Dispose();
             _uiElementManager.DisposeAndClearAll();

@@ -92,4 +92,21 @@
 	  <PackageReference Include="SkiaSharp.Views.WindowsForms" Version="3.119.1" />
 	</ItemGroup>
 
+
+	<ItemGroup>
+		<Reference Include="SniffKit.UI">
+			<HintPath>$(SolutionDir)\..\SniffKit\src\SniffKit.UI\bin\$(Configuration)\net9.0-windows\SniffKit.UI.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+
+	<ItemGroup>
+	  <Content Update="kUpdater\Resources\icon.png">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="kUpdater\Resources\logo.png">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
 </Project>
