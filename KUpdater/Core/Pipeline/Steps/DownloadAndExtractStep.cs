@@ -3,6 +3,7 @@
 using System.IO.Compression;
 using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
+using SniffKit.Core;
 
 namespace KUpdater.Core.Pipeline.Steps {
     [PipelineStep(30)]
@@ -14,11 +15,11 @@ namespace KUpdater.Core.Pipeline.Steps {
             _source = source;
         }
 
-        public async Task ExecuteAsync(UpdateContext ctx, IEventDispatcher dispatcher) {
+        public async Task ExecuteAsync(UpdateContext ctx, IEventManager eventManager) {
             string tempZip = Path.Combine(Path.GetTempPath(), "update.zip");
 
             // Download
-            dispatcher.Publish(new StatusEvent(Localization.Translate("status.downloading_pkg")));
+            eventManager.NotifyAll(new StatusEvent(Localization.Translate("status.downloading_pkg")));
             await using (var stream = await _source.GetPackageStreamAsync(ctx.Metadata.PackageUrl))
             await using (var fs = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None)) {
                 byte[] buffer = new byte[8192];
@@ -30,13 +31,13 @@ namespace KUpdater.Core.Pipeline.Steps {
                     totalRead += read;
                     if (totalLength > 0) {
                         int percent = (int)((totalRead * 100L) / totalLength);
-                        dispatcher.Publish(new ProgressEvent(percent));
+                        eventManager.NotifyAll(new ProgressEvent(percent));
                     }
                 }
             }
 
             // Extract
-            dispatcher.Publish(new StatusEvent(Localization.Translate("status.extracting_files")));
+            eventManager.NotifyAll(new StatusEvent(Localization.Translate("status.extracting_files")));
             using (var archive = ZipFile.OpenRead(tempZip)) {
                 int count = archive.Entries.Count;
                 int current = 0;
@@ -58,12 +59,12 @@ namespace KUpdater.Core.Pipeline.Steps {
                     }
 
                     current++;
-                    dispatcher.Publish(new ProgressEvent(100 * current / count));
+                    eventManager.NotifyAll(new ProgressEvent(100 * current / count));
                 }
             }
 
             File.Delete(tempZip);
-            dispatcher.Publish(new StatusEvent(Localization.Translate("status.update_complete")));
+            eventManager.NotifyAll(new StatusEvent(Localization.Translate("status.update_complete")));
         }
     }
 }

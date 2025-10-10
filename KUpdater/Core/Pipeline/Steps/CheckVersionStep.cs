@@ -2,6 +2,7 @@
 
 using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
+using SniffKit.Core;
 
 namespace KUpdater.Core.Pipeline.Steps {
     [PipelineStep(20)]
@@ -13,7 +14,7 @@ namespace KUpdater.Core.Pipeline.Steps {
             _localVersionFile = Path.Combine(rootDirectory, "version.txt");
         }
 
-        public async Task ExecuteAsync(UpdateContext ctx, IEventDispatcher dispatcher) {
+        public async Task ExecuteAsync(UpdateContext ctx, IEventManager eventManager) {
             // Lokale Version laden
             ctx.CurrentVersion = File.Exists(_localVersionFile)
                 ? File.ReadAllText(_localVersionFile).Trim()
@@ -33,14 +34,14 @@ namespace KUpdater.Core.Pipeline.Steps {
             }
 
             if (!needsUpdate) {
-                dispatcher.Publish(new StatusEvent(
+                eventManager.NotifyAll(new StatusEvent(
                     Localization.Translate("status.up_to_date", ctx.CurrentVersion)
                 ));
                 // Pipeline hier abbrechen
                 throw new OperationCanceledException("No update required");
             }
 
-            dispatcher.Publish(new StatusEvent(
+            eventManager.NotifyAll(new StatusEvent(
                 Localization.Translate("status.update_required", ctx.CurrentVersion, ctx.Metadata.Version)
             ));
 

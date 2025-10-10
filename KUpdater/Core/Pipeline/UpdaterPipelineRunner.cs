@@ -3,14 +3,15 @@
 using System.Reflection;
 using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
+using SniffKit.Core;
 
 namespace KUpdater.Core.Pipeline {
     public class UpdaterPipelineRunner {
-        private readonly IEventDispatcher _dispatcher;
+        private readonly IEventManager _eventManager;
         private readonly UpdatePipeline _pipeline;
 
-        public UpdaterPipelineRunner(IEventDispatcher dispatcher, IUpdateSource source, string baseUrl, string rootDir) {
-            _dispatcher = dispatcher;
+        public UpdaterPipelineRunner(IEventManager eventManager, IUpdateSource source, string baseUrl, string rootDir) {
+            _eventManager = eventManager;
             _pipeline = new UpdatePipeline();
 
             var stepTypes = Assembly.GetExecutingAssembly().GetTypes()
@@ -45,13 +46,13 @@ namespace KUpdater.Core.Pipeline {
             var ctx = new UpdateContext(rootDir);
 
             try {
-                await _pipeline.RunAsync(ctx, _dispatcher);
+                await _pipeline.RunAsync(ctx, _eventManager);
             }
             catch (OperationCanceledException) {
                 // Kein Update nötig → still ok
             }
             catch (Exception ex) {
-                _dispatcher.Publish(new StatusEvent(
+                _eventManager.NotifyAll(new StatusEvent(
                     Localization.Translate("status.update_failed", ex.Message)
                 ));
             }

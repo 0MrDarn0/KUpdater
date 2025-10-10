@@ -94,6 +94,9 @@
 
 
 	<ItemGroup>
+		<Reference Include="SniffKit.Core">
+			<HintPath>$(SolutionDir)\..\SniffKit\src\SniffKit.Core\bin\$(Configuration)\net9.0-windows\SniffKit.Core.dll</HintPath>
+		</Reference>
 		<Reference Include="SniffKit.UI">
 			<HintPath>$(SolutionDir)\..\SniffKit\src\SniffKit.UI\bin\$(Configuration)\net9.0-windows\SniffKit.UI.dll</HintPath>
 		</Reference>

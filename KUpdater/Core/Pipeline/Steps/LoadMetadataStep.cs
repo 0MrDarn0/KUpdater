@@ -3,6 +3,7 @@
 using System.Text.Json;
 using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
+using SniffKit.Core;
 
 namespace KUpdater.Core.Pipeline.Steps {
     [PipelineStep(10)]
@@ -19,9 +20,9 @@ namespace KUpdater.Core.Pipeline.Steps {
             _changelogUrl = baseUrl.EndsWith("/") ? baseUrl + "changelog.txt" : baseUrl + "/changelog.txt";
         }
 
-        public async Task ExecuteAsync(UpdateContext ctx, IEventDispatcher dispatcher) {
+        public async Task ExecuteAsync(UpdateContext ctx, IEventManager eventManager) {
             // Status-Event
-            dispatcher.Publish(new StatusEvent(Localization.Translate("status.waiting")));
+            eventManager.NotifyAll(new StatusEvent(Localization.Translate("status.waiting")));
 
             // Metadaten laden
             var json = await _source.GetMetadataJsonAsync(_metadataUrl);
@@ -29,7 +30,7 @@ namespace KUpdater.Core.Pipeline.Steps {
 
             // Changelog laden
             var changelog = await _source.GetChangelogAsync(_changelogUrl);
-            dispatcher.Publish(new ChangelogEvent(changelog));
+            eventManager.NotifyAll(new ChangelogEvent(changelog));
         }
     }
 }

@@ -2,6 +2,7 @@
 
 using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
+using SniffKit.Core;
 namespace KUpdater.Core.Pipeline.Steps {
     [PipelineStep(40)]
     public class SaveVersionStep : IUpdateStep {
@@ -12,10 +13,10 @@ namespace KUpdater.Core.Pipeline.Steps {
             _localVersionFile = Path.Combine(rootDirectory, "version.txt");
         }
 
-        public async Task ExecuteAsync(UpdateContext ctx, IEventDispatcher dispatcher) {
+        public async Task ExecuteAsync(UpdateContext ctx, IEventManager eventManager) {
             File.WriteAllText(_localVersionFile, ctx.Metadata.Version);
 
-            dispatcher.Publish(new StatusEvent(
+            eventManager.NotifyAll(new StatusEvent(
                 Localization.Translate("status.update_applied")
             ));
 

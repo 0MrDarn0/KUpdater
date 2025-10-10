@@ -9,6 +9,7 @@ using KUpdater.Scripting;
 using KUpdater.Scripting.Theme;
 using KUpdater.UI;
 using KUpdater.Utility;
+using SniffKit.Core;
 using SniffKit.UI;
 
 namespace KUpdater {
@@ -23,14 +24,13 @@ namespace KUpdater {
         private Size _resizeStartSize;
         private readonly int _resizeHitSize = 40;
 
-        private readonly UIElementManager _uiElementManager;
         private readonly MainTheme _theme;
         private readonly UIRenderer _uiRenderer;
+        private readonly IEventManager _eventManager;
+        private readonly UpdaterPipelineRunner _runner;
+        private readonly UIElementManager _uiElementManager;
         private readonly UpdaterConfig _config;
         private readonly TrayIcon? _trayIcon;
-
-        private readonly IEventDispatcher _dispatcher;
-        private readonly UpdaterPipelineRunner _runner;
         private readonly UIState _uiState = new();
 
 
@@ -39,9 +39,9 @@ namespace KUpdater {
 
             _config = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig").Load();
 
-            _dispatcher = new EventDispatcher();
+            _eventManager = new EventManager();
             var source = new HttpUpdateSource();
-            _runner = new UpdaterPipelineRunner(_dispatcher, source, _config.Url, AppDomain.CurrentDomain.BaseDirectory);
+            _runner = new UpdaterPipelineRunner(_eventManager, source, _config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
             _uiElementManager = new();
             _theme = new(this, _uiElementManager, _uiState, _config.Language);
@@ -86,17 +86,17 @@ namespace KUpdater {
             _uiRenderer.RequestRender();
 
             // Events abonnieren
-            _dispatcher.Subscribe<StatusEvent>(ev => {
+            _eventManager.Register<StatusEvent>(ev => {
                 _uiState.SetStatus(ev.Text);
                 _uiRenderer.RequestRender();
             });
 
-            _dispatcher.Subscribe<ProgressEvent>(ev => {
+            _eventManager.Register<ProgressEvent>(ev => {
                 _uiState.SetProgress(ev.Percent);
                 _uiRenderer.RequestRender();
             });
 
-            _dispatcher.Subscribe<ChangelogEvent>(ev => {
+            _eventManager.Register<ChangelogEvent>(ev => {
                 _uiState.SetChangelog(ev.Text);
                 _uiRenderer.RequestRender();
             });

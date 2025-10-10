@@ -2,6 +2,7 @@
 
 using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
+using SniffKit.Core;
 
 namespace KUpdater.Core.Pipeline.Steps {
     [PipelineStep(15)]
@@ -16,16 +17,16 @@ namespace KUpdater.Core.Pipeline.Steps {
 
         public string Name => "LoadChangelog";
 
-        public async Task ExecuteAsync(UpdateContext ctx, IEventDispatcher dispatcher) {
+        public async Task ExecuteAsync(UpdateContext ctx, IEventManager eventManager) {
             try {
                 string changelogUrl = _baseUrl + "changelog.txt";
                 string changelog = await _source.GetChangelogAsync(changelogUrl);
 
                 // Event feuern → landet in UIState
-                dispatcher.Publish(new ChangelogEvent(changelog));
+                eventManager.NotifyAll(new ChangelogEvent(changelog));
             }
             catch (Exception ex) {
-                dispatcher.Publish(new StatusEvent(
+                eventManager.NotifyAll(new StatusEvent(
                     Localization.Translate("status.changelog_failed", ex.Message)
                 ));
             }

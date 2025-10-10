@@ -1,11 +1,12 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using KUpdater.Core.Event;
+using SniffKit.Core;
 
 namespace KUpdater.Core.Pipeline {
     public interface IUpdateStep {
         string Name { get; }
-        Task ExecuteAsync(UpdateContext context, IEventDispatcher dispatcher);
+        Task ExecuteAsync(UpdateContext context, IEventManager eventManager);
     }
 
     public class UpdateContext {
@@ -26,14 +27,14 @@ namespace KUpdater.Core.Pipeline {
             return this;
         }
 
-        public async Task RunAsync(UpdateContext context, IEventDispatcher dispatcher) {
+        public async Task RunAsync(UpdateContext context, IEventManager eventManager) {
             foreach (var step in _steps) {
-                dispatcher.Publish(new UpdateStepStarted(step.Name));
-                await step.ExecuteAsync(context, dispatcher);
-                dispatcher.Publish(new UpdateStepCompleted(step.Name));
+                eventManager.NotifyAll(new UpdateStepStarted(step.Name));
+                await step.ExecuteAsync(context, eventManager);
+                eventManager.NotifyAll(new UpdateStepCompleted(step.Name));
             }
 
-            dispatcher.Publish(new UpdatePipelineCompleted());
+            eventManager.NotifyAll(new UpdatePipelineCompleted());
         }
     }
 }
