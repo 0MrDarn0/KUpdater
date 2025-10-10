@@ -62,6 +62,8 @@ dotnet_naming_rule.static_fields_should_be_pascal_case.style = pascal_case
 dotnet_naming_symbols.static_fields.applicable_kinds = field
 dotnet_naming_symbols.static_fields.required_modifiers = static
 
+dotnet_analyzer_diagnostic.Microsoft.Interop.Analyzers.ShapeBreakingDiagnosticSuppressor.severity = none
+
 # Lua-Dateien (nur falls du sie im Repo hast)
 [*.lua]
 indent_style = space

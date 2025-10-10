@@ -73,7 +73,9 @@ namespace KUpdater.Scripting {
                 catch (Exception ex) {
                     Debug.WriteLine($"[LuaConfig] Failed to map {key} to {prop.Name}: {ex.Message}");
                 }
-                // leave default if set==false
+                if (!set) {
+                    Debug.WriteLine($"[LuaConfig] No mapping applied for {prop.Name}, leaving default.");
+                }
             }
             return result;
         }

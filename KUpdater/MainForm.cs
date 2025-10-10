@@ -10,6 +10,7 @@ using KUpdater.Scripting.Theme;
 using KUpdater.UI;
 using KUpdater.Utility;
 using SniffKit.Core;
+using SniffKit.IO;
 using SniffKit.UI;
 
 namespace KUpdater {
@@ -32,10 +33,14 @@ namespace KUpdater {
         private readonly UpdaterConfig _config;
         private readonly TrayIcon? _trayIcon;
         private readonly UIState _uiState = new();
-
+        private readonly Logger _logger;
 
         public MainForm() {
             Instance = this;
+            _logger = new Logger("MainLogger")
+                .SetLogDirectory(Paths.AppFolder)
+                .EnableDebugOutput(true)
+                .WriteToFile(true, LogType.Info);
 
             _config = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig").Load();
 
@@ -59,7 +64,7 @@ namespace KUpdater {
                     .Item("default", Paths.Resource("app.ico"))
                 )
                 .Menu(menu => menu
-                    .Item("Settings", (s, e) => { })
+                    .Item("Settings", (s, e) => { _logger.Info("Settings clicked"); })
                     .Separator()
                     .Exit((s, e) => Application.Exit()));
         }
