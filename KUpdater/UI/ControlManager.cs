@@ -4,78 +4,87 @@ using KUpdater.UI.Control;
 using SkiaSharp;
 
 namespace KUpdater.UI {
-    public class ControlManager {
-        private readonly List<IControl> _elements = [];
-        public void Add(IControl element) => _elements.Add(element);
+    public class ControlManager : IDisposable {
+        private readonly List<IControl> _controls = [];
+        public void Add(IControl control) => _controls.Add(control);
 
         public void DisposeAndClearAll() {
-            int count = _elements.Count;
-            foreach (var el in _elements)
-                el.Dispose();
-            _elements.Clear();
-            //System.Diagnostics.Debug.WriteLine($"[ControlManager] Disposed {count} elements (DisposeAndClearAll).");
+            int count = _controls.Count;
+            foreach (var control in _controls)
+                control.Dispose();
+            _controls.Clear();
         }
 
         public void DisposeAndClear<T>() where T : class, IControl {
-            int count = _elements.Count(e => e is T);
-            foreach (var el in _elements.OfType<T>())
-                el.Dispose();
-            _elements.RemoveAll(e => e is T);
-            //System.Diagnostics.Debug.WriteLine($"[ControlManager] Disposed {count} {typeof(T).Name}(s).");
+            int count = _controls.Count(control => control is T);
+            foreach (var control in _controls.OfType<T>())
+                control.Dispose();
+            _controls.RemoveAll(control => control is T);
         }
 
         public T? FindById<T>(string id) where T : class, IControl
-           => _elements.OfType<T>().FirstOrDefault(e => e.Id == id);
+           => _controls.OfType<T>()
+            .FirstOrDefault(control => control.Id == id);
 
-        public void Update<T>(string id, Action<T> updater) where T : class, IControl {
-            var el = FindById<T>(id);
-            if (el != null)
-                updater(el);
+        public void Update<T>(string id, Action<T> callback) where T : class, IControl {
+            var control = FindById<T>(id);
+            if (control != null)
+                callback(control);
         }
 
-        public void Draw(Graphics g) {
-            foreach (var el in _elements)
-                if (el.Visible)
-                    el.Draw(g);
+        public bool TryUpdate<T>(string id, Action<T> callback) where T : class, IControl {
+            var control = FindById<T>(id);
+            if (control == null)
+                return false;
+
+            callback(control);
+            return true;
+        }
+
+        public void Draw(Graphics graphics) {
+            foreach (var control in _controls)
+                if (control.Visible)
+                    control.Draw(graphics);
         }
 
         public void Draw(SKCanvas canvas) {
-            foreach (var el in _elements)
-                if (el.Visible)
-                    el.Draw(canvas);
+            foreach (var control in _controls)
+                if (control.Visible)
+                    control.Draw(canvas);
         }
 
-        public bool MouseMove(Point p) {
+        public bool MouseMove(Point point) {
             bool needsRedraw = false;
-            foreach (var el in _elements.ToList())
-                if (el.Visible && el.OnMouseMove(p))
+            foreach (var control in _controls.ToList())
+                if (control.Visible && control.OnMouseMove(point))
                     needsRedraw = true;
             return needsRedraw;
         }
 
-        public bool MouseDown(Point p) {
+        public bool MouseDown(Point point) {
             bool needsRedraw = false;
-            foreach (var el in _elements.ToList())
-                if (el.Visible && el.OnMouseDown(p))
+            foreach (var control in _controls.ToList())
+                if (control.Visible && control.OnMouseDown(point))
                     needsRedraw = true;
             return needsRedraw;
         }
 
-        public bool MouseUp(Point p) {
+        public bool MouseUp(Point point) {
             bool needsRedraw = false;
-            foreach (var el in _elements.ToList())
-                if (el.Visible && el.OnMouseUp(p))
+            foreach (var control in _controls.ToList())
+                if (control.Visible && control.OnMouseUp(point))
                     needsRedraw = true;
             return needsRedraw;
         }
 
-        public bool MouseWheel(int delta, Point p) {
+        public bool MouseWheel(int delta, Point point) {
             bool needsRedraw = false;
-            foreach (var el in _elements.ToList())
-                if (el.Visible && el.Bounds.Contains(p) && el.OnMouseWheel(delta, p))
+            foreach (var control in _controls.ToList())
+                if (control.Visible && control.Bounds.Contains(point) && control.OnMouseWheel(delta, point))
                     needsRedraw = true;
             return needsRedraw;
         }
 
+        public void Dispose() => DisposeAndClearAll();
     }
 }

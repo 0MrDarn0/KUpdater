@@ -11,7 +11,7 @@ namespace KUpdater.UI {
     public class Renderer : IDisposable {
         private readonly Form _form;
         private readonly ITheme _theme;
-        private readonly ControlManager _uiElementManager;
+        private readonly ControlManager _controlManager;
         private readonly System.Windows.Forms.Timer _renderTimer;
         private int _needsRender;
         private SKBitmap? _renderBuffer;
@@ -24,9 +24,9 @@ namespace KUpdater.UI {
         public long LastRenderDurationMs { get; private set; }
         public int LastPresentError { get; private set; }
 
-        public Renderer(Form form, ControlManager uiElementManager, ITheme theme) {
+        public Renderer(Form form, ControlManager controlManager, ITheme theme) {
             _form = form ?? throw new ArgumentNullException(nameof(form));
-            _uiElementManager = uiElementManager ?? throw new ArgumentNullException(nameof(uiElementManager));
+            _controlManager = controlManager ?? throw new ArgumentNullException(nameof(controlManager));
             _theme = theme ?? throw new ArgumentNullException(nameof(theme));
 
             _renderTimer = new System.Windows.Forms.Timer { Interval = 33 };
@@ -105,7 +105,7 @@ namespace KUpdater.UI {
 
             var canvas = _renderSurface!.Canvas;
             DrawBackground(canvas, new Size(width, height));
-            _uiElementManager.Draw(canvas);
+            _controlManager.Draw(canvas);
 
             var bmpData = _backBuffer!.LockBits(
                 new Rectangle(0, 0, width, height),

@@ -26,10 +26,10 @@ namespace KUpdater {
         private readonly int _resizeHitSize = 40;
 
         private readonly MainTheme _theme;
-        private readonly Renderer _uiRenderer;
+        private readonly Renderer _renderer;
         private readonly IEventManager _eventManager;
         private readonly UpdaterPipelineRunner _runner;
-        private readonly ControlManager _uiElementManager;
+        private readonly ControlManager _controlManager;
         private readonly UpdaterConfig _config;
         private readonly TrayIcon? _trayIcon;
         private readonly UIState _uiState = new();
@@ -50,9 +50,9 @@ namespace KUpdater {
             _runner = new UpdaterPipelineRunner(_eventManager, source, _config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
             _resourceProvider = new FileResourceProvider(Paths.ResFolder, strongCacheCapacity: 16);
-            _uiElementManager = new();
-            _theme = new(this, _uiElementManager, _uiState, _config.Language, _resourceProvider);
-            _uiRenderer = new(this, _uiElementManager, _theme);
+            _controlManager = new();
+            _theme = new(this, _controlManager, _uiState, _config.Language, _resourceProvider);
+            _renderer = new(this, _controlManager, _theme);
 
             InitializeComponent();
             FormBorderStyle = FormBorderStyle.None;
@@ -81,9 +81,9 @@ namespace KUpdater {
 
         protected override void OnFormClosed(FormClosedEventArgs e) {
             _trayIcon?.Dispose();
-            _uiRenderer.Dispose();
+            _renderer.Dispose();
             _theme.Dispose();
-            _uiElementManager.DisposeAndClearAll();
+            _controlManager.Dispose();
             _resourceProvider?.Dispose();
             Instance = null;
             base.OnFormClosed(e);
@@ -91,22 +91,22 @@ namespace KUpdater {
 
         protected override async void OnShown(EventArgs e) {
             base.OnShown(e);
-            _uiRenderer.RequestRender();
+            _renderer.RequestRender();
 
             // Events abonnieren
             _eventManager.Register<StatusEvent>(ev => {
                 _uiState.SetStatus(ev.Text);
-                _uiRenderer.RequestRender();
+                _renderer.RequestRender();
             });
 
             _eventManager.Register<ProgressEvent>(ev => {
                 _uiState.SetProgress(ev.Percent);
-                _uiRenderer.RequestRender();
+                _renderer.RequestRender();
             });
 
             _eventManager.Register<ChangelogEvent>(ev => {
                 _uiState.SetChangelog(ev.Text);
-                _uiRenderer.RequestRender();
+                _renderer.RequestRender();
             });
 
             // Pipeline starten
@@ -116,7 +116,7 @@ namespace KUpdater {
 
         protected override void OnResize(EventArgs e) {
             base.OnResize(e);
-            _uiRenderer.RequestRender();
+            _renderer.RequestRender();
         }
 
         protected override void OnMouseMove(MouseEventArgs e) {
@@ -159,8 +159,8 @@ namespace KUpdater {
             ).Contains(e.Location) ? Cursors.SizeNWSE : Cursors.Default;
 
             // Let ControlManager handle hover state for all controls
-            if (_uiElementManager.MouseMove(e.Location))
-                _uiRenderer.RequestRender();
+            if (_controlManager.MouseMove(e.Location))
+                _renderer.RequestRender();
         }
 
         protected override void OnMouseDown(MouseEventArgs e) {
@@ -168,9 +168,9 @@ namespace KUpdater {
                 return;
 
             // Erst an ControlManager weitergeben
-            bool handled = _uiElementManager.MouseDown(e.Location);
+            bool handled = _controlManager.MouseDown(e.Location);
             if (handled) {
-                _uiRenderer.RequestRender();
+                _renderer.RequestRender();
                 return; // Wenn ein Element reagiert, nicht weiterziehen!
             }
 
@@ -193,14 +193,14 @@ namespace KUpdater {
             _isResizing = false;
 
             // Pass to ControlManager so controls can handle clicks
-            if (_uiElementManager.MouseUp(e.Location))
-                _uiRenderer.RequestRender();
+            if (_controlManager.MouseUp(e.Location))
+                _renderer.RequestRender();
         }
 
         protected override void OnMouseWheel(MouseEventArgs e) {
-            bool handled = _uiElementManager.MouseWheel(e.Delta, e.Location);
+            bool handled = _controlManager.MouseWheel(e.Delta, e.Location);
             if (handled)
-                _uiRenderer.RequestRender();
+                _renderer.RequestRender();
         }
 
     }

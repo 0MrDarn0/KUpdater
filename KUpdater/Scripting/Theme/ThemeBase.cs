@@ -11,16 +11,16 @@ using SniffKit.UI;
 namespace KUpdater.Scripting.Theme {
     public abstract class ThemeBase : Lua, ITheme {
         protected readonly Form _form;
-        protected readonly ControlManager _mgr;
+        protected readonly ControlManager _controlManager;
         protected readonly UIState _state;
         protected readonly IResourceProvider _resourceProvider;
         private ThemeBackground? _cachedBackground;
         private ThemeLayout? _cachedLayout;
 
-        protected ThemeBase(string themeScript, Form form, ControlManager mgr, UIState state, string lang, IResourceProvider resourceProvider)
+        protected ThemeBase(string themeScript, Form form, ControlManager controlManager, UIState state, string lang, IResourceProvider resourceProvider)
             : base(themeScript) {
             _form = form;
-            _mgr = mgr;
+            _controlManager = controlManager;
             _state = state;
             _resourceProvider = resourceProvider;
             RegisterGlobals();

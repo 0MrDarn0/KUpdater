@@ -7,8 +7,8 @@ using MoonSharp.Interpreter;
 using SniffKit.UI;
 
 namespace KUpdater.Scripting.Theme {
-    public class MainTheme(Form form, ControlManager mgr, UIState state, string lang, IResourceProvider resourceProvider)
-        : ThemeBase("theme_loader.lua", form, mgr, state, lang, resourceProvider) {
+    public class MainTheme(Form form, ControlManager controlManager, UIState state, string lang, IResourceProvider resourceProvider)
+        : ThemeBase("theme_loader.lua", form, controlManager, state, lang, resourceProvider) {
 
         protected override string GetThemeName() => "main_form";
 
@@ -21,20 +21,20 @@ namespace KUpdater.Scripting.Theme {
             ));
             SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
 
-            ExposeToLua("Controls", _mgr);
+            ExposeToLua("Controls", _controlManager);
             ExposeToLua<Font>();
             ExposeToLua<Color>();
             ExposeMarkedTypes();
-            SetGlobal("update_status", (Action<string>)(text => _mgr.Update<UI.Control.Label>("lb_update_status", l => l.Text = text)));
-            SetGlobal("update_download_progress", (Action<double>)(percent => _mgr.Update<UI.Control.ProgressBar>("pb_update_progress", b => b.Progress = (float)Math.Clamp(percent, 0.0, 1.0))));
-            SetGlobal("update_label", UIBindings.UpdateLabel(_mgr));
-            SetGlobal("update_progress", UIBindings.UpdateProgress(_mgr));
+            SetGlobal("update_status", (Action<string>)(text => _controlManager.Update<UI.Control.Label>("lb_update_status", l => l.Text = text)));
+            SetGlobal("update_download_progress", (Action<double>)(percent => _controlManager.Update<UI.Control.ProgressBar>("pb_update_progress", b => b.Progress = (float)Math.Clamp(percent, 0.0, 1.0))));
+            SetGlobal("update_label", UIBindings.UpdateLabel(_controlManager));
+            SetGlobal("update_progress", UIBindings.UpdateProgress(_controlManager));
         }
 
         protected override void UpdateLastState() {
-            _mgr.Update<UI.Control.Label>("lb_update_status", l => l.Text = _state.Status);
-            _mgr.Update<UI.Control.ProgressBar>("pb_update_progress", b => b.Progress = (float)_state.Progress);
-            _mgr.Update<UI.Control.TextBox>("tb_changelog", tb => tb.Text = _state.Changelog);
+            _controlManager.Update<UI.Control.Label>("lb_update_status", l => l.Text = _state.Status);
+            _controlManager.Update<UI.Control.ProgressBar>("pb_update_progress", b => b.Progress = (float)_state.Progress);
+            _controlManager.Update<UI.Control.TextBox>("tb_changelog", tb => tb.Text = _state.Changelog);
         }
 
 
