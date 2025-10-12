@@ -25,24 +25,24 @@ namespace KUpdater.Scripting {
 
         // 🔗 Binding helpers   
         public static Action<string> BindLabelText(ControlManager mgr, string id)
-            => text => mgr.Update<UI.Label>(id, l => l.Text = text);
+            => text => mgr.Update<UI.Control.Label>(id, l => l.Text = text);
 
         public static Action<double> BindProgress(ControlManager mgr, string id)
-            => value => mgr.Update<UI.ProgressBar>(id, b => b.Progress = (float)Math.Clamp(value, 0.0, 1.0));
+            => value => mgr.Update<UI.Control.ProgressBar>(id, b => b.Progress = (float)Math.Clamp(value, 0.0, 1.0));
 
         public static Action<string> BindButtonText(ControlManager mgr, string id)
-            => text => mgr.Update<UI.Button>(id, b => b.Text = text);
+            => text => mgr.Update<UI.Control.Button>(id, b => b.Text = text);
 
         public static Action<System.Drawing.Color> BindLabelColor(ControlManager mgr, string id)
-            => color => mgr.Update<UI.Label>(id, l => l.Color = color);
+            => color => mgr.Update<UI.Control.Label>(id, l => l.Color = color);
 
         public static Action<string, string> UpdateLabel(ControlManager mgr)
-              => (id, text) => mgr.Update<UI.Label>(id, l => l.Text = text);
+              => (id, text) => mgr.Update<UI.Control.Label>(id, l => l.Text = text);
 
         public static Action<string, double> UpdateProgress(ControlManager mgr)
-            => (id, value) => mgr.Update<UI.ProgressBar>(id, b => b.Progress = (float)Math.Clamp(value, 0.0, 1.0));
+            => (id, value) => mgr.Update<UI.Control.ProgressBar>(id, b => b.Progress = (float)Math.Clamp(value, 0.0, 1.0));
 
         public static Action<string> BindTextBoxText(ControlManager mgr, string id)
-           => text => mgr.Update<UI.TextBox>(id, tb => tb.Text = text);
+           => text => mgr.Update<UI.Control.TextBox>(id, tb => tb.Text = text);
     }
 }

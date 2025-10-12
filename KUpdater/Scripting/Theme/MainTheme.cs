@@ -25,16 +25,16 @@ namespace KUpdater.Scripting.Theme {
             ExposeToLua<Font>();
             ExposeToLua<Color>();
             ExposeMarkedTypes();
-            SetGlobal("update_status", (Action<string>)(text => _mgr.Update<UI.Label>("lb_update_status", l => l.Text = text)));
-            SetGlobal("update_download_progress", (Action<double>)(percent => _mgr.Update<UI.ProgressBar>("pb_update_progress", b => b.Progress = (float)Math.Clamp(percent, 0.0, 1.0))));
+            SetGlobal("update_status", (Action<string>)(text => _mgr.Update<UI.Control.Label>("lb_update_status", l => l.Text = text)));
+            SetGlobal("update_download_progress", (Action<double>)(percent => _mgr.Update<UI.Control.ProgressBar>("pb_update_progress", b => b.Progress = (float)Math.Clamp(percent, 0.0, 1.0))));
             SetGlobal("update_label", UIBindings.UpdateLabel(_mgr));
             SetGlobal("update_progress", UIBindings.UpdateProgress(_mgr));
         }
 
         protected override void UpdateLastState() {
-            _mgr.Update<UI.Label>("lb_update_status", l => l.Text = _state.Status);
-            _mgr.Update<UI.ProgressBar>("pb_update_progress", b => b.Progress = (float)_state.Progress);
-            _mgr.Update<UI.TextBox>("tb_changelog", tb => tb.Text = _state.Changelog);
+            _mgr.Update<UI.Control.Label>("lb_update_status", l => l.Text = _state.Status);
+            _mgr.Update<UI.Control.ProgressBar>("pb_update_progress", b => b.Progress = (float)_state.Progress);
+            _mgr.Update<UI.Control.TextBox>("tb_changelog", tb => tb.Text = _state.Changelog);
         }
 
 

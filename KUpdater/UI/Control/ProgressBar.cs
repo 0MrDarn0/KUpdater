@@ -3,7 +3,7 @@
 using KUpdater.Core.Attributes;
 using MoonSharp.Interpreter;
 using SkiaSharp;
-namespace KUpdater.UI {
+namespace KUpdater.UI.Control {
 
     [ExposeToLua]
     public class ProgressBar : IControl {

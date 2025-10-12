@@ -2,7 +2,7 @@
 
 using SkiaSharp;
 
-namespace KUpdater.UI {
+namespace KUpdater.UI.Control {
     public interface IControl : IDisposable {
         string Id { get; }
         public bool Visible { get; set; }

@@ -5,7 +5,7 @@ using KUpdater.Utility;
 using MoonSharp.Interpreter;
 using SkiaSharp;
 
-namespace KUpdater.UI {
+namespace KUpdater.UI.Control {
 
     [ExposeToLua]
     public class Button : IControl {
