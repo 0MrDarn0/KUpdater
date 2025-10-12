@@ -1,13 +1,13 @@
 -- Hintergrund-Konfiguration
 local background_config = {
-  top_left      = "main_tl_default.png",
-  top_center    = "main_tc_default.png",
-  top_right     = "main_tr_default.png",
-  right_center  = "main_rc_default.png",
-  bottom_right  = "main_br_default.png",
-  bottom_center = "main_bc_default.png",
-  bottom_left   = "main_bl_default.png",
-  left_center   = "main_lc_default.png",
+  top_left      = "Default:top_left.png",
+  top_center    = "Default:top_center.png",
+  top_right     = "Default:top_right.png",
+  right_center  = "Default:right_center.png",
+  bottom_right  = "Default:bottom_right.png",
+  bottom_center = "Default:bottom_center.png",
+  bottom_left   = "Default:bottom_left.png",
+  left_center   = "Default:left_center.png",
   fill_color    = "#101010"
 }
 
@@ -79,6 +79,7 @@ end
 local engine = require("actions.engine")
 local http = require("actions.http")
 
+
 -- Rückgabe der gesamten Fensterdefinition
 return {
   background = background_config,
@@ -87,66 +88,66 @@ return {
   init = function()
   
     -- Title
-    local titleLabel = UILabel("lb_title",
+    local titleLabel = Label("lb_title",
         bounds(35, 0, 200, 40),
         T("app.title"),
         Font("Chiller", 40, "Italic"),
         Color.Orange)
-    uiElement.Add(titleLabel)
+    Controls.Add(titleLabel)
 
-    local subtitleLabel = UILabel("lb_subtitle",
+    local subtitleLabel = Label("lb_subtitle",
         bounds(-115, 12, 200, 27),
         T("app.subtitle"), 
         Font("Malgun Gothic", 13, "Bold"),
         Color.Gold)
-    uiElement.Add(subtitleLabel)
+    Controls.Add(subtitleLabel)
 
     -- Buttons
-    local btnClose = UIButton("btn_close",
+    local btnClose = Button("btn_exit",
       bounds(-35, 16, 18, 18),
       T("button.exit"),
       Font("Segoe UI", 10, "Regular"),
       Color.Orange,
-      "btn_exit",
+      "Default",
       function() application_exit() end)
-    uiElement.Add(btnClose)
+    Controls.Add(btnClose)
 
-    local btnStart = UIButton("btn_start",
+    local btnStart = Button("btn_start",
       bounds(-150, -70, 97, 22),
       T("button.start"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
-      "btn_default",
+      "Default",
       function() engine.start_game() end)
-    uiElement.Add(btnStart)
+    Controls.Add(btnStart)
 
-    local btnSettings = UIButton("btn_settings",
+    local btnSettings = Button("btn_settings",
       bounds(-255, -70, 97, 22),
       T("button.settings"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
-      "btn_default",
+      "Default",
       function() engine.open_settings() end)
-    uiElement.Add(btnSettings)
+    Controls.Add(btnSettings)
 
-    local btnWebsite = UIButton("btn_website",
+    local btnWebsite = Button("btn_website",
       bounds(-360, -70, 97, 22),
       T("button.website"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
-      "btn_default",
+      "Default",
       function() http.open("https://google.com") end)
-    uiElement.Add(btnWebsite)
+    Controls.Add(btnWebsite)
 
 
 -- Progressbar (27px vom linken Rand, 30px vom unteren Rand,
 -- rechts -27px Abstand, Höhe 5px)
-    local progressBar = UIProgressBar("pb_update_progress",
+    local progressBar = ProgressBar("pb_update_progress",
       anchor(27, 30, -27, 5, "bottom_left"))
-      uiElement.Add(progressBar)
+      Controls.Add(progressBar)
 
 
-    local changelogBox = UITextBox("tb_changelog", 
+    local changelogBox = TextBox("tb_changelog", 
         anchor(36, 55, -400, 200, "bottom_left"),
         "Changelog ...",
         Font("Segoe UI", 10, "Regular"),
@@ -160,16 +161,16 @@ return {
         changelogBox.GlowColor = Color.White
         changelogBox.GlowRadius = 6
 
-    uiElement.Add(changelogBox)
+    Controls.Add(changelogBox)
 
 
     -- Status-Label (27px vom linken Rand, 50px vom unteren Rand)
-    local statusLabel = UILabel("lb_update_status",
+    local statusLabel = Label("lb_update_status",
       anchor(27, 20, 200, 20, "bottom_left"),
       T("status.waiting"),
       Font("Segoe UI", 8, "Italic"),
       Color.White)
-      uiElement.Add(statusLabel)
+      Controls.Add(statusLabel)
 
   end,
 

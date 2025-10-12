@@ -5,24 +5,40 @@ using KUpdater.Extensions;
 using KUpdater.UI;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;
+using SkiaSharp;
+using SniffKit.UI;
 
 namespace KUpdater.Scripting.Theme {
     public abstract class ThemeBase : Lua, ITheme {
         protected readonly Form _form;
-        protected readonly UIElementManager _mgr;
+        protected readonly ControlManager _mgr;
         protected readonly UIState _state;
-        protected readonly ResourceManager _resources = new();
+        protected readonly IResourceProvider _resourceProvider;
         private ThemeBackground? _cachedBackground;
         private ThemeLayout? _cachedLayout;
 
-        protected ThemeBase(string themeScript, Form form, UIElementManager mgr, UIState state, string lang)
+        protected ThemeBase(string themeScript, Form form, ControlManager mgr, UIState state, string lang, IResourceProvider resourceProvider)
             : base(themeScript) {
             _form = form;
             _mgr = mgr;
             _state = state;
+            _resourceProvider = resourceProvider;
             RegisterGlobals();
             LoadLanguage(lang);
             LoadTheme(GetThemeName());
+        }
+
+        protected SKBitmap? GetSkiaBitmapFromProvider(string? id) {
+            if (string.IsNullOrWhiteSpace(id))
+                return null;
+            try {
+                // Provider bietet TryGetSkiaBitmap; verwende diese (non-throwing)
+                var sk = _resourceProvider.TryGetSkiaBitmap(id);
+                return sk;
+            }
+            catch {
+                return null;
+            }
         }
 
         protected abstract string GetThemeName();

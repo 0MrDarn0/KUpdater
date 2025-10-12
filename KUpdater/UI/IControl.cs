@@ -3,7 +3,7 @@
 using SkiaSharp;
 
 namespace KUpdater.UI {
-    public interface IUIElement : IDisposable {
+    public interface IControl : IDisposable {
         string Id { get; }
         public bool Visible { get; set; }
         Rectangle Bounds { get; }

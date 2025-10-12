@@ -7,7 +7,7 @@ using SkiaSharp;
 namespace KUpdater.UI {
 
     [ExposeToLua]
-    public class UITextBox : IUIElement {
+    public class TextBox : IControl {
         public string Id { get; }
         private readonly Func<Rectangle> _boundsFunc;
         public Rectangle Bounds => _boundsFunc();
@@ -44,7 +44,7 @@ namespace KUpdater.UI {
         public float GlowRadius { get; set; } = 8f;
 
 
-        public UITextBox(string id, Func<Rectangle> boundsFunc, string text, Font font,
+        public TextBox(string id, Func<Rectangle> boundsFunc, string text, Font font,
                          Color foreColor, Color backColor,
                          bool multiline = true, bool readOnly = false, Color? scrollBarColor = null, bool ownsFont = true) {
             Id = id;
@@ -61,7 +61,7 @@ namespace KUpdater.UI {
             InitSkiaResources();
         }
 
-        public UITextBox(string id, Table bounds, string text, Font font, Color foreColor, Color backColor,
+        public TextBox(string id, Table bounds, string text, Font font, Color foreColor, Color backColor,
                          bool multiline = true, bool readOnly = false, Color? scrollBarColor = null, bool ownsFont = true)
             : this(id, () => new Rectangle(
                 (int)(bounds.Get("x").CastToNumber() ?? 0),

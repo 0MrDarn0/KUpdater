@@ -4,10 +4,12 @@ using KUpdater.Core.UI;
 using KUpdater.UI;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;
+using SniffKit.UI;
 
 namespace KUpdater.Scripting.Theme {
-    public class MainTheme(Form form, UIElementManager mgr, UIState state, string lang)
-        : ThemeBase("theme_loader.lua", form, mgr, state, lang) {
+    public class MainTheme(Form form, ControlManager mgr, UIState state, string lang, IResourceProvider resourceProvider)
+        : ThemeBase("theme_loader.lua", form, mgr, state, lang, resourceProvider) {
+
         protected override string GetThemeName() => "main_form";
 
         protected override void RegisterGlobals() {
@@ -17,40 +19,36 @@ namespace KUpdater.Scripting.Theme {
                 DynValue.NewNumber(_form.Width),
                 DynValue.NewNumber(_form.Height)
             ));
-            //SetGlobal("open_website", (Action<string>)((url) => {
-            //    Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
-            //}));
-
             SetGlobal(LuaKeys.Actions.ApplicationExit, (Action)(() => Application.Exit()));
-            ExposeToLua("uiElement", _mgr);
+
+            ExposeToLua("Controls", _mgr);
             ExposeToLua<Font>();
             ExposeToLua<Color>();
             ExposeMarkedTypes();
-            SetGlobal("update_status", (Action<string>)(text => _mgr.Update<UILabel>("lb_update_status", l => l.Text = text)));
-            SetGlobal("update_download_progress", (Action<double>)(percent => _mgr.Update<UIProgressBar>("pb_update_progress", b => b.Progress = (float)Math.Clamp(percent, 0.0, 1.0))));
+            SetGlobal("update_status", (Action<string>)(text => _mgr.Update<UI.Label>("lb_update_status", l => l.Text = text)));
+            SetGlobal("update_download_progress", (Action<double>)(percent => _mgr.Update<UI.ProgressBar>("pb_update_progress", b => b.Progress = (float)Math.Clamp(percent, 0.0, 1.0))));
             SetGlobal("update_label", UIBindings.UpdateLabel(_mgr));
             SetGlobal("update_progress", UIBindings.UpdateProgress(_mgr));
         }
 
-
         protected override void UpdateLastState() {
-            _mgr.Update<UILabel>("lb_update_status", l => l.Text = _state.Status);
-            _mgr.Update<UIProgressBar>("pb_update_progress", b => b.Progress = (float)_state.Progress);
-            _mgr.Update<UITextBox>("tb_changelog", tb => tb.Text = _state.Changelog);
+            _mgr.Update<UI.Label>("lb_update_status", l => l.Text = _state.Status);
+            _mgr.Update<UI.ProgressBar>("pb_update_progress", b => b.Progress = (float)_state.Progress);
+            _mgr.Update<UI.TextBox>("tb_changelog", tb => tb.Text = _state.Changelog);
         }
 
 
         protected override ThemeBackground BuildBackground() {
             var bg = new ThemeTable(GetThemeTable("background"), Script);
             return new ThemeBackground {
-                TopLeft = _resources.GetSkiaBitmap(bg.GetString("top_left")),
-                TopCenter = _resources.GetSkiaBitmap(bg.GetString("top_center")),
-                TopRight = _resources.GetSkiaBitmap(bg.GetString("top_right")),
-                RightCenter = _resources.GetSkiaBitmap(bg.GetString("right_center")),
-                BottomRight = _resources.GetSkiaBitmap(bg.GetString("bottom_right")),
-                BottomCenter = _resources.GetSkiaBitmap(bg.GetString("bottom_center")),
-                BottomLeft = _resources.GetSkiaBitmap(bg.GetString("bottom_left")),
-                LeftCenter = _resources.GetSkiaBitmap(bg.GetString("left_center")),
+                TopLeft = GetSkiaBitmapFromProvider(bg.GetString("top_left")),
+                TopCenter = GetSkiaBitmapFromProvider(bg.GetString("top_center")),
+                TopRight = GetSkiaBitmapFromProvider(bg.GetString("top_right")),
+                RightCenter = GetSkiaBitmapFromProvider(bg.GetString("right_center")),
+                BottomRight = GetSkiaBitmapFromProvider(bg.GetString("bottom_right")),
+                BottomCenter = GetSkiaBitmapFromProvider(bg.GetString("bottom_center")),
+                BottomLeft = GetSkiaBitmapFromProvider(bg.GetString("bottom_left")),
+                LeftCenter = GetSkiaBitmapFromProvider(bg.GetString("left_center")),
                 FillColor = bg.GetColor("fill_color", Color.Black)
             };
         }

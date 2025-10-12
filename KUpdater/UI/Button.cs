@@ -8,7 +8,7 @@ using SkiaSharp;
 namespace KUpdater.UI {
 
     [ExposeToLua]
-    public class UIButton : IUIElement {
+    public class Button : IControl {
         public string Id { get; }
         private readonly Func<Rectangle> _boundsFunc;
         public Rectangle Bounds => _boundsFunc();
@@ -32,7 +32,7 @@ namespace KUpdater.UI {
         private SKFont? _skFont;
         private SKPaint? _skPaint;
 
-        public UIButton(string id, Func<Rectangle> boundsFunc, string text, Font font, Color color, string themeKey, Action? onClick, bool ownsFont = true) {
+        public Button(string id, Func<Rectangle> boundsFunc, string text, Font font, Color color, string themeKey, Action? onClick, bool ownsFont = true) {
             Id = id;
             _boundsFunc = boundsFunc;
             Text = text;
@@ -45,7 +45,7 @@ namespace KUpdater.UI {
             LoadResources();
         }
 
-        public UIButton(string id, Table bounds, string text, Font font, Color color,
+        public Button(string id, Table bounds, string text, Font font, Color color,
                         string themeKey, Action? onClick, bool ownsFont = true)
             : this(id, () => new Rectangle(
                 (int)(bounds.Get("x").CastToNumber() ?? 0),
@@ -58,7 +58,7 @@ namespace KUpdater.UI {
 
         private void LoadResources() {
             foreach (var state in new[] { "normal", "hover", "click" }) {
-                string path = Paths.Resource($"{ThemeKey}_{state}.png");
+                string path = Paths.Resource($"{ThemeKey}/{Id}_{state}.png");
                 if (File.Exists(path)) {
                     _stateImages[state] = Image.FromFile(path);
                     _stateBitmaps[state] = SKBitmap.Decode(path);

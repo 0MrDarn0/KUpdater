@@ -398,7 +398,7 @@ namespace KUpdater.Scripting {
 
         public void ExposeUIElements() {
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => typeof(IUIElement).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
+                .Where(t => typeof(IControl).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)) {
                 var method = typeof(Lua).GetMethod(nameof(ExposeToLua))!;
                 var generic = method.MakeGenericMethod(type);
                 generic.Invoke(this, [null, null]);

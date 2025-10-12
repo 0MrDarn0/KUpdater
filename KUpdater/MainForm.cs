@@ -26,14 +26,15 @@ namespace KUpdater {
         private readonly int _resizeHitSize = 40;
 
         private readonly MainTheme _theme;
-        private readonly UIRenderer _uiRenderer;
+        private readonly Renderer _uiRenderer;
         private readonly IEventManager _eventManager;
         private readonly UpdaterPipelineRunner _runner;
-        private readonly UIElementManager _uiElementManager;
+        private readonly ControlManager _uiElementManager;
         private readonly UpdaterConfig _config;
         private readonly TrayIcon? _trayIcon;
         private readonly UIState _uiState = new();
         private readonly Logger _logger;
+        public readonly IResourceProvider _resourceProvider;
 
         public MainForm() {
             Instance = this;
@@ -48,8 +49,9 @@ namespace KUpdater {
             var source = new HttpUpdateSource();
             _runner = new UpdaterPipelineRunner(_eventManager, source, _config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
+            _resourceProvider = new FileResourceProvider(Paths.ResFolder, strongCacheCapacity: 8);
             _uiElementManager = new();
-            _theme = new(this, _uiElementManager, _uiState, _config.Language);
+            _theme = new(this, _uiElementManager, _uiState, _config.Language, _resourceProvider);
             _uiRenderer = new(this, _uiElementManager, _theme);
 
             InitializeComponent();
@@ -59,9 +61,9 @@ namespace KUpdater {
 
             _trayIcon = new TrayIcon()
                 .Name("kUpdater")
-                .Icon(Paths.Resource("app.ico"))
+                .Icon(Paths.Resource("Default/app.ico"))
                 .StatusIcons(status => status
-                    .Item("default", Paths.Resource("app.ico"))
+                    .Item("default", Paths.Resource("Default/app.ico"))
                 )
                 .Menu(menu => menu
                     .Item("Settings", (s, e) => { _logger.Info("Settings clicked"); })
@@ -82,6 +84,7 @@ namespace KUpdater {
             _uiRenderer.Dispose();
             _theme.Dispose();
             _uiElementManager.DisposeAndClearAll();
+            _resourceProvider?.Dispose();
             Instance = null;
             base.OnFormClosed(e);
         }
@@ -155,7 +158,7 @@ namespace KUpdater {
                 _resizeHitSize
             ).Contains(e.Location) ? Cursors.SizeNWSE : Cursors.Default;
 
-            // Let UIElementManager handle hover state for all controls
+            // Let ControlManager handle hover state for all controls
             if (_uiElementManager.MouseMove(e.Location))
                 _uiRenderer.RequestRender();
         }
@@ -164,7 +167,7 @@ namespace KUpdater {
             if (e.Button != MouseButtons.Left)
                 return;
 
-            // Erst an UIElementManager weitergeben
+            // Erst an ControlManager weitergeben
             bool handled = _uiElementManager.MouseDown(e.Location);
             if (handled) {
                 _uiRenderer.RequestRender();
@@ -189,7 +192,7 @@ namespace KUpdater {
             _isDragging = false;
             _isResizing = false;
 
-            // Pass to UIElementManager so controls can handle clicks
+            // Pass to ControlManager so controls can handle clicks
             if (_uiElementManager.MouseUp(e.Location))
                 _uiRenderer.RequestRender();
         }

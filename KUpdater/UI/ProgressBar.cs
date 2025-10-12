@@ -6,7 +6,7 @@ using SkiaSharp;
 namespace KUpdater.UI {
 
     [ExposeToLua]
-    public class UIProgressBar : IUIElement {
+    public class ProgressBar : IControl {
         public string Id { get; }
         private readonly Func<Rectangle> _boundsFunc;
         public Rectangle Bounds => _boundsFunc();
@@ -42,7 +42,7 @@ namespace KUpdater.UI {
         private readonly SKPaint _borderPaint;
         private readonly SKPaint _bgPaint;
 
-        public UIProgressBar(string id, Func<Rectangle> boundsFunc) {
+        public ProgressBar(string id, Func<Rectangle> boundsFunc) {
             Id = id;
             _boundsFunc = boundsFunc;
 
@@ -51,7 +51,7 @@ namespace KUpdater.UI {
             _bgPaint = new SKPaint { Color = _backgroundColor, IsAntialias = true };
         }
 
-        public UIProgressBar(string id, Table bounds)
+        public ProgressBar(string id, Table bounds)
             : this(id, () => new Rectangle(
                 (int)(bounds.Get("x").CastToNumber() ?? 0),
                 (int)(bounds.Get("y").CastToNumber() ?? 0),

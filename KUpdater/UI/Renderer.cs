@@ -7,10 +7,10 @@ using KUpdater.Scripting.Theme;
 using SkiaSharp;
 
 namespace KUpdater.UI {
-    public class UIRenderer : IDisposable {
+    public class Renderer : IDisposable {
         private readonly Form _form;
         private readonly ITheme _theme;
-        private readonly UIElementManager _uiElementManager;
+        private readonly ControlManager _uiElementManager;
         private readonly System.Windows.Forms.Timer _renderTimer;
         private bool _needsRender;
         private SKBitmap? _cachedSkBitmap;
@@ -20,7 +20,7 @@ namespace KUpdater.UI {
         private readonly SKPaint _fillPaint = new() { IsAntialias = true };
         public bool IsRendering { get; private set; }
 
-        public UIRenderer(Form form, UIElementManager uiElementManager, ITheme theme) {
+        public Renderer(Form form, ControlManager uiElementManager, ITheme theme) {
             _form = form;
             _uiElementManager = uiElementManager;
             _theme = theme;
@@ -65,7 +65,7 @@ namespace KUpdater.UI {
             if (_form.IsDisposed || !_form.IsHandleCreated || _disposed)
                 return;
 
-            //Debug.WriteLine($"[UIRenderer] Redraw at {DateTime.Now:HH:mm:ss.fff}");
+            //Debug.WriteLine($"[Renderer] Redraw at {DateTime.Now:HH:mm:ss.fff}");
             //Debug.WriteLine($"GDI Handles: {System.Diagnostics.Process.GetCurrentProcess().HandleCount}, MemorySize: {System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64}");
 
             int width = _form.Width;

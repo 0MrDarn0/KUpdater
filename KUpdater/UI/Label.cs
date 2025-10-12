@@ -6,7 +6,7 @@ using SkiaSharp;
 namespace KUpdater.UI {
 
     [ExposeToLua]
-    public class UILabel : IUIElement {
+    public class Label : IControl {
         public string Id { get; }
         private readonly Func<Rectangle> _boundsFunc;
         public Rectangle Bounds => _boundsFunc();
@@ -23,7 +23,7 @@ namespace KUpdater.UI {
         private SKFont? _skFont;
         private SKPaint? _skPaint;
 
-        public UILabel(string id, Func<Rectangle> boundsFunc, string text, Font font, Color color, bool ownsFont = true, TextFormatFlags flags = TextFormatFlags.Default) {
+        public Label(string id, Func<Rectangle> boundsFunc, string text, Font font, Color color, bool ownsFont = true, TextFormatFlags flags = TextFormatFlags.Default) {
             Id = id;
             _boundsFunc = boundsFunc;
             Text = text;
@@ -35,7 +35,7 @@ namespace KUpdater.UI {
             InitSkiaResources();
         }
 
-        public UILabel(string id, Table bounds, string text, Font font, Color color,
+        public Label(string id, Table bounds, string text, Font font, Color color,
                        bool ownsFont = true, TextFormatFlags flags = TextFormatFlags.Default)
             : this(id, () => new Rectangle(
                 (int)(bounds.Get("x").CastToNumber() ?? 0),
