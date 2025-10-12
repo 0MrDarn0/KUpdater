@@ -34,7 +34,7 @@ namespace KUpdater {
         private readonly TrayIcon? _trayIcon;
         private readonly UIState _uiState = new();
         private readonly Logger _logger;
-        public readonly IResourceProvider _resourceProvider;
+        private readonly IResourceProvider _resourceProvider;
 
         public MainForm() {
             Instance = this;
@@ -49,7 +49,7 @@ namespace KUpdater {
             var source = new HttpUpdateSource();
             _runner = new UpdaterPipelineRunner(_eventManager, source, _config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
-            _resourceProvider = new FileResourceProvider(Paths.ResFolder, strongCacheCapacity: 8);
+            _resourceProvider = new FileResourceProvider(Paths.ResFolder, strongCacheCapacity: 16);
             _uiElementManager = new();
             _theme = new(this, _uiElementManager, _uiState, _config.Language, _resourceProvider);
             _uiRenderer = new(this, _uiElementManager, _theme);
