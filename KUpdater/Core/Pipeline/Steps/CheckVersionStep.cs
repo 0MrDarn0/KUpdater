@@ -2,49 +2,48 @@
 
 using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
+using KUpdater.Extensions;
+using KUpdater.Scripting;
 
-namespace KUpdater.Core.Pipeline.Steps {
-    [PipelineStep(20)]
-    public class CheckVersionStep : IUpdateStep {
-        private readonly string _localVersionFile;
-        public string Name => "CheckVersion";
+namespace KUpdater.Core.Pipeline.Steps;
 
-        public CheckVersionStep(string rootDirectory) {
-            _localVersionFile = Path.Combine(rootDirectory, "version.txt");
-        }
+[PipelineStep(20)]
+public class CheckVersionStep(string rootDirectory) : IUpdateStep {
+    private readonly string _localVersionFile = Path.Combine(rootDirectory, "version.txt");
 
-        public async Task ExecuteAsync(UpdateContext ctx, IEventManager eventManager) {
-            // Lokale Version laden
-            ctx.CurrentVersion = File.Exists(_localVersionFile)
-                ? File.ReadAllText(_localVersionFile).Trim()
-                : "0.0.0";
+    public string Name => "CheckVersion";
 
-            bool needsUpdate = ctx.CurrentVersion != ctx.Metadata.Version;
+    public async Task ExecuteAsync(UpdateContext ctx, IEventManager eventManager) {
+        // Lokale Version laden
+        ctx.CurrentVersion = File.Exists(_localVersionFile)
+            ? File.ReadAllText(_localVersionFile).Trim()
+            : "0.0.0";
 
-            // Falls Version gleich, prüfen wir die Dateien per Hash
-            if (!needsUpdate) {
-                foreach (var file in ctx.Metadata.Files) {
-                    var localFile = new FileInfo(Path.Combine(ctx.RootDirectory, file.Path));
-                    if (!localFile.VerifySha256(file.Sha256)) {
-                        needsUpdate = true;
-                        break;
-                    }
+        bool needsUpdate = ctx.CurrentVersion != ctx.Metadata.Version;
+
+        // Falls Version gleich, prüfen wir die Dateien per Hash
+        if (!needsUpdate) {
+            foreach (var file in ctx.Metadata.Files) {
+                var localFile = new FileInfo(Path.Combine(ctx.RootDirectory, file.Path));
+                if (!localFile.VerifySha256(file.Sha256)) {
+                    needsUpdate = true;
+                    break;
                 }
             }
-
-            if (!needsUpdate) {
-                eventManager.NotifyAll(new StatusEvent(
-                    Localization.Translate("status.up_to_date", ctx.CurrentVersion)
-                ));
-                // Pipeline hier abbrechen
-                throw new OperationCanceledException("No update required");
-            }
-
-            eventManager.NotifyAll(new StatusEvent(
-                Localization.Translate("status.update_required", ctx.CurrentVersion, ctx.Metadata.Version)
-            ));
-
-            await Task.CompletedTask;
         }
+
+        if (!needsUpdate) {
+            eventManager.NotifyAll(new StatusEvent(
+                Localization.Translate("status.up_to_date", ctx.CurrentVersion)
+            ));
+            // Pipeline hier abbrechen
+            throw new OperationCanceledException("No update required");
+        }
+
+        eventManager.NotifyAll(new StatusEvent(
+            Localization.Translate("status.update_required", ctx.CurrentVersion, ctx.Metadata.Version)
+        ));
+
+        await Task.CompletedTask;
     }
 }

@@ -2,6 +2,8 @@
 
 using System.Security.Cryptography;
 
+namespace KUpdater.Extensions;
+
 public static class FileInfoExtensions {
     /// <summary>
     /// Computes the SHA256 hash of the file and returns it as an uppercase hex string.

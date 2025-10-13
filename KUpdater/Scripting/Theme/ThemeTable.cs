@@ -4,40 +4,40 @@ using KUpdater.Extensions;
 using MoonSharp.Interpreter;
 using SkiaSharp;
 
-namespace KUpdater.Scripting.Theme {
-    public readonly struct ThemeTable(Table table, Script script) {
-        private readonly Table _table = table;
-        private readonly Script _script = script;
+namespace KUpdater.Scripting.Theme;
 
-        public string GetString(string key, string fallback = "")
-            => _table.Get(key).AsString() ?? fallback;
+public readonly struct ThemeTable(Table table, Script script) {
+    private readonly Table _table = table;
+    private readonly Script _script = script;
 
-        public int GetInt(string key, int fallback = 0)
-            => (int)(_table.Get(key).AsNumber() ?? fallback);
+    public string GetString(string key, string fallback = "")
+        => _table.Get(key).AsString() ?? fallback;
 
-        public double GetDouble(string key, double fallback = 0.0)
-            => _table.Get(key).AsNumber() ?? fallback;
+    public int GetInt(string key, int fallback = 0)
+        => (int)(_table.Get(key).AsNumber() ?? fallback);
 
-        public Color GetColor(string key, Color fallback)
-            => _table.Get(key).AsColor(fallback);
+    public double GetDouble(string key, double fallback = 0.0)
+        => _table.Get(key).AsNumber() ?? fallback;
 
-        public Rectangle GetBounds(string key, Rectangle fallback)
-            => _table.Get(key).As(fallback);
+    public Color GetColor(string key, Color fallback)
+        => _table.Get(key).AsColor(fallback);
 
-        public SKBitmap GetBitmap(string key, string resourceDir) {
-            string? file = _table.Get(key).AsString();
-            if (string.IsNullOrWhiteSpace(file))
-                return new SKBitmap(1, 1);
+    public Rectangle GetBounds(string key, Rectangle fallback)
+        => _table.Get(key).As(fallback);
 
-            string path = Path.Combine(resourceDir, file);
-            if (!File.Exists(path))
-                return new SKBitmap(1, 1);
+    public SKBitmap GetBitmap(string key, string resourceDir) {
+        string? file = _table.Get(key).AsString();
+        if (string.IsNullOrWhiteSpace(file))
+            return new SKBitmap(1, 1);
 
-            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-            using var img = Image.FromStream(fs);
-            return img.ToSKBitmap();
-        }
+        string path = Path.Combine(resourceDir, file);
+        if (!File.Exists(path))
+            return new SKBitmap(1, 1);
 
-        public DynValue Raw(string key) => _table.Get(key);
+        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+        using var img = Image.FromStream(fs);
+        return img.ToSKBitmap();
     }
+
+    public DynValue Raw(string key) => _table.Get(key);
 }

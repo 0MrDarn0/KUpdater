@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using System.Runtime.InteropServices;
+namespace KUpdater.Interop;
 
 internal static class NativeMethods {
     public const int ULW_ALPHA = 0x00000002;

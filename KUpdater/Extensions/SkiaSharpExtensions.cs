@@ -3,6 +3,8 @@
 using System.Drawing.Imaging;
 using SkiaSharp;
 
+namespace KUpdater.Extensions;
+
 public static class SkiaSharpExtensions {
 
     public static SKColor ToSKColor(this System.Drawing.Color color)

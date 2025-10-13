@@ -1,18 +1,11 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
-namespace KUpdater.Utility;
-
-
-// Copyright (c) 2025 Christian Schnuck
-// Licensed under the MIT License.
-// See LICENSE.txt in the project root for license information.
-
-
 using System.Collections.Concurrent;
 using System.Drawing.Imaging;
-using System.IO;
+using KUpdater.Extensions;
 using SkiaSharp;
 
+namespace KUpdater.Utility;
 
 public class FileResourceProvider : IResourceProvider {
     private readonly string _baseDirectory;

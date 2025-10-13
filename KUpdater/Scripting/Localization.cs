@@ -2,6 +2,8 @@
 
 using MoonSharp.Interpreter;
 
+namespace KUpdater.Scripting;
+
 public static class Localization {
     private static Script? _script;
 
