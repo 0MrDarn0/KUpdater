@@ -4,7 +4,6 @@ using KUpdater.Core.UI;
 using KUpdater.UI;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;
-using SniffKit.UI;
 
 namespace KUpdater.Scripting.Theme {
     public class MainTheme(Form form, ControlManager controlManager, UIState state, string lang, IResourceProvider resourceProvider)

@@ -6,7 +6,6 @@ using KUpdater.UI;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;
 using SkiaSharp;
-using SniffKit.UI;
 
 namespace KUpdater.Scripting.Theme {
     public abstract class ThemeBase : Lua, ITheme {

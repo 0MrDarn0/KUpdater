@@ -3,7 +3,6 @@
 using System.Reflection;
 using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
-using SniffKit.Core;
 
 namespace KUpdater.Core.Pipeline {
     public class UpdaterPipelineRunner {

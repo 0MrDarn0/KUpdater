@@ -3,7 +3,6 @@
 using System.IO.Compression;
 using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
-using SniffKit.Core;
 
 namespace KUpdater.Core.Pipeline.Steps {
     [PipelineStep(30)]
