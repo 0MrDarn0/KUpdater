@@ -43,7 +43,7 @@ public class Button : IControl {
         ThemeKey = themeKey;
         OnClick = onClick;
 
-        LoadResources();
+        InitResources();
     }
 
     public Button(string id, Table bounds, string text, Font font, Color color,
@@ -57,7 +57,7 @@ public class Button : IControl {
     }
 
 
-    private void LoadResources() {
+    private void InitResources() {
         foreach (var state in new[] { "normal", "hover", "click" }) {
             string path = Paths.Resource($"{ThemeKey}/{Id}_{state}.png");
             if (File.Exists(path)) {

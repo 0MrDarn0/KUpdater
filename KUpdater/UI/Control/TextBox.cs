@@ -59,7 +59,7 @@ public class TextBox : IControl {
         if (scrollBarColor.HasValue)
             ScrollBarColor = scrollBarColor.Value;
         _ownsFont = ownsFont;
-        InitSkiaResources();
+        InitResources();
     }
 
     public TextBox(string id, Table bounds, string text, Font font, Color foreColor, Color backColor,
@@ -72,7 +72,7 @@ public class TextBox : IControl {
         ), text, font, foreColor, backColor, multiline, readOnly, scrollBarColor, ownsFont) { }
 
 
-    private void InitSkiaResources() {
+    private void InitResources() {
         SKFontStyleWeight weight = Font.Style.HasFlag(FontStyle.Bold) ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal;
         SKFontStyleSlant slant = Font.Style.HasFlag(FontStyle.Italic) ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
 
