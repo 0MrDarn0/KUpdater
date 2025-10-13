@@ -88,8 +88,18 @@
 	
 	<ItemGroup>
 	  <PackageReference Include="MoonSharp" Version="2.0.0" />
-	  <PackageReference Include="SkiaSharp" Version="3.119.0" />
-	  <PackageReference Include="SkiaSharp.Views.WindowsForms" Version="3.119.0" />
+	  <PackageReference Include="SkiaSharp" Version="3.119.1" />
+	  <PackageReference Include="SkiaSharp.Views.WindowsForms" Version="3.119.1" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+	  <Content Update="kUpdater\Resources\icon.png">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="kUpdater\Resources\logo.png">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Content>
 	</ItemGroup>
 
 </Project>

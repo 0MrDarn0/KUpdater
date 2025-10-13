@@ -1,10 +1,15 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
-using KUpdater.UI;
+using KUpdater.Core.Attributes;
+using KUpdater.Extensions;
+using KUpdater.Utility;
 using MoonSharp.Interpreter;
 using SkiaSharp;
 
-public class UIButton : IUIElement {
+namespace KUpdater.UI.Control;
+
+[ExposeToLua]
+public class Button : IControl {
     public string Id { get; }
     private readonly Func<Rectangle> _boundsFunc;
     public Rectangle Bounds => _boundsFunc();
@@ -17,6 +22,7 @@ public class UIButton : IUIElement {
     public bool IsHovered { get; private set; }
     public bool IsPressed { get; private set; }
     private readonly bool _ownsFont;
+    private bool _disposed;
 
     // 🧩 Cache für Bilder
     private readonly Dictionary<string, SKBitmap> _stateBitmaps = [];
@@ -27,7 +33,7 @@ public class UIButton : IUIElement {
     private SKFont? _skFont;
     private SKPaint? _skPaint;
 
-    public UIButton(string id, Func<Rectangle> boundsFunc, string text, Font font, Color color, string themeKey, Action? onClick, bool ownsFont = true) {
+    public Button(string id, Func<Rectangle> boundsFunc, string text, Font font, Color color, string themeKey, Action? onClick, bool ownsFont = true) {
         Id = id;
         _boundsFunc = boundsFunc;
         Text = text;
@@ -40,7 +46,7 @@ public class UIButton : IUIElement {
         LoadResources();
     }
 
-    public UIButton(string id, Table bounds, string text, Font font, Color color,
+    public Button(string id, Table bounds, string text, Font font, Color color,
                     string themeKey, Action? onClick, bool ownsFont = true)
         : this(id, () => new Rectangle(
             (int)(bounds.Get("x").CastToNumber() ?? 0),
@@ -53,7 +59,7 @@ public class UIButton : IUIElement {
 
     private void LoadResources() {
         foreach (var state in new[] { "normal", "hover", "click" }) {
-            string path = UIResources.PathFor($"{ThemeKey}_{state}.png");
+            string path = Paths.Resource($"{ThemeKey}/{Id}_{state}.png");
             if (File.Exists(path)) {
                 _stateImages[state] = Image.FromFile(path);
                 _stateBitmaps[state] = SKBitmap.Decode(path);
@@ -120,18 +126,32 @@ public class UIButton : IUIElement {
 
     public bool OnMouseWheel(int delta, Point p) => false;
 
+
     public void Dispose() {
-        foreach (var img in _stateImages.Values)
-            img.Dispose();
-        foreach (var bmp in _stateBitmaps.Values)
-            bmp.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this); // verhindert unnötigen Finalizer
+    }
 
-        _typeface?.Dispose();
+    protected virtual void Dispose(bool disposing) {
+        if (_disposed)
+            return;
 
-        if (_ownsFont)
-            Font.Dispose();
+        if (disposing) {
+            // Managed Ressourcen freigeben
+            if (_ownsFont)
+                Font.Dispose();
 
-        _skPaint?.Dispose();
-        _skFont?.Dispose();
+            foreach (var img in _stateImages.Values)
+                img.Dispose();
+            foreach (var bmp in _stateBitmaps.Values)
+                bmp.Dispose();
+
+            _typeface?.Dispose();
+            _skPaint?.Dispose();
+            _skFont?.Dispose();
+        }
+
+        // Unmanaged Ressourcen hier freigeben
+        _disposed = true;
     }
 }

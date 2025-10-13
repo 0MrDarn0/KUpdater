@@ -1,13 +1,13 @@
 -- Hintergrund-Konfiguration
 local background_config = {
-  top_left      = "main_tl_default.png",
-  top_center    = "main_tc_default.png",
-  top_right     = "main_tr_default.png",
-  right_center  = "main_rc_default.png",
-  bottom_right  = "main_br_default.png",
-  bottom_center = "main_bc_default.png",
-  bottom_left   = "main_bl_default.png",
-  left_center   = "main_lc_default.png",
+  top_left      = "Default:top_left.png",
+  top_center    = "Default:top_center.png",
+  top_right     = "Default:top_right.png",
+  right_center  = "Default:right_center.png",
+  bottom_right  = "Default:bottom_right.png",
+  bottom_center = "Default:bottom_center.png",
+  bottom_left   = "Default:bottom_left.png",
+  left_center   = "Default:left_center.png",
   fill_color    = "#101010"
 }
 
@@ -31,19 +31,54 @@ local function bounds(x, y, w, h)
   end
 end
 
--- Hilfsfunktion für rechts-/unten-Anchor
-local function anchor(x, y, w, h)
+-- Generische Anchor-Funktion
+-- mode: "top_left", "top_right", "bottom_left", "bottom_right"
+local function anchor(x, y, w, h, mode)
+  mode = mode or "top_left"
+
   return function()
     local winW, winH = get_window_size()
 
-    local rx = (x < 0) and (winW + x) or x
-    local ry = (y < 0) and (winH + y) or y
-    local rw = (w < 0) and (winW + w - rx) or w
-    local rh = (h < 0) and (winH + h - ry) or h
+    local rx, ry, rw, rh
+
+    -- Breite
+    if w < 0 then
+      rw = winW + w - ((x < 0) and (winW + x) or x)
+    else
+      rw = w
+    end
+
+    -- Höhe
+    if h < 0 then
+      rh = winH + h - ((y < 0) and (winH + y) or y)
+    else
+      rh = h
+    end
+
+    if mode == "top_left" then
+      rx = (x < 0) and (winW + x) or x
+      ry = (y < 0) and (winH + y) or y
+
+    elseif mode == "top_right" then
+      rx = winW - ((x < 0) and -x or x) - rw
+      ry = (y < 0) and (winH + y) or y
+
+    elseif mode == "bottom_left" then
+      rx = (x < 0) and (winW + x) or x
+      ry = winH - ((y < 0) and -y or y) - rh
+
+    elseif mode == "bottom_right" then
+      rx = winW - ((x < 0) and -x or x) - rw
+      ry = winH - ((y < 0) and -y or y) - rh
+    end
 
     return { x = rx, y = ry, width = rw, height = rh }
   end
 end
+
+local engine = require("actions.engine")
+local http = require("actions.http")
+
 
 -- Rückgabe der gesamten Fensterdefinition
 return {
@@ -53,77 +88,89 @@ return {
   init = function()
   
     -- Title
-    local titleLabel = UILabel("lb_title",
+    local titleLabel = Label("lb_title",
         bounds(35, 0, 200, 40),
         T("app.title"),
         Font("Chiller", 40, "Italic"),
         Color.Orange)
-    uiElement.Add(titleLabel)
+    Controls.Add(titleLabel)
 
-    local subtitleLabel = UILabel("lb_subtitle",
+    local subtitleLabel = Label("lb_subtitle",
         bounds(-115, 12, 200, 27),
         T("app.subtitle"), 
         Font("Malgun Gothic", 13, "Bold"),
         Color.Gold)
-    uiElement.Add(subtitleLabel)
+    Controls.Add(subtitleLabel)
 
     -- Buttons
-    local btnClose = UIButton("btn_close",
+    local btnClose = Button("btn_exit",
       bounds(-35, 16, 18, 18),
       T("button.exit"),
       Font("Segoe UI", 10, "Regular"),
       Color.Orange,
-      "btn_exit",
+      "Default",
       function() application_exit() end)
-    uiElement.Add(btnClose)
+    Controls.Add(btnClose)
 
-    local btnStart = UIButton("btn_start",
+    local btnStart = Button("btn_start",
       bounds(-150, -70, 97, 22),
       T("button.start"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
-      "btn_default",
-      function() start_game() end)
-    uiElement.Add(btnStart)
+      "Default",
+      function() engine.start_game() end)
+    Controls.Add(btnStart)
 
-    local btnSettings = UIButton("btn_settings",
+    local btnSettings = Button("btn_settings",
       bounds(-255, -70, 97, 22),
       T("button.settings"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
-      "btn_default",
-      function() open_settings() end)
-    uiElement.Add(btnSettings)
+      "Default",
+      function() engine.open_settings() end)
+    Controls.Add(btnSettings)
 
-    local btnWebsite = UIButton("btn_website",
+    local btnWebsite = Button("btn_website",
       bounds(-360, -70, 97, 22),
       T("button.website"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
-      "btn_default",
-      function() open_website("https://google.com") end)
-    uiElement.Add(btnWebsite)
+      "Default",
+      function() http.open("https://google.com") end)
+    Controls.Add(btnWebsite)
 
-    -- Status-Label
-    local statusLabel = UILabel("lb_update_status",
-        anchor(27, -50, 200, 20),
-        T("status.waiting"),
-        Font("Segoe UI", 10, "Regular"),
-        Color.White)
-    uiElement.Add(statusLabel)
 
-    -- Progressbar
-    local progressBar = UIProgressBar("pb_update_progress", anchor(27, -30, -27, 5))
-    uiElement.Add(progressBar)
+-- Progressbar (27px vom linken Rand, 30px vom unteren Rand,
+-- rechts -27px Abstand, Höhe 5px)
+    local progressBar = ProgressBar("pb_update_progress",
+      anchor(27, 30, -27, 5, "bottom_left"))
+      Controls.Add(progressBar)
 
-    local changelogBox = UITextBox("tb_changelog", 
-        anchor(36, 240, -380, -60),
+
+    local changelogBox = TextBox("tb_changelog", 
+        anchor(36, 55, -400, 200, "bottom_left"),
         "Changelog ...",
         Font("Segoe UI", 10, "Regular"),
-        Color.White, MakeColor.FromHex("#282828"),
-        true, true)
+        Color.White, MakeColor.FromHex("#101010"),
+        true, true, MakeColor.FromHex("#7C6E4B"))
 
-    uiElement.Add(changelogBox)
+        -- Rahmen + Glow konfigurieren
+        changelogBox.BorderColor = MakeColor.FromHex("#7C6E4B")
+        changelogBox.BorderThickness = 3
+        changelogBox.GlowEnabled = true
+        changelogBox.GlowColor = Color.White
+        changelogBox.GlowRadius = 6
+
+    Controls.Add(changelogBox)
+
+
+    -- Status-Label (27px vom linken Rand, 50px vom unteren Rand)
+    local statusLabel = Label("lb_update_status",
+      anchor(27, 20, 200, 20, "bottom_left"),
+      T("status.waiting"),
+      Font("Segoe UI", 8, "Italic"),
+      Color.White)
+      Controls.Add(statusLabel)
 
   end,
 
