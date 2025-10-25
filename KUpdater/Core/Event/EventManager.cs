@@ -13,7 +13,7 @@ public class EventManager : IEventManager {
     private readonly ConcurrentDictionary<Type, List<Delegate>> _listeners = new();
 
     // Lock-Objekt für thread-sichere Zugriffe auf die Listener-Listen
-    private readonly Lock _lock = new();
+    private readonly object _lock = new();
 
     /// <summary>
     /// Registriert einen synchronen Listener für Nachrichten vom Typ T.
