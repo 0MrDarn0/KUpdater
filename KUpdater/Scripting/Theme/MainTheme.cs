@@ -14,6 +14,11 @@ public class MainTheme(Form form, ControlManager controlManager, UIState state, 
 
     protected override void RegisterGlobals() {
         base.RegisterGlobals();
+        LuaPolicy.Clear();
+        LuaPolicy.Grant("Process.Start");
+        LuaPolicy.Grant("Website.Open");
+        LuaPathGuard.SetAllowedRoots(AppDomain.CurrentDomain.BaseDirectory);
+
         SetGlobal(LuaKeys.Theme.ThemeDir, Paths.LuaThemes.Replace("\\", "/"));
         SetGlobal(LuaKeys.UI.GetWindowSize, () => DynValue.NewTuple(
             DynValue.NewNumber(_form.Width),

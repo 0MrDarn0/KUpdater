@@ -36,6 +36,10 @@ public partial class MainForm : Form {
     public MainForm() {
         Instance = this;
 
+        LuaHost.OnNotify += (level, message) => {
+            BeginInvoke(() => MessageBox.Show(this, message, level, MessageBoxButtons.OK, MessageBoxIcon.Information));
+        };
+
         _config = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig").Load();
 
         _eventManager = new EventManager();
