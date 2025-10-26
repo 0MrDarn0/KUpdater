@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Reflection;
 using MoonSharp.Interpreter;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Runtime;
 
 public class BaseConfig {
     public string Url { get; set; } = string.Empty;

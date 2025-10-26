@@ -2,7 +2,7 @@
 
 using System.Collections.Concurrent;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Security;
 
 public static class LuaPolicy {
     private static readonly ConcurrentDictionary<string, byte> Granted = new(StringComparer.OrdinalIgnoreCase);

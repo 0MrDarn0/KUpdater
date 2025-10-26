@@ -2,7 +2,7 @@
 
 using KUpdater.UI;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Runtime;
 
 /// <summary>
 /// Central place for all UI element IDs and strongly-typed bindings.

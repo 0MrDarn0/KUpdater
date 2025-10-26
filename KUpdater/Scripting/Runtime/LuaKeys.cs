@@ -2,7 +2,7 @@
 
 using System.Text.RegularExpressions;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Runtime;
 
 public static class LuaKeys {
     // Hilfsfunktion: wandelt CamelCase in snake_case um

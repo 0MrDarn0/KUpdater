@@ -10,7 +10,7 @@ using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Loaders;
 using SkiaSharp;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Runtime;
 
 public abstract class Lua : IDisposable {
     protected readonly Script _script;

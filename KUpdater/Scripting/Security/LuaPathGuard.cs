@@ -1,6 +1,6 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Security;
 
 public static class LuaPathGuard {
     private static readonly object Sync = new();

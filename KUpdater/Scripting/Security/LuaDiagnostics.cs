@@ -2,7 +2,7 @@
 
 using System.Diagnostics;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Security;
 
 
 public static class LuaDiagnostics {

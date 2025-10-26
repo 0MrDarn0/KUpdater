@@ -2,12 +2,14 @@
 
 using System.Diagnostics;
 using KUpdater.Core.Attributes;
+using KUpdater.Scripting.Runtime;
+using KUpdater.Scripting.Security;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Api;
 
 
 [ExposeToLua("Website")]
-public static class LuaWebApi {
+public static class WebApi {
     private const string Capability = "Website.Open";
     public static LuaResult Open(string url) {
         if (string.IsNullOrWhiteSpace(url))

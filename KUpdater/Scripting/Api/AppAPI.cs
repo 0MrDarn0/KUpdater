@@ -2,9 +2,9 @@
 
 using KUpdater.Core.Attributes;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Api;
 
 [ExposeToLua("Application")]
-public static class LuaAppAPI {
+public static class AppAPI {
     public static void Exit() => Application.Exit();
 }

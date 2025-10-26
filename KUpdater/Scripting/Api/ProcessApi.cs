@@ -2,8 +2,10 @@
 
 using System.Diagnostics;
 using KUpdater.Core.Attributes;
+using KUpdater.Scripting.Runtime;
+using KUpdater.Scripting.Security;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Api;
 
 
 [ExposeToLua("ProcessInfo")]
@@ -23,7 +25,7 @@ public sealed class LuaProcessInfo {
 
 
 [ExposeToLua("Process")]
-public static class LuaProcessApi {
+public static class ProcessApi {
     private const string CapabilityName = "Process.Start";
 
     public static LuaResult Start(LuaProcessInfo info) {

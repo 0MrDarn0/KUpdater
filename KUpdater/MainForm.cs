@@ -5,7 +5,7 @@ using KUpdater.Core.Event;
 using KUpdater.Core.Pipeline;
 using KUpdater.Core.UI;
 using KUpdater.Interop;
-using KUpdater.Scripting;
+using KUpdater.Scripting.Runtime;
 using KUpdater.Scripting.Theme;
 using KUpdater.UI;
 using KUpdater.Utility;

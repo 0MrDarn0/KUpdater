@@ -3,7 +3,7 @@
 using System.Text.Json;
 using KUpdater.Core.Attributes;
 using KUpdater.Core.Event;
-using KUpdater.Scripting;
+using KUpdater.Scripting.Runtime;
 
 namespace KUpdater.Core.Pipeline.Steps;
 

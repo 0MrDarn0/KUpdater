@@ -2,6 +2,7 @@
 
 using KUpdater.Core.UI;
 using KUpdater.Extensions;
+using KUpdater.Scripting.Runtime;
 using KUpdater.UI;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;

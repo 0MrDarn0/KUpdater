@@ -3,7 +3,7 @@
 using KUpdater.Extensions;
 using MoonSharp.Interpreter;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Runtime;
 
 public readonly struct LuaValue<T> {
     public DynValue Raw { get; }
