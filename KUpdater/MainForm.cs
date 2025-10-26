@@ -28,7 +28,7 @@ public partial class MainForm : Form {
     private readonly IEventManager _eventManager;
     private readonly UpdaterPipelineRunner _runner;
     private readonly ControlManager _controlManager;
-    private readonly UpdaterConfig _config;
+    private readonly BaseConfig _config;
     private readonly TrayIcon? _trayIcon;
     private readonly UIState _uiState = new();
     private readonly IResourceProvider _resourceProvider;
@@ -40,13 +40,12 @@ public partial class MainForm : Form {
             BeginInvoke(() => MessageBox.Show(this, message, level, MessageBoxButtons.OK, MessageBoxIcon.Information));
         };
 
-        _config = new LuaConfig<UpdaterConfig>("config.lua", "UpdaterConfig").Load();
+        _config = new LuaConfig<BaseConfig>("base.lua", "Base").Load();
 
         _eventManager = new EventManager();
-        var source = new HttpUpdateSource();
-        _runner = new UpdaterPipelineRunner(_eventManager, source, _config.Url, AppDomain.CurrentDomain.BaseDirectory);
+        _runner = new UpdaterPipelineRunner(_eventManager, new HttpUpdateSource(), _config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
-        _resourceProvider = new FileResourceProvider(Paths.ResFolder, strongCacheCapacity: 16);
+        _resourceProvider = new FileResourceProvider(Paths.ResFolder, strongCacheCapacity: 8);
         _controlManager = new();
         _theme = new(this, _controlManager, _uiState, _config.Language, _resourceProvider);
         _renderer = new(this, _controlManager, _theme);
