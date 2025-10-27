@@ -3,12 +3,12 @@
 <img width="1105" height="641" alt="kUpdater_screenshot" src="https://github.com/user-attachments/assets/7cc468dc-0173-4b6d-b9fe-c75a45f047f8" />
 
 📦 KUpdater – KalOnline Client Updater
-KUpdater is a modern, fully customizable launcher and updater for KalOnline.
+KUpdater is a modern, fully customizable launcher and updater made for KalOnline but can be used for any game or client.
 
 ✨ Features
 🎨 Theme System
 Fully configurable background images, layout offsets, and color schemes
-Built‑in fallback mechanism if theme files are missing or corrupted
+Built‑in.
 
 🖌 Custom Rendering
 Entirely custom‑drawn interface (no default WinForms look)
@@ -16,18 +16,13 @@ Support for transparent windows and anti‑aliasing for smooth visuals
 
 ⚙ Lua Integration
 Create UI elements such as labels and buttons directly from Lua
-Lua API for window sizing, theme loading, and UI interaction
+Lua API for window sizing, and UI interaction
 Enables dynamic, script‑driven customization
 
 🖱 UI System
-IUIElement interface for building custom controls
-Includes UIButton and UILabel as reference implementations
-Hover and click effects with theme‑dependent graphics
-
-🚀 Launcher Functions
-Launch the game with custom parameters
-Open game settings directly from the launcher
-Automatically closes after the game starts
+IControl interface for building custom controls
+Includes Button and Label as reference implementations
+Hover and click effects.
 
 🔧 Tech Stack
 C# / .NET for core logic and UI rendering
