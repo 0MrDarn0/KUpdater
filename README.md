@@ -1,3 +1,5 @@
+[![.NET Desktop CI](https://github.com/0MrDarn0/KUpdater/actions/workflows/dotnet.yml/badge.svg)](https://github.com/0MrDarn0/KUpdater/actions/workflows/dotnet.yml)
+
 📦 KUpdater – KalOnline Client Updater
 KUpdater is a modern, fully customizable launcher and updater for KalOnline.
 
