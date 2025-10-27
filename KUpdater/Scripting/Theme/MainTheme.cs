@@ -32,10 +32,10 @@ public class MainTheme(Form form, ControlManager controlManager, UIState state, 
         ExposeToLua<Font>();
         ExposeToLua<Color>();
         ExposeMarkedTypes();
-        SetGlobal("update_status", (Action<string>)(text => _controlManager.Update<UI.Control.Label>("lb_update_status", l => l.Text = text)));
-        SetGlobal("update_download_progress", (Action<double>)(percent => _controlManager.Update<UI.Control.ProgressBar>("pb_update_progress", b => b.Progress = (float)Math.Clamp(percent, 0.0, 1.0))));
-        SetGlobal("update_label", UIBindings.UpdateLabel(_controlManager));
-        SetGlobal("update_progress", UIBindings.UpdateProgress(_controlManager));
+        //SetGlobal("update_status", (Action<string>)(text => _controlManager.Update<UI.Control.Label>("lb_update_status", l => l.Text = text)));
+        //SetGlobal("update_download_progress", (Action<double>)(percent => _controlManager.Update<UI.Control.ProgressBar>("pb_update_progress", b => b.Progress = (float)Math.Clamp(percent, 0.0, 1.0))));
+        //SetGlobal("update_label", UIBindings.UpdateLabel(_controlManager));
+        //SetGlobal("update_progress", UIBindings.UpdateProgress(_controlManager));
     }
 
     protected override void UpdateLastState() {

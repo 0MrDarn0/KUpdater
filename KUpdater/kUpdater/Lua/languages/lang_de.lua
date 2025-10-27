@@ -11,7 +11,7 @@ return {
   },
   status = {
     waiting          = "Prüfe Version...",
-    up_to_date       = "Bereits aktuell (v{0}).",
+    up_to_date       = "(v{0}).",
     update_required  = "Update erforderlich: {0} → {1}",
     applying_update  = "Wende Update an...",
     update_applied   = "Update erfolgreich angewendet.",

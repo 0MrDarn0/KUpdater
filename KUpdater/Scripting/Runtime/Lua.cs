@@ -69,8 +69,24 @@ public abstract class Lua : IDisposable {
     protected LuaValue<T> GetGlobal<T>(string name)
          => new(_script.Globals.Get(name));
 
-    protected DynValue InvokeClosure(DynValue func, params object[] args)
-        => func.IsFunction() ? _script.Call(func, args) : DynValue.Nil;
+    protected DynValue InvokeClosure(DynValue func, params object[] args) {
+        if (!func.IsFunction())
+            return DynValue.Nil;
+
+        try {
+            var dynArgs = (args ?? Array.Empty<object>()).Select(a => DynValue.FromObject(_script, a)).ToArray();
+            return _script.Call(func, dynArgs);
+        }
+        catch (ScriptRuntimeException srx) {
+            Debug.WriteLine($"[Lua] runtime error invoking closure: {srx.DecoratedMessage ?? srx.Message}");
+            Debug.WriteLine($"[Lua] raw stacktrace: {srx.StackTrace}");
+            return DynValue.Nil;
+        }
+        catch (Exception ex) {
+            Debug.WriteLine($"[Lua] error invoking closure: {ex}");
+            return DynValue.Nil;
+        }
+    }
 
 
     public DynValue Invoke(string functionName, params object[] args) {
