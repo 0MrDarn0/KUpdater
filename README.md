@@ -1,4 +1,5 @@
 [![.NET Desktop CI](https://github.com/0MrDarn0/KUpdater/actions/workflows/dotnet.yml/badge.svg)](https://github.com/0MrDarn0/KUpdater/actions/workflows/dotnet.yml)
+
 <img width="1105" height="641" alt="kUpdater_screenshot" src="https://github.com/user-attachments/assets/7cc468dc-0173-4b6d-b9fe-c75a45f047f8" />
 
 📦 KUpdater – KalOnline Client Updater
