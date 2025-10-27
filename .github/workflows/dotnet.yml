@@ -36,13 +36,14 @@ jobs:
         run: dotnet build ${{ env.SOLUTION }} --configuration ${{ env.CONFIGURATION }} --no-restore
 
       - name: Run tests (if any)
+        shell: pwsh
         run: |
-          set -e
-          if dir /b **\*.csproj 1>nul 2>nul (
-            dotnet test ${{ env.SOLUTION }} --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal
-          ) else (
-            echo "No csproj found for tests."
-          )
+            $csproj = Get-ChildItem -Recurse -Filter '*.csproj' -ErrorAction SilentlyContinue
+            if ($csproj) {
+                dotnet test ${{ env.SOLUTION }} --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal
+            }
+            else { Write-Host "No csproj found for tests." }
+
 
       - name: Pack (only on tags)
         if: startsWith(github.ref, 'refs/tags/')
