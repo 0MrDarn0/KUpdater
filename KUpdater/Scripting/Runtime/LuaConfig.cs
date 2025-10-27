@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Reflection;
 using MoonSharp.Interpreter;
 
-namespace KUpdater.Scripting;
+namespace KUpdater.Scripting.Runtime;
 
-public class UpdaterConfig {
+public class BaseConfig {
     public string Url { get; set; } = string.Empty;
     public string Language { get; set; } = "en";
     public NetworkConfig Network { get; set; } = new();
@@ -22,12 +22,8 @@ public class ProxyConfig {
 }
 
 
-public class LuaConfig<T> : Lua where T : new() {
-    private readonly string _tableName;
-
-    public LuaConfig(string scriptFile, string tableName) : base(scriptFile) {
-        _tableName = tableName;
-    }
+public class LuaConfig<T>(string scriptFile, string tableName) : Lua(scriptFile) where T : new() {
+    private readonly string _tableName = tableName;
 
     public T Load() {
         var table = GetTableOrEmpty(_tableName);

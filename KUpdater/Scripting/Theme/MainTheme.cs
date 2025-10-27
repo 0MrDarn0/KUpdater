@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using KUpdater.Core.UI;
+using KUpdater.Scripting.Runtime;
+using KUpdater.Scripting.Security;
 using KUpdater.UI;
 using KUpdater.Utility;
 using MoonSharp.Interpreter;
@@ -14,6 +16,11 @@ public class MainTheme(Form form, ControlManager controlManager, UIState state, 
 
     protected override void RegisterGlobals() {
         base.RegisterGlobals();
+        LuaPolicy.Clear();
+        LuaPolicy.Grant("Process.Start");
+        LuaPolicy.Grant("Website.Open");
+        LuaPathGuard.SetAllowedRoots(AppDomain.CurrentDomain.BaseDirectory);
+
         SetGlobal(LuaKeys.Theme.ThemeDir, Paths.LuaThemes.Replace("\\", "/"));
         SetGlobal(LuaKeys.UI.GetWindowSize, () => DynValue.NewTuple(
             DynValue.NewNumber(_form.Width),
@@ -25,10 +32,10 @@ public class MainTheme(Form form, ControlManager controlManager, UIState state, 
         ExposeToLua<Font>();
         ExposeToLua<Color>();
         ExposeMarkedTypes();
-        SetGlobal("update_status", (Action<string>)(text => _controlManager.Update<UI.Control.Label>("lb_update_status", l => l.Text = text)));
-        SetGlobal("update_download_progress", (Action<double>)(percent => _controlManager.Update<UI.Control.ProgressBar>("pb_update_progress", b => b.Progress = (float)Math.Clamp(percent, 0.0, 1.0))));
-        SetGlobal("update_label", UIBindings.UpdateLabel(_controlManager));
-        SetGlobal("update_progress", UIBindings.UpdateProgress(_controlManager));
+        //SetGlobal("update_status", (Action<string>)(text => _controlManager.Update<UI.Control.Label>("lb_update_status", l => l.Text = text)));
+        //SetGlobal("update_download_progress", (Action<double>)(percent => _controlManager.Update<UI.Control.ProgressBar>("pb_update_progress", b => b.Progress = (float)Math.Clamp(percent, 0.0, 1.0))));
+        //SetGlobal("update_label", UIBindings.UpdateLabel(_controlManager));
+        //SetGlobal("update_progress", UIBindings.UpdateProgress(_controlManager));
     }
 
     protected override void UpdateLastState() {

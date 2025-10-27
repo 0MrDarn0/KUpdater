@@ -76,6 +76,23 @@ local function anchor(x, y, w, h, mode)
   end
 end
 
+
+local function ServerStatus()
+  if ServerApi and ServerApi.StatusOf then
+    local ok = ServerApi.StatusOf("127.0.0.1", 30001)
+    local text = ok and "ServerStatus:[Online]" or "ServerStatus:[Offline]"
+    local color = ok and Color.Green or Color.Red
+
+    Controls.Add(Label("lb_server_status", bounds(-150, 40, 150, 20), text, Font("Segoe UI", 9, "Bold"), color))
+
+    print(ok and "✅ Online" or "❌ Offline")
+  else
+    print("⚠️ ServerApi-Modul nicht verfügbar")
+  end
+end
+
+
+
 local engine = require("actions.engine")
 local http = require("actions.http")
 
@@ -86,65 +103,83 @@ return {
   layout     = layout_config,
 
   init = function()
-  
-    -- Title
-    local titleLabel = Label("lb_title",
-        bounds(35, 0, 200, 40),
-        T("app.title"),
-        Font("Chiller", 40, "Italic"),
-        Color.Orange)
-    Controls.Add(titleLabel)
 
-    local subtitleLabel = Label("lb_subtitle",
-        bounds(-115, 12, 200, 27),
-        T("app.subtitle"), 
-        Font("Malgun Gothic", 13, "Bold"),
-        Color.Gold)
-    Controls.Add(subtitleLabel)
+  ServerStatus()
+
+    -- Title
+    Controls.Add(
+      Label("lb_title",
+      bounds(35, 0, 200, 40),
+      T("app.title"),
+      Font("Chiller", 40, "Italic"),
+      Color.Orange)
+    )
+
+    -- Subtitle
+    Controls.Add(
+      Label("lb_subtitle",
+      bounds(-115, 12, 200, 27),
+      T("app.subtitle"),
+      Font("Malgun Gothic", 13, "Bold"),
+      Color.Gold)
+    )
 
     -- Buttons
-    local btnClose = Button("btn_exit",
+    Controls.Add(
+      Button("btn_exit",
       bounds(-35, 16, 18, 18),
       T("button.exit"),
       Font("Segoe UI", 10, "Regular"),
       Color.Orange,
       "Default",
-      function() application_exit() end)
-    Controls.Add(btnClose)
+      function()
+        application_exit()
+      end)
+    )
 
-    local btnStart = Button("btn_start",
+    Controls.Add(
+      Button("btn_start",
       bounds(-150, -70, 97, 22),
       T("button.start"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "Default",
-      function() engine.start_game() end)
-    Controls.Add(btnStart)
+      function()
+        engine.start_game()
+      end)
+    )
 
-    local btnSettings = Button("btn_settings",
+    Controls.Add(
+      Button("btn_settings",
       bounds(-255, -70, 97, 22),
       T("button.settings"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "Default",
-      function() engine.open_settings() end)
-    Controls.Add(btnSettings)
+      function()
+        engine.open_settings()
+        end)
+    )
 
-    local btnWebsite = Button("btn_website",
+    Controls.Add(
+      Button("btn_website",
       bounds(-360, -70, 97, 22),
       T("button.website"),
       Font("Segoe UI", 11, "Regular"),
       Color.Orange,
       "Default",
-      function() http.open("https://google.com") end)
-    Controls.Add(btnWebsite)
+      function()
+        http.open("https://google.com")
+        end)
+    )
 
 
--- Progressbar (27px vom linken Rand, 30px vom unteren Rand,
--- rechts -27px Abstand, Höhe 5px)
-    local progressBar = ProgressBar("pb_update_progress",
+  -- Progressbar (27px vom linken Rand, 30px vom unteren Rand,
+  -- rechts -27px Abstand, Höhe 5px)
+    Controls.Add(
+      ProgressBar("pb_update_progress",
       anchor(27, 30, -27, 5, "bottom_left"))
-      Controls.Add(progressBar)
+    )
 
 
     local changelogBox = TextBox("tb_changelog", 
@@ -165,23 +200,13 @@ return {
 
 
     -- Status-Label (27px vom linken Rand, 50px vom unteren Rand)
-    local statusLabel = Label("lb_update_status",
-      anchor(27, 20, 200, 20, "bottom_left"),
-      T("status.waiting"),
-      Font("Segoe UI", 8, "Italic"),
-      Color.White)
-      Controls.Add(statusLabel)
+      Controls.Add(
+        Label("lb_update_status",
+        anchor(27, 20, 200, 20, "bottom_left"),
+        T("status.waiting"),
+        Font("Segoe UI", 8, "Italic"),
+        Color.White)
+      )
 
   end,
-
-
-  on_update_status = function(message)
-    update_status(message)
-  end,
-
-
-  on_update_progress = function(value)
-    update_download_progress(value)
-  end
-
 }

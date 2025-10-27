@@ -34,7 +34,7 @@ public class Label : IControl {
         Flags = flags;
         _ownsFont = ownsFont;
 
-        InitSkiaResources();
+        InitResources();
     }
 
     public Label(string id, Table bounds, string text, Font font, Color color,
@@ -48,7 +48,7 @@ public class Label : IControl {
     }
 
 
-    private void InitSkiaResources() {
+    private void InitResources() {
         SKFontStyleWeight weight = Font.Style.HasFlag(FontStyle.Bold) ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal;
         SKFontStyleSlant slant = Font.Style.HasFlag(FontStyle.Italic) ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
 
