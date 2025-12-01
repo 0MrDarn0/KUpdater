@@ -37,9 +37,12 @@ public class Renderer : IDisposable {
         _renderTimer.Start();
     }
 
-    public void RequestRender() => Interlocked.Exchange(ref _needsRender, 1);
+    public void RequestRender()
+        => Interlocked.Exchange(ref _needsRender, 1);
 
-    private void RenderTimer_Tick(object? sender, EventArgs e) => RenderTick();
+    private void RenderTimer_Tick(object? sender, EventArgs e)
+        => RenderTick();
+
     private void RenderTick() {
         if (Interlocked.Exchange(ref _needsRender, 0) == 0)
             return;
@@ -72,6 +75,7 @@ public class Renderer : IDisposable {
             IsRendering = false;
         }
     }
+
     private void GetDeviceSize(out int deviceWidth, out int deviceHeight) {
         float scale = Math.Max(1f, _form.DeviceDpi / 96f);
         deviceWidth = (int)Math.Ceiling(_form.Width * scale);
@@ -171,6 +175,7 @@ public class Renderer : IDisposable {
 
         Present(_backBuffer);
     }
+
     public void Present(Bitmap bitmap, byte opacity = 255) {
         if (_disposed || bitmap == null)
             return;
