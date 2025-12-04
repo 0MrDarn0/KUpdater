@@ -100,6 +100,11 @@ public partial class MainForm : Form {
             _renderer.RequestRender();
         });
 
+        _eventManager.Register<UpdatePipelineCompleted>(_ => {
+            _uiState.SetProgress(0);
+            _renderer.RequestRender();
+        });
+
         _eventManager.Register<ChangelogEvent>(ev => {
             _uiState.SetChangelog(ev.Text);
             _renderer.RequestRender();
