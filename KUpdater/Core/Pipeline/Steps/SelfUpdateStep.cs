@@ -1,0 +1,46 @@
+// Copyright (c) 2025 Christian Schnuck - Licensed under the GPL-3.0 (see LICENSE.txt)
+
+using System.Diagnostics;
+using KUpdater.Core.Attributes;
+using KUpdater.Core.Event;
+using KUpdater.Scripting.Runtime;
+
+namespace KUpdater.Core.Pipeline.Steps;
+
+[PipelineStep(50)]
+public class SelfUpdateStep(string rootDirectory) : IUpdateStep {
+    private readonly string _rootDir = rootDirectory;
+    public string Name => "SelfUpdate";
+
+    public async Task ExecuteAsync(UpdateContext ctx, IEventManager eventManager) {
+        string newExe = Path.Combine(_rootDir, "KUpdater_new.exe");
+        string bootstrapper = Path.Combine(_rootDir, "Bootstrapper.exe");
+
+        // Prüfen ob neue Version und Bootstrapper vorhanden sind
+        if (File.Exists(newExe) && File.Exists(bootstrapper)) {
+            eventManager.NotifyAll(new StatusEvent(
+                Localization.Translate("status.selfupdate_started")));
+
+            try {
+                // Pfad der aktuell laufenden EXE holen
+                string currentExe = Environment.ProcessPath!;
+
+                // Bootstrapper starten mit Pfaden
+                Process.Start(new ProcessStartInfo {
+                    FileName = bootstrapper,
+                    Arguments = $"\"{currentExe}\" \"{newExe}\"",
+                    UseShellExecute = false
+                });
+
+                // Alten Updater beenden
+                Application.Exit();
+            }
+            catch (Exception ex) {
+                eventManager.NotifyAll(new StatusEvent(
+                    Localization.Translate("status.selfupdate_failed", ex.Message)));
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+}

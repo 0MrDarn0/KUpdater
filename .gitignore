@@ -2,8 +2,10 @@
 bin/
 obj/
 
-# User-spezifische Dateien
+# Publish-Ordner
+publish/
 
+# User-spezifische Dateien
 *.suo
 *.userosscache
 *.sln.docstates
@@ -58,4 +60,4 @@ secrets.json
 
 # Benutzer-spezifische Publish-Profile ausschließen
 *.pubxml.user
-
+*.pubxml

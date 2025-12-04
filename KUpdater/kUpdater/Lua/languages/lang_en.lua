@@ -18,7 +18,9 @@ return {
     update_failed    = "Update failed: {0}",
     downloading_pkg  = "Downloading update package...",
     extracting_files = "Extracting files...",
-    update_complete  = "Update complete!"
+    update_complete  = "Update complete!",
+    selfupdate_started = "Self-Update started",
+    selfupdate_failed = "Self-Update failed!"
   },
   info = {
       current_version = "Current Version: {0}",
