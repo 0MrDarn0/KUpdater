@@ -18,7 +18,9 @@ return {
     update_failed    = "Update fehlgeschlagen: {0}",
     downloading_pkg  = "Lade Updatepaket...",
     extracting_files = "Entpacke Dateien...",
-    update_complete  = "Update abgeschlossen!"
+    update_complete  = "Update abgeschlossen!",
+    selfupdate_started = "Selbst-Update gestartstarted",
+    selfupdate_failed = "Selbst-Update fehlgeschlagen!"
   },
   info = {
       current_version = "Derzeitige Version: {0}",
