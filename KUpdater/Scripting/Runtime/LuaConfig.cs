@@ -9,7 +9,7 @@ namespace KUpdater.Scripting.Runtime;
 public class BaseConfig {
     public string Url { get; set; } = string.Empty;
     public string Language { get; set; } = "en";
-    public NetworkConfig Network { get; set; } = new();
+    //public NetworkConfig Network { get; set; } = new();
 }
 
 public class NetworkConfig {

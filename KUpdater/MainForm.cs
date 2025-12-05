@@ -45,7 +45,7 @@ public partial class MainForm : Form {
         _eventManager = new EventManager();
         _runner = new UpdaterPipelineRunner(_eventManager, new HttpUpdateSource(), _config.Url, AppDomain.CurrentDomain.BaseDirectory);
 
-        _resourceProvider = new FileResourceProvider(Paths.ResFolder, strongCacheCapacity: 8);
+        _resourceProvider = new FileResourceProvider(Paths.ResFolder);
         _controlManager = new();
         _theme = new(this, _controlManager, _uiState, _config.Language, _resourceProvider);
         _renderer = new(this, _controlManager, _theme);
