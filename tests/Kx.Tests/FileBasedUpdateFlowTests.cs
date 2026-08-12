@@ -211,6 +211,69 @@ public sealed class FileBasedUpdateFlowTests {
         Assert.True(File.Exists(Path.Combine(rootDirectory, "data", "Hypertext", "B(+).bmp")));
     }
 
+    [Fact]
+    public async Task WhenEscapedPathReturnsServerErrorThenLiteralPathIsRetried() {
+        string rootDirectory = CreateTempDirectory();
+        byte[] fileContent = Encoding.UTF8.GetBytes("bitmap-data");
+        var source = new FakeUpdateSource();
+        source.RegisterFailure("https://updates.example/data/Hypertext/B%28%2B%29.bmp", HttpStatusCode.InternalServerError);
+        source.RegisterFile("https://updates.example/data/Hypertext/B(+).bmp", fileContent);
+
+        var context = new UpdateContext(rootDirectory) {
+            Metadata = new UpdateMetadata {
+                Files = [
+                    new UpdateFile {
+                        Path = "data/Hypertext/B(+).bmp",
+                        Sha256 = ComputeSha256(fileContent)
+                    }
+                ]
+            }
+        };
+
+        var step = new DownloadAndApplyStep(source, "https://updates.example/");
+        await step.ExecuteAsync(context, new EventManager());
+
+        Assert.Equal([
+            "https://updates.example/data/Hypertext/B%28%2B%29.bmp",
+            "https://updates.example/data/Hypertext/B(+).bmp"
+        ], source.RequestedUrls);
+        Assert.True(File.Exists(Path.Combine(rootDirectory, "data", "Hypertext", "B(+).bmp")));
+    }
+
+    [Fact]
+    public async Task WhenOneFileDownloadFailsThenStepContinuesWithRemainingFilesAndFailsAtEnd() {
+        string rootDirectory = CreateTempDirectory();
+        byte[] validContent = Encoding.UTF8.GetBytes("valid-data");
+        var source = new FakeUpdateSource();
+        source.RegisterFile("https://updates.example/data/HyperText/ok.dat", validContent);
+
+        var context = new UpdateContext(rootDirectory) {
+            Metadata = new UpdateMetadata {
+                Files = [
+                    new UpdateFile {
+                        Path = "data/HyperText/wmk",
+                        Sha256 = ComputeSha256(Encoding.UTF8.GetBytes("missing-data"))
+                    },
+                    new UpdateFile {
+                        Path = "data/HyperText/ok.dat",
+                        Sha256 = ComputeSha256(validContent)
+                    }
+                ]
+            }
+        };
+
+        var step = new DownloadAndApplyStep(source, "https://updates.example/");
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => step.ExecuteAsync(context, new EventManager()));
+
+        Assert.Contains("data/HyperText/wmk", exception.Message, StringComparison.Ordinal);
+        Assert.Equal([
+            "https://updates.example/data/HyperText/wmk",
+            "https://updates.example/data/HyperText/ok.dat"
+        ], source.RequestedUrls);
+        Assert.True(File.Exists(Path.Combine(rootDirectory, "data", "HyperText", "ok.dat")));
+    }
+
     private static string CreateTempDirectory() {
         string path = Path.Combine(Path.GetTempPath(), "kx-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(path);
@@ -225,6 +288,7 @@ public sealed class FileBasedUpdateFlowTests {
 
     private sealed class FakeUpdateSource : IUpdateSource {
         private readonly Dictionary<string, byte[]> _files = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, HttpStatusCode> _failures = new(StringComparer.OrdinalIgnoreCase);
 
         public string MetadataJson { get; set; } = JsonSerializer.Serialize(new UpdateMetadata());
         public List<string> RequestedUrls { get; } = [];
@@ -236,6 +300,11 @@ public sealed class FileBasedUpdateFlowTests {
             _files[url] = content;
         }
 
+        public void RegisterFailure(string url, HttpStatusCode statusCode) {
+            ArgumentException.ThrowIfNullOrWhiteSpace(url);
+            _failures[url] = statusCode;
+        }
+
         public Task<string> GetMetadataJsonAsync(string metadataUrl, CancellationToken ct = default) {
             return Task.FromResult(MetadataJson);
         }
@@ -243,6 +312,10 @@ public sealed class FileBasedUpdateFlowTests {
         public Task<Stream> GetPackageStreamAsync(string packageUrl, CancellationToken ct = default) {
             RequestedUrls.Add(packageUrl);
             PackageStreamRequestCount++;
+
+            if (_failures.TryGetValue(packageUrl, out HttpStatusCode failureStatusCode))
+                throw new HttpRequestException($"Registered failure for {packageUrl}.", null, failureStatusCode);
+
             if (!_files.TryGetValue(packageUrl, out var content))
                 throw new HttpRequestException($"No file registered for {packageUrl}.", null, HttpStatusCode.NotFound);
 

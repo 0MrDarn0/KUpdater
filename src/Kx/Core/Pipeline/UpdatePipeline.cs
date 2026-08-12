@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Christian Schnuck
 // Licensed under the GPL-3.0 (see LICENSE.txt)
 
-using Kx.Sdk.Events;
 using Kx.Core.Event;
+using Kx.Sdk.Events;
 using Kx.Sdk.Updater;
 
 namespace Kx.Core.Pipeline;
@@ -18,7 +18,7 @@ public class UpdateContext(string rootDirectory) {
 }
 
 public class UpdatePipeline {
-    private readonly List<IUpdateStep> _steps = new();
+    private readonly List<IUpdateStep> _steps = [];
 
     public UpdatePipeline AddStep(IUpdateStep step) {
         _steps.Add(step);

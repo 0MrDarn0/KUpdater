@@ -26,6 +26,7 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
         List<PendingDeleteFile> filesToDelete = GetFilesToDelete(ctx, rootFullPath);
         int totalOperations = filesToApply.Count + filesToDelete.Count;
         int completedOperations = 0;
+        List<string> failedFiles = [];
 
         eventManager.NotifyAll(new StatusEvent(LanguageService.Translate(KxLanguageKeys.Status.ApplyingFiles)));
 
@@ -38,7 +39,15 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
                 ? GetPendingSelfUpdatePath(destinationPath)
                 : destinationPath;
 
-            await DownloadFileAsync(file, finalPath, ct).ConfigureAwait(false);
+            try {
+                await DownloadFileAsync(file, finalPath, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) {
+                throw;
+            }
+            catch (Exception ex) {
+                failedFiles.Add($"{file.Path}: {ex.Message}");
+            }
 
             completedOperations++;
             ReportProgress(eventManager, completedOperations, totalOperations);
@@ -56,6 +65,10 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
         }
 
         eventManager.NotifyAll(new ProgressEvent(100));
+
+        if (failedFiles.Count > 0)
+            throw new InvalidOperationException(CreatePartialFailureMessage(failedFiles));
+
         eventManager.NotifyAll(new StatusEvent(LanguageService.Translate(KxLanguageKeys.Status.UpdateComplete)));
     }
 
@@ -79,9 +92,7 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
             if (!fileInfo.VerifySha256(file.Sha256))
                 throw new InvalidDataException(LanguageService.Translate(KxLanguageKeys.Error.HashMismatch, file.Path));
 
-            if (File.Exists(destinationPath))
-                File.Delete(destinationPath);
-
+            EnsureDestinationPathIsWritable(destinationPath);
             File.Move(tempPath, destinationPath);
         }
         finally {
@@ -99,19 +110,27 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
         ArgumentException.ThrowIfNullOrWhiteSpace(relativePath);
 
         string[] fileUrls = CreateFileUrls(relativePath);
-        HttpRequestException? lastNotFoundException = null;
+        HttpRequestException? lastHttpException = null;
 
         foreach (string fileUrl in fileUrls) {
             try {
                 return await _source.GetPackageStreamAsync(fileUrl, ct).ConfigureAwait(false);
             }
-            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound) {
-                lastNotFoundException = ex;
+            catch (HttpRequestException ex) {
+                lastHttpException = ex;
             }
         }
 
-        if (lastNotFoundException is not null)
-            throw lastNotFoundException;
+        if (lastHttpException is not null) {
+            string statusCode = lastHttpException.StatusCode is HttpStatusCode code
+                ? $"{(int)code} ({code})"
+                : "unknown";
+
+            throw new HttpRequestException(
+                $"Failed to download '{relativePath}'. Tried URLs: {string.Join(", ", fileUrls)}. Last status: {statusCode}.",
+                lastHttpException,
+                lastHttpException.StatusCode);
+        }
 
         throw new InvalidOperationException($"No download URL candidates were produced for '{relativePath}'.");
     }
@@ -122,12 +141,12 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
             .Split('/', StringSplitOptions.RemoveEmptyEntries)
             .Select(Uri.EscapeDataString));
 
-        string escapedUrl = new Uri(new Uri(_baseUrl, UriKind.Absolute), escapedPath).ToString();
-        string literalUrl = new Uri(new Uri(_baseUrl, UriKind.Absolute), normalizedPath).ToString();
+        var baseUri = new Uri(_baseUrl, UriKind.Absolute);
+        string escapedUrl = new Uri(baseUri, escapedPath).ToString();
+        string literalUrl = new Uri(baseUri, normalizedPath).ToString();
+        string rawUrl = _baseUrl + normalizedPath;
 
-        return string.Equals(escapedUrl, literalUrl, StringComparison.Ordinal)
-            ? [escapedUrl]
-            : [escapedUrl, literalUrl];
+        return [.. new[] { escapedUrl, literalUrl, rawUrl }.Distinct(StringComparer.Ordinal)];
     }
 
     private static List<UpdateFile> GetFilesToApply(UpdateContext ctx, string rootFullPath) {
@@ -176,6 +195,18 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
         return destinationPath;
     }
 
+    private static void EnsureDestinationPathIsWritable(string destinationPath) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
+
+        if (File.Exists(destinationPath)) {
+            File.Delete(destinationPath);
+            return;
+        }
+
+        if (Directory.Exists(destinationPath))
+            Directory.Delete(destinationPath, recursive: true);
+    }
+
     private static bool IsCurrentProcessExecutable(string filePath) {
         string? processPath = Environment.ProcessPath;
         return !string.IsNullOrWhiteSpace(processPath) &&
@@ -186,6 +217,16 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
         return Path.Combine(
             Path.GetDirectoryName(executablePath) ?? string.Empty,
             Path.GetFileNameWithoutExtension(executablePath) + UpdaterConstants.PendingSelfUpdateSuffix + Path.GetExtension(executablePath));
+    }
+
+    private static string CreatePartialFailureMessage(IReadOnlyList<string> failedFiles) {
+        ArgumentNullException.ThrowIfNull(failedFiles);
+
+        string details = string.Join(" | ", failedFiles.Take(3));
+        if (failedFiles.Count > 3)
+            details += $" | ... (+{failedFiles.Count - 3} more)";
+
+        return $"Update completed with {failedFiles.Count} failed file(s): {details}";
     }
 
     private static void ReportProgress(IEventManager eventManager, int completedOperations, int totalOperations) {

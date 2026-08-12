@@ -1,150 +1,173 @@
-# Kx
+# Kx – UI/Runtime Framework
 
-`Kx` is a .NET 10 desktop UI/runtime framework with a plugin-driven window system, YAML-based markup, custom rendering, and a sample updater application built on top of it.
+![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)
+![.NET 10](https://img.shields.io/badge/.NET-10-purple)
+![Platform: Windows](https://img.shields.io/badge/Platform-Windows-blue)
+![Status: Active](https://img.shields.io/badge/Status-Active-success)
 
-The repository now contains five main areas:
-- reusable framework and runtime infrastructure in `src`
-- concrete applications in `apps`
-- reusable plugins in `plugins`
-- tests in `tests`
-- runnable reference material in `examples`
+`Kx` is a .NET 10 desktop UI/runtime framework featuring a plugin-driven window system, YAML-based markup, custom rendering, and a sample updater application built on top of it.
 
-## Repository overview
+---
 
-### Framework and app projects
-- `src/Kx` - framework runtime, window system, rendering, configuration loading, plugin infrastructure
-- `src/Kx.Sdk` - contracts for plugins, UI, logging, DI, window hosting, and markup
-- `apps/KxUpdater` - concrete updater application built on the framework, including its own `Assets` content and the file-based updater client
-- `apps/KxUpdateBuilder` - desktop manifest builder for publishing file-based updates into an `Upload` folder
-- `apps/KxUpdater/Plugins/KalTheme` - updater-specific visual plugin scaffold for the KalOnline style and updater-specific UI work
-- `tests/Kx.Tests` - framework and runtime tests
-- `tests/KxUpdater.Tests` - updater application tests
+## 📑 Table of Contents
+1. [Repository Overview](#repository-overview)  
+2. [Current Architecture Direction](#current-architecture-direction)  
+3. [Documentation](#documentation)  
+4. [Quick Start](#quick-start)  
+5. [File-Based Update Flow](#file-based-update-flow)  
+6. [Asset and Configuration Boundaries](#asset-and-configuration-boundaries)  
+7. [Plugin and Test Structure](#plugin-and-test-structure)  
+8. [Goals of the Framework](#goals-of-the-framework)  
+9. [License](#license)
 
-### Reusable plugins
-- `plugins` - home for reusable plugins that are not tied to a single application
-- `plugins/KalCipher` - reusable cipher plugin
-- `plugins/KalCipher.Tests` - tests for the reusable cipher plugin
+---
+
+## Repository Overview
+
+### Framework & Applications
+- **src/Kx** – runtime, window system, rendering, configuration loading, plugin infrastructure  
+- **src/Kx.Sdk** – contracts for plugins, UI, logging, DI, window hosting, markup  
+- **apps/KxUpdater** – updater application with its own `Assets` and file-based update client  
+- **apps/KxUpdateBuilder** – desktop manifest builder for publishing file-based updates  
+- **apps/KxUpdater/Plugins/KalTheme** – updater-specific visual plugin for KalOnline-style UI  
+- **tests/Kx.Tests** – framework/runtime tests  
+- **tests/KxUpdater.Tests** – updater application tests  
+
+### Reusable Plugins
+- **plugins** – reusable, cross-application plugins  
+- **plugins/KalCipher** – reusable cipher plugin  
+- **plugins/KalCipher.Tests** – tests for the cipher plugin  
 
 ### Examples
-- `examples/Kx.Plugin.Example` - reference plugin that registers controls, actions, commands, themes, and window definitions
-- `examples/Kx.Example.App` - minimal sample host application that demonstrates the framework together with the example plugin and its own local `Assets` content
+- **examples/Kx.Plugin.Example** – reference plugin demonstrating controls, actions, commands, themes, window definitions  
+- **examples/Kx.Example.App** – minimal sample host application using the framework and example plugin  
 
-## Current architecture direction
+---
 
-The codebase is being split more clearly into:
-- framework-generic infrastructure in `Kx`
-- app-specific behavior in `KxUpdater`
-- reusable cross-app plugins under `plugins`
-- app-specific plugins beside their owning app
-- plugin extension points through `Kx.Sdk`
-- learning and reference material under `examples`
+## Current Architecture Direction
 
-The runtime bootstrap is now composed explicitly through dedicated composition objects:
-- `PluginRuntimeComposition`
-- `RuntimeUiComposition`
-- `RuntimeLoggingComposition`
+The codebase is being separated into:
+- framework-generic infrastructure (`Kx`)  
+- app-specific behavior (`KxUpdater`)  
+- reusable plugins (`plugins`)  
+- app-local plugins beside their owning app  
+- plugin extension points via `Kx.Sdk`  
+- learning/reference material under `examples`
+
+Runtime bootstrap is composed through:
+- `PluginRuntimeComposition`  
+- `RuntimeUiComposition`  
+- `RuntimeLoggingComposition`  
 - `RuntimeShellComposition`
 
-This keeps `RuntimeServiceConfiguration` focused on registering already composed services instead of constructing them inline.
+This keeps `RuntimeServiceConfiguration` focused on registering composed services rather than constructing them inline.
+
+---
 
 ## Documentation
 
-- `docs/architecture.md` - project boundaries, runtime startup flow, and composition model
-- `docs/grid-splitter.md` - runtime-resizable grid dividers, YAML usage, and layout recommendations
-- `docs/plugins.md` - plugin model, registries, markup assets, and example plugin walkthrough
-- `docs/update-builder.md` - file-based updater publishing flow, `KxUpdateBuilder` usage, manifest structure, and IIS notes
-- `docs/windows-and-markup.md` - window lifecycle, YAML/registry lookup, control layers, icon precedence, and fallback UI behavior
+- **architecture.md** – project boundaries, runtime startup flow, composition model  
+- **grid-splitter.md** – resizable grid dividers, YAML usage, layout recommendations  
+- **plugins.md** – plugin model, registries, markup assets, example plugin walkthrough  
+- **update-builder.md** – file-based update publishing flow, manifest structure, IIS notes  
+- **windows-and-markup.md** – window lifecycle, YAML lookup, control layers, icon precedence, fallback UI behavior  
 
-## Quick start
+---
 
-### Run the concrete updater app
+## Quick Start
+
+### Run the updater application
 Open the solution in Visual Studio 2026 or build from the repository root and run `apps/KxUpdater`.
 
 ### Run the update builder
-Build and run `apps/KxUpdateBuilder`. It mirrors files from an `Update` folder into an `Upload` folder and writes a file-based `update.json` manifest for `KxUpdater`.
+Build and run `apps/KxUpdateBuilder`.  
+It mirrors files from `Update` to `Upload` and writes a file-based `update.json` manifest.
 
-### Run the sample app
-Build and run `examples/Kx.Example.App`. It is intended as the smallest reference host for the framework and the example plugin.
+### Run the sample application
+Build and run `examples/Kx.Example.App`.
 
 ### Run tests
-- framework/runtime tests: `dotnet test tests/Kx.Tests/Kx.Tests.csproj`
-- updater app tests: `dotnet test tests/KxUpdater.Tests/KxUpdater.Tests.csproj`
-- reusable plugin tests: `dotnet test plugins/KalCipher.Tests/KalCipher.Tests.csproj`
+- Framework/runtime: `dotnet test tests/Kx.Tests/Kx.Tests.csproj`  
+- Updater app: `dotnet test tests/KxUpdater.Tests/KxUpdater.Tests.csproj`  
+- Reusable plugins: `dotnet test plugins/KalCipher.Tests/KalCipher.Tests.csproj`  
 
 ### Main entry points
-- updater app startup: `apps/KxUpdater/Program.cs`
-- update builder startup: `apps/KxUpdateBuilder/Program.cs`
-- sample app startup: `examples/Kx.Example.App/Program.cs`
-- runtime bootstrap: `src/Kx/App/Runtime.cs`
-- base window behavior: `src/Kx/App/Window.cs`
-- example plugin: `examples/Kx.Plugin.Example/Example.cs`
+- Updater startup: `apps/KxUpdater/Program.cs`  
+- Update builder startup: `apps/KxUpdateBuilder/Program.cs`  
+- Sample app startup: `examples/Kx.Example.App/Program.cs`  
+- Runtime bootstrap: `src/Kx/App/Runtime.cs`  
+- Base window behavior: `src/Kx/App/Window.cs`  
+- Example plugin: `examples/Kx.Plugin.Example/Example.cs`  
 
-## File-based update flow
+---
 
-`KxUpdater` now uses a file-based manifest flow instead of requiring a monolithic `update.zip` package.
+## File-Based Update Flow
 
-Current publication model:
-- `update.json` describes all current files plus `deletedFiles`
-- `news.yaml` provides updater news entries
-- each published file is downloaded directly from its relative path under the update base URL
+`KxUpdater` now uses a file-based manifest instead of a monolithic `update.zip`.
 
-Current client behavior:
-- load `update.json`
-- compare local file hashes against manifest entries
-- download only changed or missing files
-- remove files listed in `deletedFiles`
-- stage a replacement updater executable for self-update when needed
+### Publication model
+- `update.json` – describes all files plus `deletedFiles`  
+- `news.yaml` – updater news entries  
+- each file is downloaded directly from its relative path under the update base URL  
 
-Current builder behavior:
-- read source files from `Update`
-- mirror them into `Upload`
-- remove legacy `update.zip` and `version.txt` artifacts from `Upload`
-- write `update.json`
+### Client behavior
+- load `update.json`  
+- compare local file hashes  
+- download changed/missing files  
+- remove files listed in `deletedFiles`  
+- stage a replacement updater executable for self-update  
 
-For a practical walkthrough, see `docs/update-builder.md`.
+### Builder behavior
+- read files from `Update`  
+- mirror them into `Upload`  
+- remove legacy `update.zip` and `version.txt`  
+- write `update.json`  
 
-## Asset and configuration boundaries
+See `docs/update-builder.md` for a walkthrough.
 
-Framework-generic path and loading infrastructure stays in `Kx`.
+---
 
-Concrete asset files belong to the owning app or example project. That includes:
-- `Assets/Configs/app.yaml`
-- `Assets/Configs/frame.yaml`
-- `Assets/Languages/*.yaml`
-- app-owned icons under `Assets/Icons`
-- theme-owned visuals under `Assets/Themes/<ThemeName>/...`
+## Asset and Configuration Boundaries
 
-Resource ids map directly under the app `Assets` root. For example:
-- `Icons:app.ico` -> `Assets/Icons/app.ico`
-- `Themes:KalOnline:Frame:top_left.png` -> `Assets/Themes/KalOnline/Frame/top_left.png`
-- `Themes:KalOnline:Buttons:btn_exit.normal.png` -> `Assets/Themes/KalOnline/Buttons/btn_exit.normal.png`
+Framework-generic path/loading infrastructure stays in `Kx`.
 
-Current examples:
-- updater app assets now live under `apps/KxUpdater/Assets`
-  - `Assets/Icons/app.ico`
-  - `Assets/Themes/KalOnline/Frame/...`
-  - `Assets/Themes/KalOnline/Buttons/...`
-- sample app assets now live under `examples/Kx.Example.App/Assets`
-  - `Assets/Icons/app.ico`
-- `Kx` keeps generic asset resolution infrastructure, not updater-specific content files
+App-specific assets include:
+- `Assets/Configs/*.yaml`  
+- `Assets/Languages/*.yaml`  
+- `Assets/Icons/*`  
+- `Assets/Themes/<ThemeName>/*`
 
-## Plugin and test structure
+Resource ID mapping examples:
+- `Icons:app.ico` → `Assets/Icons/app.ico`  
+- `Themes:KalOnline:Frame:top_left.png` → `Assets/Themes/KalOnline/Frame/top_left.png`  
 
-- app-local plugins live beside their owning app, for example `apps/KxUpdater/Plugins/KalTheme`
-- reusable plugins live under `plugins`, for example `plugins/KalCipher`
-- app hosts include plugins through the shared MSBuild `PluginProject` + `build/PluginCopy.targets` pattern
-- framework tests stay in `tests/Kx.Tests`
-- app-specific tests stay in dedicated app test projects such as `tests/KxUpdater.Tests`
-- reusable plugin tests stay beside the plugin under `plugins/<PluginName>.Tests`
+Examples:
+- Updater assets: `apps/KxUpdater/Assets`  
+- Sample app assets: `examples/Kx.Example.App/Assets`  
 
-## Goals of the framework
+---
 
-- plugin-driven UI extension
-- YAML-defined windows and themes
-- custom-rendered desktop UI
-- explicit runtime composition
-- separation between reusable framework code and app-specific code
+## Plugin and Test Structure
+
+- App-local plugins: `apps/KxUpdater/Plugins/*`  
+- Reusable plugins: `plugins/*`  
+- Plugin inclusion via MSBuild `PluginProject` + `PluginCopy.targets`  
+- Framework tests: `tests/Kx.Tests`  
+- App tests: `tests/KxUpdater.Tests`  
+- Plugin tests: `plugins/<PluginName>.Tests`  
+
+---
+
+## Goals of the Framework
+
+- plugin-driven UI extension  
+- YAML-defined windows and themes  
+- custom-rendered desktop UI  
+- explicit runtime composition  
+- separation between reusable framework code and app-specific code  
+
+---
 
 ## License
 
-This project is licensed under the GPL-3.0. See `LICENSE.txt`.
+GPL-3.0 — see `LICENSE.txt`.
