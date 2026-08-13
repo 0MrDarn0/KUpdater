@@ -120,7 +120,7 @@ internal sealed class UpdaterWorkflow {
     }
 
     private void OnProgressChanged(ProgressEvent progressEvent) {
-        _setProgressValue(progressEvent.Percent);
+        _setProgressValue((float)(progressEvent.Percent / 100.0f));
     }
 
     private void OnUpdateRequired(UpdateRequired _) {

@@ -27,10 +27,10 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
         int totalOperations = filesToApply.Count + filesToDelete.Count;
         int completedOperations = 0;
         List<string> failedFiles = [];
-
         eventManager.NotifyAll(new StatusEvent(LanguageService.Translate(KxLanguageKeys.Status.ApplyingFiles)));
 
-        foreach (var file in filesToApply) {
+        for (int i = 0; i < filesToApply.Count; i++) {
+            var file = filesToApply[i];
             ct.ThrowIfCancellationRequested();
             eventManager.NotifyAll(new StatusEvent(LanguageService.Translate(KxLanguageKeys.Status.DownloadingFile, file.Path)));
 
@@ -40,31 +40,34 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
                 : destinationPath;
 
             try {
-                await DownloadFileAsync(file, finalPath, ct).ConfigureAwait(false);
+                await DownloadFileAsync(file, finalPath, completedOperations, totalOperations, eventManager, ct).ConfigureAwait(false);
+
+                completedOperations++;
             }
             catch (OperationCanceledException) {
                 throw;
             }
             catch (Exception ex) {
                 failedFiles.Add($"{file.Path}: {ex.Message}");
+                completedOperations++;
             }
-
-            completedOperations++;
-            ReportProgress(eventManager, completedOperations, totalOperations);
         }
 
         foreach (var fileToDelete in filesToDelete) {
             ct.ThrowIfCancellationRequested();
             eventManager.NotifyAll(new StatusEvent(LanguageService.Translate(KxLanguageKeys.Status.RemovingFile, fileToDelete.RelativePath)));
-
-            if (!IsCurrentProcessExecutable(fileToDelete.FullPath))
-                File.Delete(fileToDelete.FullPath);
-
+            if (!IsCurrentProcessExecutable(fileToDelete.FullPath)) {
+                try {
+                    File.Delete(fileToDelete.FullPath);
+                }
+                catch (Exception ex) {
+                    failedFiles.Add($"{fileToDelete.RelativePath}: {ex.Message}");
+                }
+            }
             completedOperations++;
-            ReportProgress(eventManager, completedOperations, totalOperations);
         }
 
-        eventManager.NotifyAll(new ProgressEvent(100));
+        //eventManager.NotifyAll(new ProgressEvent(100f));
 
         if (failedFiles.Count > 0)
             throw new InvalidOperationException(CreatePartialFailureMessage(failedFiles));
@@ -72,7 +75,7 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
         eventManager.NotifyAll(new StatusEvent(LanguageService.Translate(KxLanguageKeys.Status.UpdateComplete)));
     }
 
-    private async Task DownloadFileAsync(UpdateFile file, string destinationPath, CancellationToken ct) {
+    private async Task DownloadFileAsync(UpdateFile file, string destinationPath, int completedOperationsBeforeThisFile, int totalOperations, IEventManager eventManager, CancellationToken ct) {
         ArgumentNullException.ThrowIfNull(file);
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
 
@@ -84,9 +87,8 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
 
         try {
             await using var sourceStream = await OpenPackageStreamAsync(file.Path, ct).ConfigureAwait(false);
-            await using (var destinationStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None)) {
-                await sourceStream.CopyToAsync(destinationStream, ct).ConfigureAwait(false);
-            }
+
+            await DownloadFileWithProgressAsync(sourceStream, tempPath, eventManager, completedOperationsBeforeThisFile, totalOperations, ct).ConfigureAwait(false);
 
             var fileInfo = new FileInfo(tempPath);
             if (!fileInfo.VerifySha256(file.Sha256))
@@ -140,6 +142,64 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
         throw new InvalidOperationException($"No download URL candidates were produced for '{relativePath}'.");
     }
 
+    private async Task DownloadFileWithProgressAsync(Stream sourceStream, string tempPath, IEventManager eventManager, int completedOperationsBeforeThisFile, int totalOperations, CancellationToken ct) {
+        const int bufferSize = 81920;
+        const int minReportIntervalMs = 150;
+
+        string? parent = Path.GetDirectoryName(tempPath);
+        if (!string.IsNullOrWhiteSpace(parent))
+            Directory.CreateDirectory(parent);
+
+        await using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, useAsync: true);
+        var buffer = new byte[bufferSize];
+        long totalRead = 0;
+        long? contentLength = null;
+
+        try {
+            if (sourceStream.CanSeek)
+                contentLength = sourceStream.Length;
+        }
+        catch {
+            contentLength = null;
+        }
+
+        var lastReport = DateTime.UtcNow;
+        while (true) {
+            ct.ThrowIfCancellationRequested();
+            int read = await sourceStream.ReadAsync(buffer, ct).ConfigureAwait(false);
+            if (read == 0)
+                break;
+            await fileStream.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
+            totalRead += read;
+
+            if ((DateTime.UtcNow - lastReport).TotalMilliseconds >= minReportIntervalMs) {
+                lastReport = DateTime.UtcNow;
+                float percentForFile = contentLength.HasValue ? (float)(totalRead * 100L / Math.Max(1L, contentLength.Value)) : -1;
+                float overallPercent = ComputeOverallPercentFromState(completedOperationsBeforeThisFile, totalOperations, percentForFile);
+                eventManager.NotifyAll(new ProgressEvent(overallPercent));
+            }
+        }
+
+        float finalOverall = ComputeOverallPercentFromState(completedOperationsBeforeThisFile, totalOperations, 100f);
+        eventManager.NotifyAll(new ProgressEvent(finalOverall));
+    }
+
+    private static float ComputeOverallPercentFromState(int completedOperationsBeforeThisFile, int totalOperations, float percentForCurrentFile) {
+        if (totalOperations <= 0)
+            return 100.0f;
+
+        float completedShare = (float)completedOperationsBeforeThisFile / totalOperations;
+        float currentShare = (percentForCurrentFile < 0.0f) ? 0.0f : (float)(percentForCurrentFile / 100.0f) / totalOperations;
+        float overall = (completedShare + currentShare) * 100.0f;
+        return Math.Clamp(overall, 0.0f, 100.0f);
+    }
+
+    private static float ComputeOverallPercentFromCompleted(int completedOperations, int totalOperations) {
+        if (totalOperations <= 0)
+            return 100.0f;
+        return Math.Min(100.0f, Math.Max(0.0f, (float)Math.Round((completedOperations * 100.0f) / totalOperations)));
+    }
+
     private string[] CreateFileUrls(string relativePath) {
         string normalizedPath = relativePath.Replace('\\', '/');
         string escapedPath = string.Join('/', normalizedPath
@@ -149,17 +209,18 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
         var baseUri = new Uri(_baseUrl, UriKind.Absolute);
         string escapedUrl = new Uri(baseUri, escapedPath).ToString();
         string literalUrl = new Uri(baseUri, normalizedPath).ToString();
-        string rawUrl = _baseUrl + normalizedPath;
 
-        return [.. new[] { escapedUrl, literalUrl, rawUrl }.Distinct(StringComparer.Ordinal)];
+        return escapedUrl == literalUrl
+            ? [escapedUrl]
+            : [escapedUrl, literalUrl];
     }
 
     private static List<UpdateFile> GetFilesToApply(UpdateContext ctx, string rootFullPath) {
         ArgumentNullException.ThrowIfNull(ctx);
         ArgumentException.ThrowIfNullOrWhiteSpace(rootFullPath);
 
-        List<UpdateFile> filesToApply = [];
-        foreach (var file in ctx.Metadata.Files ?? []) {
+        List<UpdateFile> filesToApply = new();
+        foreach (var file in ctx.Metadata.Files ?? Enumerable.Empty<UpdateFile>()) {
             string destinationPath = GetValidatedDestinationPath(rootFullPath, file.Path);
             string currentPath = IsCurrentProcessExecutable(destinationPath)
                 ? GetPendingSelfUpdatePath(destinationPath)
@@ -178,8 +239,8 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
         ArgumentNullException.ThrowIfNull(ctx);
         ArgumentException.ThrowIfNullOrWhiteSpace(rootFullPath);
 
-        List<PendingDeleteFile> filesToDelete = [];
-        foreach (var deletedFile in ctx.Metadata.DeletedFiles ?? []) {
+        List<PendingDeleteFile> filesToDelete = new();
+        foreach (var deletedFile in ctx.Metadata.DeletedFiles ?? Enumerable.Empty<string>()) {
             string fullPath = GetValidatedDestinationPath(rootFullPath, deletedFile);
             if (!File.Exists(fullPath))
                 continue;
@@ -231,13 +292,6 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
             details += $" | ... (+{failedFiles.Count - 3} more)";
 
         return $"Update completed with {failedFiles.Count} failed file(s): {details}";
-    }
-
-    private static void ReportProgress(IEventManager eventManager, int completedOperations, int totalOperations) {
-        if (totalOperations <= 0)
-            return;
-
-        eventManager.NotifyAll(new ProgressEvent((int)((completedOperations * 100f) / totalOperations)));
     }
 
     private sealed record PendingDeleteFile(string RelativePath, string FullPath);

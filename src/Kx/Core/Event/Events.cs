@@ -9,7 +9,7 @@ public record StatusEvent(string Text) : IEvent {
     public DateTime OccurredAt { get; } = DateTime.UtcNow;
 }
 
-public record ProgressEvent(int Percent) : IEvent {
+public record ProgressEvent(float Percent) : IEvent {
     public DateTime OccurredAt { get; } = DateTime.UtcNow;
 };
 
