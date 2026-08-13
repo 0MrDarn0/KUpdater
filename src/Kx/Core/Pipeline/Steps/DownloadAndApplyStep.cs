@@ -3,12 +3,12 @@
 
 using System.Net;
 
-using Kx.Sdk.Events;
 using Kx.Core.Attributes;
 using Kx.Core.Event;
 using Kx.Core.Extensions;
 using Kx.Core.Localization;
 using Kx.Core.Update;
+using Kx.Sdk.Events;
 using Kx.Sdk.Updater;
 
 namespace Kx.Core.Pipeline.Steps;
@@ -93,7 +93,12 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
                 throw new InvalidDataException(LanguageService.Translate(KxLanguageKeys.Error.HashMismatch, file.Path));
 
             EnsureDestinationPathIsWritable(destinationPath);
-            File.Move(tempPath, destinationPath);
+
+            if (File.Exists(destinationPath)) {
+                File.Replace(tempPath, destinationPath, null);
+            } else {
+                File.Move(tempPath, destinationPath);
+            }
         }
         finally {
             if (File.Exists(tempPath)) {
@@ -198,13 +203,12 @@ public class DownloadAndApplyStep(IUpdateSource source, string baseUrl) : IUpdat
     private static void EnsureDestinationPathIsWritable(string destinationPath) {
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
 
-        if (File.Exists(destinationPath)) {
-            File.Delete(destinationPath);
-            return;
-        }
-
         if (Directory.Exists(destinationPath))
-            Directory.Delete(destinationPath, recursive: true);
+            throw new IOException($"Destination '{destinationPath}' is a directory, expected a file.");
+
+        string? parent = Path.GetDirectoryName(destinationPath);
+        if (!string.IsNullOrWhiteSpace(parent))
+            Directory.CreateDirectory(parent);
     }
 
     private static bool IsCurrentProcessExecutable(string filePath) {
