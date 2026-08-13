@@ -2,6 +2,8 @@
 // Licensed under the GPL-3.0 (see LICENSE.txt)
 
 using System.Net;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.Json;
 
@@ -273,6 +275,63 @@ public sealed class FileBasedUpdateFlowTests {
         ], source.RequestedUrls);
         Assert.True(File.Exists(Path.Combine(rootDirectory, "data", "HyperText", "ok.dat")));
     }
+
+    [Fact]
+    public async Task FileReplaceOverwritesExistingFileSafely() {
+        string root = CreateTempDirectory();
+        string target = Path.Combine(root, "data", "x.dat");
+
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        File.WriteAllText(target, "old");
+
+        byte[] newContent = Encoding.UTF8.GetBytes("new");
+        var source = new FakeUpdateSource();
+        source.RegisterFile("https://updates.example/data/x.dat", newContent);
+
+        var context = new UpdateContext(root) {
+            Metadata = new UpdateMetadata {
+                Files = [
+                new UpdateFile {
+                    Path = "data/x.dat",
+                    Sha256 = ComputeSha256(newContent)
+                }
+            ]
+            }
+        };
+
+        var step = new DownloadAndApplyStep(source, "https://updates.example/");
+        await step.ExecuteAsync(context, new EventManager());
+
+        Assert.Equal("new", File.ReadAllText(target));
+    }
+
+    [Fact]
+    public void EnsureDestinationPathIsWritableThrowsWhenDestinationIsDirectory() {
+        string root = CreateTempDirectory();
+        string dir = Path.Combine(root, "data", "folder");
+
+        Directory.CreateDirectory(dir);
+
+        var ex = Assert.Throws<IOException>(() =>
+        InvokeEnsureDestinationPathIsWritable(dir)
+    );
+
+        Assert.Contains("directory", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void InvokeEnsureDestinationPathIsWritable(string path) {
+        var method = typeof(DownloadAndApplyStep)
+        .GetMethod("EnsureDestinationPathIsWritable", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        try {
+            method.Invoke(null, [path]);
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null) {
+            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            throw;
+        }
+    }
+
 
     private static string CreateTempDirectory() {
         string path = Path.Combine(Path.GetTempPath(), "kx-tests", Guid.NewGuid().ToString("N"));
