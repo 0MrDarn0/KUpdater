@@ -1,0 +1,16 @@
+// Copyright (c) 2026 Christian Schnuck
+// Licensed under the GPL-3.0 (see LICENSE.txt)
+
+namespace Kx.UI.Layout;
+
+public enum TextAlignmentHorizontal {
+    Left,
+    Center,
+    Right
+}
+
+public enum TextAlignmentVertical {
+    Top,
+    Middle,
+    Bottom
+}
