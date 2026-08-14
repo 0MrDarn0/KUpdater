@@ -22,8 +22,7 @@ public static class FileInfoExtensions {
     /// Uses IncrementalHash and asynchronous stream reads to avoid blocking the calling thread.
     /// </summary>
     public static async Task<string> ComputeSha256Async(this FileInfo file, CancellationToken ct = default) {
-        if (file is null)
-            throw new ArgumentNullException(nameof(file));
+        ArgumentNullException.ThrowIfNull(file);
         if (!file.Exists)
             throw new FileNotFoundException("File not found", file.FullName);
 
@@ -49,10 +48,8 @@ public static class FileInfoExtensions {
     /// Synchronous convenience wrapper.
     /// </summary>
     public static bool VerifySha256(this FileInfo file, string expectedHash) {
-        if (file is null)
-            throw new ArgumentNullException(nameof(file));
-        if (expectedHash is null)
-            throw new ArgumentNullException(nameof(expectedHash));
+        ArgumentNullException.ThrowIfNull(file);
+        ArgumentNullException.ThrowIfNull(expectedHash);
         if (!file.Exists)
             return false;
         return file.ComputeSha256().Equals(expectedHash, StringComparison.OrdinalIgnoreCase);
@@ -63,10 +60,8 @@ public static class FileInfoExtensions {
     /// Returns false if file does not exist.
     /// </summary>
     public static async Task<bool> VerifySha256Async(this FileInfo file, string expectedHash, CancellationToken ct = default) {
-        if (file is null)
-            throw new ArgumentNullException(nameof(file));
-        if (expectedHash is null)
-            throw new ArgumentNullException(nameof(expectedHash));
+        ArgumentNullException.ThrowIfNull(file);
+        ArgumentNullException.ThrowIfNull(expectedHash);
         if (!file.Exists)
             return false;
 
